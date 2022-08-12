@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 0
+    path: Assets/Testing/Testing Scene.unity
+    guid: 1f1ad34103a2eee4499c8159644a8212
+  - enabled: 0
+    path: Assets/Testing/Benchmark.unity
+    guid: 6683dcceb2384934a920ebac21619679
+  m_configObjects:
+    Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 0055f3b559c412246859f6589c8ac5a8, type: 2}
+    Unity.XR.OpenVR.Settings: {fileID: 11400000, guid: 87f3d906a5a44b946a1380d6044fb4cb, type: 2}
+    Unity.XR.WindowsMR.Settings: {fileID: 11400000, guid: c889ce3967d880b4588c006cbd11a9c4, type: 2}
+    com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: fc3429511832143438a601d3adadff55, type: 2}
+    com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: ce984b5c6d3a24e4ba48666be481925b, type: 2}
+    com.unity.input.settings: {fileID: 11400000, guid: b9ce7c5bf10c4ae4ab79fd62c83d8551, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 819d473a1c4b951409376446add26845, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 8f74d8ad361157c43a7b16de65fa7cc9, type: 2}

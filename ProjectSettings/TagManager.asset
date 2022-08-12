@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - Orb
+  - TeleportSurface
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - Portal
+  - Water
+  - UI
+  - Teleport Valid
+  - Hide In Target Portal
+  - Default/Portal Space A
+  - Portal Space A
+  - Default/Portal Space B
+  - Portal Space B
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0

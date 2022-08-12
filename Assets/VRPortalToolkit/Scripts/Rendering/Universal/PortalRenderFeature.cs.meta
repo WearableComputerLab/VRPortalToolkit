@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 99e41a64dc405354588b050dec75d452
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _portalIncrease: {fileID: 2100000, guid: b37df06b0d97d3c439b9960600476bf5, type: 2}
+  - _portalDecrease: {fileID: 2100000, guid: 1610932ed2cb46d4a89736052e6d551a, type: 2}
+  - _portalClearDepth: {fileID: 2100000, guid: 341ceec8b7a572c4a8e3b4271af4f049, type: 2}
+  - _portalDepthOnly: {fileID: 2100000, guid: 733b792f0cd776f47b9541770721d1b8, type: 2}
+  - _portalStereo: {fileID: 2100000, guid: 5b4b59fca78fdd54ea72d3b37270eb85, type: 2}
+  - renderCamera: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
