@@ -34,9 +34,9 @@ namespace VRPortalToolkit
 
         protected MaterialPropertyBlock _propertyBlock;
 
-        public override void ForceApply()
+        public override void Apply()
         {
-            base.ForceApply();
+            base.Apply();
 
             // Just in case there are no clones
             if (maxCloneCount == 0 && sortedTransitions.Count > 0)

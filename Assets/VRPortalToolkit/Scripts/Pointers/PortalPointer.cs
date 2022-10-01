@@ -2,17 +2,12 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 using VRPortalToolkit.Physics;
-using Misc.Update;
-using Misc.Events;
 
 namespace VRPortalToolkit.Pointers
 {
+    [DefaultExecutionOrder(100)]
     public class PortalPointer : MonoBehaviour
     {
-        [SerializeField] private UpdateMask _updateMask = new UpdateMask(UpdateFlags.FixedUpdate);
-        public UpdateMask updateMask => _updateMask;
-        protected Updater updater = new Updater();
-
         [SerializeField] private LayerMask _portalMask = 1 << 3; // TODO: change this on reset to default to a user defined value
         public virtual LayerMask portalMask
         {
@@ -72,13 +67,9 @@ namespace VRPortalToolkit.Pointers
         }
 
         [Header("Raycast Events")]
-        public SerializableEvent<PortalPointer> onRaycastEntered = new SerializableEvent<PortalPointer>();
+        public UnityEvent<PortalPointer> onRaycastEntered = new UnityEvent<PortalPointer>();
         //public UnityEvent<PortalPointer> onRaycastStay;
-        public SerializableEvent<PortalPointer> onRaycastExited = new SerializableEvent<PortalPointer>();
-
-        [Header("Update Events")]
-        public SerializableEvent preUpdate = new SerializableEvent();
-        public SerializableEvent postUpdate = new SerializableEvent();
+        public UnityEvent<PortalPointer> onRaycastExited = new UnityEvent<PortalPointer>();
 
         [Header("Optional"), SerializeField] private PortalCaster _portalCaster;
         public PortalCaster portalCaster
@@ -125,12 +116,6 @@ namespace VRPortalToolkit.Pointers
             portalCaster = GetComponentInChildren<PortalCaster>();
         }
 
-        protected virtual void Awake()
-        {
-            updater.updateMask = _updateMask;
-            updater.onInvoke = ForceApply;
-        }
-
         protected virtual void OnValidate()
         {
             maxDistance = _maxDistance;
@@ -138,13 +123,11 @@ namespace VRPortalToolkit.Pointers
 
         protected virtual void OnEnable()
         {
-            updater.enabled = true;
+            //
         }
 
         protected virtual void OnDisable()
         {
-            updater.enabled = false;
-
             if (hitPortalRaysIndex >= 0)
             {
                 RaycastExited();
@@ -173,15 +156,13 @@ namespace VRPortalToolkit.Pointers
             }
         }
 
-        public virtual void Apply()
+        public virtual void FixedUpdate()
         {
-            if (isActiveAndEnabled && Application.isPlaying && !updater.isUpdating) ForceApply();
+            Apply();
         }
 
-        public virtual void ForceApply()
+        public virtual void Apply()
         {
-            preUpdate?.Invoke();
-
             if (_maxRecursions < 0) _maxRecursions = 0;
 
             bool raycastHit;
@@ -254,8 +235,6 @@ namespace VRPortalToolkit.Pointers
 
                 SwapToNew(ref newHitInfo, newHitInfoRayIndex, newPortalRaysCount);
             }
-            
-            postUpdate?.Invoke();
         }
 
         private void SwapToNew(ref RaycastHit newHitInfo, int newHitInfoRayIndex, int newPortalRaysCount)

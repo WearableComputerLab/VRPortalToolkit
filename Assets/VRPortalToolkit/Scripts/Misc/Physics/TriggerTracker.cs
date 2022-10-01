@@ -1,5 +1,4 @@
 using Misc.EditorHelpers;
-using Misc.Events;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,16 +9,16 @@ namespace Misc.Physics
     public class TriggerTracker : TriggerHandler
     {
         [Header("Collider Events")]
-        public SerializableEvent<Collider> colliderEntered = new SerializableEvent<Collider>();
-        public SerializableEvent<Collider> colliderExited = new SerializableEvent<Collider>();
+        public UnityEvent<Collider> colliderEntered = new UnityEvent<Collider>();
+        public UnityEvent<Collider> colliderExited = new UnityEvent<Collider>();
 
         [Header("Rigidbody Events")]
-        public SerializableEvent<Rigidbody> rigidbodyEntered = new SerializableEvent<Rigidbody>();
-        public SerializableEvent<Rigidbody> rigidbodyExited = new SerializableEvent<Rigidbody>();
+        public UnityEvent<Rigidbody> rigidbodyEntered = new UnityEvent<Rigidbody>();
+        public UnityEvent<Rigidbody> rigidbodyExited = new UnityEvent<Rigidbody>();
 
         [Header("Container Events")]
-        public SerializableEvent<Transform> containerEntered = new SerializableEvent<Transform>();
-        public SerializableEvent<Transform> containerExited = new SerializableEvent<Transform>();
+        public UnityEvent<Transform> containerEntered = new UnityEvent<Transform>();
+        public UnityEvent<Transform> containerExited = new UnityEvent<Transform>();
 
         public new int colliderCount => base.colliderCount;
         public new int rigidbodyCount => base.rigidbodyCount;

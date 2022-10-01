@@ -1,6 +1,4 @@
 using Misc.EditorHelpers;
-using Misc.Events;
-using Misc.Update;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,12 +9,9 @@ using VRPortalToolkit.Portables;
 
 namespace VRPortalToolkit.Pointers
 {
+    [DefaultExecutionOrder(101)] // Execute after pointer
     public class PortalPointerCursor : MonoBehaviour
     {
-        [SerializeField] private UpdateMask _updateMask = new UpdateMask(UpdateFlags.LateUpdate);
-        public UpdateMask updateMask => _updateMask;
-        protected Updater updater = new Updater();
-
         [SerializeField] private PortalPointer _raycaster;
         public PortalPointer raycaster
         {
@@ -75,10 +70,6 @@ namespace VRPortalToolkit.Pointers
             set => _hitMode = value;
         }
 
-        [Header("Events")]
-        public SerializableEvent preUpdate = new SerializableEvent();
-        public SerializableEvent postUpdate = new SerializableEvent();
-
         [Header("Optional"), SerializeField] private Transform _upright;
         public virtual Transform upright
         {
@@ -116,15 +107,11 @@ namespace VRPortalToolkit.Pointers
 
         protected virtual void Awake()
         {
-            updater.updateMask = _updateMask;
-            updater.onInvoke = ForceApply;
-
             target = _target;
         }
 
         protected virtual void OnEnable()
         {
-            updater.enabled = true;
             AddRaycasterListeners(_raycaster);
 
             Apply();
@@ -132,7 +119,6 @@ namespace VRPortalToolkit.Pointers
 
         protected virtual void OnDisable()
         {
-            updater.enabled = false;
             RemoveRaycasterListeners(_raycaster);
 
             PeformTeleports(0);
@@ -148,15 +134,13 @@ namespace VRPortalToolkit.Pointers
             if (raycaster) PortalPhysics.RemovePostTeleportListener(raycaster.transform, RaycasterPostTeleport);
         }
 
-        public virtual void Apply()
+        public virtual void FixedUpdate()
         {
-            if (isActiveAndEnabled && Application.isPlaying && !updater.isUpdating) ForceApply();
+            Apply();
         }
 
-        public virtual void ForceApply()
+        public virtual void Apply()
         {
-            preUpdate?.Invoke();
-
             if (!raycaster || raycaster.portalRaysCount <= 0) return;
 
             if (_hitMode != HitMode.Ignore && raycaster.TryGetHitInfo(out RaycastHit hitInfo, out int hitIndex))
@@ -204,8 +188,6 @@ namespace VRPortalToolkit.Pointers
                 PeformTeleports(raycaster.portalRaysCount);
 
             }
-
-            postUpdate?.Invoke();
         }
 
         // altUp is used as a backup if forwad is parallel to up. Normal may also be parallel, so this isnt perfect

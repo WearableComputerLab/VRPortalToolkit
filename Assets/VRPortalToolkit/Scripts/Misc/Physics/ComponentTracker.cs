@@ -1,5 +1,4 @@
 using Misc.EditorHelpers;
-using Misc.Update;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -22,6 +21,8 @@ namespace Misc.Physics
 
     public abstract class ComponentTracker<TSource, TComponent> : MonoBehaviour where TSource : Component where TComponent : Component
     {
+        private static readonly WaitForFixedUpdate WAIT_FOR_FIXED = new WaitForFixedUpdate();
+
         [Header("Component Events")]
         public UnityEvent<TComponent> componentEntered = new UnityEvent<TComponent>();
         public UnityEvent<TComponent> componentExited = new UnityEvent<TComponent>();
@@ -48,9 +49,7 @@ namespace Misc.Physics
             }
         }
 
-        [SerializeField] private UpdateMask _checkStateMask = new UpdateMask(UpdateFlags.WaitForFixedUpdate);
-        public UpdateMask updateMask => _checkStateMask;
-        protected Updater updater = new Updater();
+        private IEnumerator _fixedCheckState;
 
         public int componentCount => handler.componentCount;
 
@@ -58,9 +57,6 @@ namespace Misc.Physics
 
         protected virtual void Awake()
         {
-            updater.updateMask = _checkStateMask;
-            updater.onInvoke = CheckState;
-
             handler.componentEntered = OnEnterComponent;
             handler.componentExited = OnExitComponent;
             handler.getComponentsMode = getComponentsMode;
@@ -71,19 +67,30 @@ namespace Misc.Physics
         {
             Validate.FieldWithProperty(this, nameof(_exitMode), nameof(exitMode));
             Validate.FieldWithProperty(this, nameof(_getComponentsMode), nameof(getComponentsMode));
-            updater.updateMask = _checkStateMask;
         }
 
         protected virtual void OnEnable()
         {
             handler.enabled = true;
-            updater.enabled = true;
+
+            StartCoroutine(_fixedCheckState = FixedCheckState());
         }
 
         protected virtual void OnDisable()
         {
-            updater.enabled = false;
             handler.enabled = false;
+
+            StopCoroutine(_fixedCheckState);
+        }
+
+        private IEnumerator FixedCheckState()
+        {
+            while (isActiveAndEnabled)
+            {
+                yield return WAIT_FOR_FIXED;
+
+                CheckState();
+            }
         }
 
         protected virtual void ApplyExitMode()

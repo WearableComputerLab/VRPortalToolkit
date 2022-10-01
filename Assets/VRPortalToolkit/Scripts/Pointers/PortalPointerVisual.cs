@@ -1,9 +1,8 @@
 using Misc;
-using Misc.Events;
-using Misc.Update;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using VRPortalToolkit.Data;
 using VRPortalToolkit.Physics;
 
@@ -13,11 +12,6 @@ namespace VRPortalToolkit.Pointers
 
     public class PortalPointerVisual : MonoBehaviour
     {
-        [SerializeField] protected UpdateMask _updateMask = new UpdateMask(UpdateFlags.LateUpdate);
-        public UpdateMask updateMask => _updateMask;
-        protected Updater updater = new Updater();
-
-
         [SerializeField] private PortalPointer _portalPointer;
         public PortalPointer portalPointer
         {
@@ -50,10 +44,6 @@ namespace VRPortalToolkit.Pointers
             }
         }*/
 
-        [Header("Update Events")]
-        public SerializableEvent preUpdate = new SerializableEvent();
-        public SerializableEvent postUpdate = new SerializableEvent();
-
         protected LinkedList<Transform> lines = new LinkedList<Transform>();
         protected ObjectPool<Transform> linePool;
 
@@ -70,9 +60,6 @@ namespace VRPortalToolkit.Pointers
 
         protected virtual void Awake()
         {
-            updater.updateMask = _updateMask;
-            updater.onInvoke = ForceApply;
-
             linePool = new ObjectPool<Transform>(CreateLine, null, null, DestroyLine);
         }
 
@@ -93,25 +80,13 @@ namespace VRPortalToolkit.Pointers
             if (line) Destroy(line.gameObject);
         }
 
-        protected virtual void OnEnable()
+        protected virtual void LateUpdate()
         {
-            updater.enabled = true;
-        }
-
-        protected virtual void OnDisable()
-        {
-            updater.enabled = false;
+            Apply();
         }
 
         public virtual void Apply()
         {
-            if (isActiveAndEnabled && Application.isPlaying && !updater.isUpdating) ForceApply();
-        }
-
-        public virtual void ForceApply()
-        {
-            preUpdate?.Invoke();
-
             if (portalPointer)
             {
                 // TODO: Could optimise by only creating line renderers when a new portal rocks up in the array...
@@ -132,8 +107,6 @@ namespace VRPortalToolkit.Pointers
                     ApplyPortalRaysToRenderers();
                 }
             }
-
-            postUpdate?.Invoke();
         }
 
         protected void ApplyPortalRaysToRenderers()

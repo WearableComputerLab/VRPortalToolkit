@@ -1,19 +1,12 @@
-using Misc.Events;
-using Misc.Update;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 
 [RequireComponent(typeof(SphereCollider))]
 public class SphereColliderExpander : MonoBehaviour
 {
     private SphereCollider _collider;
     public new SphereCollider collider => _collider ? _collider : _collider = GetComponent<SphereCollider>();
-
-    [SerializeField] private UpdateMask _updateMask = new UpdateMask(UpdateFlags.WaitForFixedUpdate);
-    public UpdateMask updateMask => _updateMask;
-    protected Updater updater = new Updater();
 
     [SerializeField] private List<Transform> _sources;
     public List<Transform> sources
@@ -29,35 +22,13 @@ public class SphereColliderExpander : MonoBehaviour
         set => _border = value;
     }
 
-    [Header("Events")]
-    public SerializableEvent preUpdate = new SerializableEvent();
-    public SerializableEvent postUpdate = new SerializableEvent();
-
-    protected virtual void Awake()
+    protected virtual void LateUpdate()
     {
-        updater.onInvoke = ForceApply;
-        updater.updateMask = _updateMask;
-    }
-
-    protected virtual void OnEnable()
-    {
-        updater.enabled = true;
-    }
-
-    protected virtual void OnDisable()
-    {
-        updater.enabled = false;
+        Apply();
     }
 
     public virtual void Apply()
     {
-        if (isActiveAndEnabled && Application.isPlaying && !updater.isUpdating) ForceApply();
-    }
-
-    public virtual void ForceApply()
-    {
-        preUpdate?.Invoke();
-
         if (collider && sources.Count > 0)
         {
             int count = 0;
@@ -105,7 +76,5 @@ public class SphereColliderExpander : MonoBehaviour
 
             _collider.radius = transform.InverseTransformVector(vector * radius).magnitude + border;
         }
-
-        postUpdate?.Invoke();
     }
 }

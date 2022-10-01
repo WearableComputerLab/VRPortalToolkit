@@ -1,11 +1,9 @@
-using Misc.Update;
 using Misc.Physics;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using Misc.EditorHelpers;
-using Misc.Events;
 using VRPortalToolkit.Physics;
 using VRPortalToolkit.Cloning;
 using Misc;
@@ -17,10 +15,6 @@ namespace VRPortalToolkit
 
     public class PortalRenderClone : Misc.Physics.TriggerHandler
     {
-        [SerializeField] private UpdateMask _updateMask = new UpdateMask(UpdateFlags.LateUpdate);
-        public UpdateMask updateMask => _updateMask;
-        protected Updater updater = new Updater();
-
         [SerializeField] private GameObject _original;
         public virtual GameObject original
         {
@@ -77,10 +71,6 @@ namespace VRPortalToolkit
             public List<PortalCloneInfo<MeshFilter>> filters = new List<PortalCloneInfo<MeshFilter>>();
         }
 
-        [Header("Events")]
-        public SerializableEvent preUpdate = new SerializableEvent();
-        public SerializableEvent postUpdate = new SerializableEvent();
-
         /*[Header("Transition Events")]
         public SerializableEvent<PortalTransition> enteredTransition = new SerializableEvent<PortalTransition>();
         public SerializableEvent<PortalTransition> exitedTransition = new SerializableEvent<PortalTransition>();*/
@@ -107,9 +97,6 @@ namespace VRPortalToolkit
 
         protected virtual void Awake()
         {
-            updater.updateMask = _updateMask;
-            updater.onInvoke = ForceApply;
-
             transitionHandler.componentEntered = OnTriggerEnterTransition;
             transitionHandler.componentExited = OnTriggerExitTransition;
             transitionHandler.getComponentsMode = GetComponentsMode.GetComponents;
@@ -121,8 +108,6 @@ namespace VRPortalToolkit
         {
             base.OnEnable();
 
-            updater.enabled = true;
-
             PortalPhysics.AddPreTeleportListener(transform, OnPreTeleport);
             PortalPhysics.AddPostTeleportListener(transform, OnPostTeleport);
 
@@ -132,8 +117,6 @@ namespace VRPortalToolkit
         protected override void OnDisable()
         {
             base.OnDisable();
-
-            updater.enabled = false;
 
             PortalPhysics.RemovePreTeleportListener(transform, OnPreTeleport);
             PortalPhysics.RemovePostTeleportListener(transform, OnPostTeleport);
@@ -146,21 +129,17 @@ namespace VRPortalToolkit
             clonePool.Clear();
         }
 
-        public virtual void Apply()
+        protected virtual void LateUpdate()
         {
-            if (isActiveAndEnabled && Application.isPlaying && !updater.isUpdating) ForceApply();
+            Apply();
         }
 
-        public virtual void ForceApply()
+        public virtual void Apply()
         {
-            preUpdate?.Invoke();
-
             GenerateClones();
 
             foreach (var pair in currentClones)
                 UpdateCloneHandler(pair.Key, pair.Value);
-
-            postUpdate?.Invoke();
         }
 
         protected override void OnTriggerEnterContainer(Transform other)

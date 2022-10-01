@@ -1,11 +1,9 @@
 using Misc.EditorHelpers;
-using Misc.Update;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using VRPortalToolkit;
 using VRPortalToolkit.Physics;
-
 
 public class IgnoreParentTeleport : MonoBehaviour
 {

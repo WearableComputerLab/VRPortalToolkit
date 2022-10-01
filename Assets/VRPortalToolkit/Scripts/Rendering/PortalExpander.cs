@@ -1,5 +1,5 @@
-using Misc.Events;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Rendering;
 using VRPortalToolkit.Rendering;
 
@@ -21,8 +21,8 @@ namespace VRPortalToolkit
         public Bounds bounds { get => _bounds; set => _bounds = value; }
 
         [Header("Events")]
-        public SerializableEvent<Camera> expanded = new SerializableEvent<Camera>();
-        public SerializableEvent<Camera> flattened = new SerializableEvent<Camera>();
+        public UnityEvent<Camera> expanded = new UnityEvent<Camera>();
+        public UnityEvent<Camera> flattened = new UnityEvent<Camera>();
 
         protected virtual void OnDrawGizmos()
         {
