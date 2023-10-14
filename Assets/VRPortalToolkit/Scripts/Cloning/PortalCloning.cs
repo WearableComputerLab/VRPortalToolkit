@@ -117,26 +117,32 @@ namespace VRPortalToolkit.Cloning
 
         public static bool TryGetClones<T>(T original, out T[] clones) where T : Component
         {
-            if (original != null)
+            if (original != null && _clonesByOriginal.TryGetValue(original, out Component[] componentClones))
             {
-                if (_clonesByOriginal.TryGetValue(original, out Component[] componentClones))
-                {
-                    int actualLength = 0;
+                int actualLength = 0;
 
-                    foreach (Component clone in componentClones)
-                        if (clone is T) actualLength++;
+                foreach (Component clone in componentClones)
+                    if (clone is T) actualLength++;
 
-                    clones = new T[actualLength];
+                clones = new T[actualLength];
 
-                    int index = 0;
+                int index = 0;
 
-                    foreach (Component clone in componentClones)
-                        if (clone is T asT) clones[index++] = asT;
-                }
+                foreach (Component clone in componentClones)
+                    if (clone is T asT) clones[index++] = asT;
             }
 
             clones = null;
             return false;
+        }
+
+        public static IEnumerable<T> GetClones<T>(T original) where T : Component
+        {
+            if (original != null && _clonesByOriginal.TryGetValue(original, out Component[] componentClones))
+            {
+                foreach (Component clone in componentClones)
+                    if (clone is T cloneT) yield return cloneT;
+            }
         }
 
         public static bool TryGetCloneInfos<T>(T original, out PortalCloneInfo<T>[] infos) where T : Component
@@ -157,14 +163,29 @@ namespace VRPortalToolkit.Cloning
                     foreach (Component clone in componentClones)
                     {
                         _cloneInfos.TryGetValue(clone, out PortalCloneInfo<Component> info);
-                        info.TryAs(out PortalCloneInfo<T> infoT);
-                        infos[index++] = infoT;
+
+                        if (info.TryAs(out PortalCloneInfo<T> infoT))
+                            infos[index++] = infoT;
                     }
                 }
             }
 
             infos = null;
             return false;
+        }
+
+        public static IEnumerable<PortalCloneInfo<T>> GetCloneInfos<T>(T original) where T : Component
+        {
+            if (original != null && _clonesByOriginal.TryGetValue(original, out Component[] componentClones))
+            {
+                foreach (Component clone in componentClones)
+                {
+                    _cloneInfos.TryGetValue(clone, out PortalCloneInfo<Component> info);
+
+                    if (info.TryAs(out PortalCloneInfo<T> infoT))
+                        yield return infoT;
+                }
+            }
         }
 
         public static bool IsClone(Component clone) => _cloneInfos.ContainsKey(clone);

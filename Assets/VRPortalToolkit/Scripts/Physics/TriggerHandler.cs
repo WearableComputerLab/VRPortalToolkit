@@ -1,93 +1,182 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.XR.Interaction.Toolkit;
+using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit
 {
-    public abstract class TriggerHandler : MonoBehaviour
+    public class TriggerHandler<TValue> : IEnumerable<KeyValuePair<Collider, TValue>>
     {
-        private Dictionary<Collider, int> _activeCollisions = new Dictionary<Collider, int>();
+        public event Action<TValue> valueAdded;
 
-        protected int colliderCount => _activeCollisions.Count;
+        public event Action<TValue> valueRemoved;
 
-        protected int CollisionCount(Collider collider)
+        public IEnumerable<Collider> Colliders => _valueByCollider.Keys;
+
+        public IEnumerable<TValue> Values => _valueCount.Keys;
+
+        readonly Dictionary<Collider, TValue> _valueByCollider = new Dictionary<Collider, TValue>();
+        readonly Dictionary<TValue, int> _valueCount = new Dictionary<TValue, int>();
+
+        static readonly List<Collider> _exited = new List<Collider>();
+
+        public void Add(Collider collider, TValue value)
         {
-            if (isActiveAndEnabled && _activeCollisions.TryGetValue(collider, out int count))
-                return count;
-
-            return 0;
+            RemoveCollider(collider);
+            ForceAdd(collider, value);
         }
 
-        protected IEnumerable<Collider> GetColliders()
+        public void TryAdd(Collider collider, TValue value)
         {
-            if (isActiveAndEnabled)
-            {
-                foreach (Collider collider in _activeCollisions.Keys)
-                    yield return collider;
-            }
+            if (!HasCollider(collider)) ForceAdd(collider, value);
         }
 
-        protected virtual void OnEnable()
+        private void ForceAdd(Collider collider, TValue value)
         {
-            foreach (Collider collider in _activeCollisions.Keys)
-                OnTriggerFirstEnter(collider);
-        }
+            _valueByCollider[collider] = value;
 
-        protected virtual void OnDisable()
-        {
-            foreach (Collider collider in _activeCollisions.Keys)
-                OnTriggerLastExit(collider);
-        }
-
-        protected virtual bool Contains(Collider collider)
-        {
-            return (isActiveAndEnabled && _activeCollisions.ContainsKey(collider));
-        }
-
-        protected virtual void OnTriggerFirstEnter(Collider collider) { }
-
-        protected virtual void OnTriggerEnter(Collider collider)
-        {
-            if (_activeCollisions.TryGetValue(collider, out int count))
-                _activeCollisions[collider] = count + 1;
+            if (_valueCount.TryGetValue(value, out int count))
+                _valueCount[value] = count + 1;
             else
             {
-                _activeCollisions[collider] = 1;
-
-                if (isActiveAndEnabled)
-                    OnTriggerFirstEnter(collider);
+                _valueCount[value] = 1;
+                valueAdded?.Invoke(value);
             }
         }
 
-        protected virtual void OnTriggerExit(Collider collider)
+        public void RemoveCollider(Collider collider)
         {
-            if (_activeCollisions.TryGetValue(collider, out int count))
+            if (_valueByCollider.TryGetValue(collider, out TValue value))
             {
-                if (count > 1)
-                    _activeCollisions[collider] = count - 1;
-                else
+                if (_valueCount.TryGetValue(value, out int count))
                 {
-                    _activeCollisions.Remove(collider);
+                    count--;
 
-                    if (isActiveAndEnabled)
-                        OnTriggerLastExit(collider);
+                    if (count == 0)
+                    {
+                        _valueCount.Remove(value);
+                        valueRemoved?.Invoke(value);
+                    }
+                    else
+                        _valueCount[value] = count;
                 }
+
+                _valueByCollider.Remove(collider);
             }
         }
 
-        protected virtual void OnTriggerLastExit(Collider collider) { }
-        
-        private List<Collider> _clearList;
-        protected virtual void CleanupDeactiveAndDestroyed()
+        public void UpdateColliders(HashSet<Collider> remainingColliders)
         {
-            if (_clearList == null) _clearList = new List<Collider>();
-            else _clearList.Clear();
+            _exited.Clear();
 
-            foreach (Collider collider in _activeCollisions.Keys)
-                if (!collider || !collider.enabled) _clearList.Add(collider);
+            foreach (Collider key in _valueByCollider.Keys)
+            {
+                if (!remainingColliders.Contains(key))
+                    _exited.Add(key);
+                //else
+                //    remainingKeys.Remove(key);
+            }
 
-            foreach (Collider collider in _clearList)
-                OnTriggerExit(collider);
+            foreach (var source in _exited)
+                RemoveCollider(source);
+
+            _exited.Clear();
         }
+
+        public bool HasCollider(Collider key) => _valueByCollider.ContainsKey(key);
+
+        public bool HasValue(TValue value) => _valueCount.ContainsKey(value);
+
+        public IEnumerator<KeyValuePair<Collider, TValue>> GetEnumerator() => _valueByCollider.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => _valueByCollider.GetEnumerator();
+    }
+
+    public class TriggerHandler<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+    {
+        public event Action<TValue> valueAdded;
+
+        public event Action<TValue> valueRemoved;
+
+        public IEnumerable<TKey> Keys => _valueByKey.Keys;
+
+        public IEnumerable<TValue> Values => _valueCount.Keys;
+
+        readonly Dictionary<TKey, TValue> _valueByKey = new Dictionary<TKey, TValue>();
+        readonly Dictionary<TValue, int> _valueCount = new Dictionary<TValue, int>();
+
+        static readonly List<TKey> _exited = new List<TKey>();
+
+        public void Add(TKey key, TValue value)
+        {
+            RemoveKey(key);
+            ForceAdd(key, value);
+        }
+
+        public void TryAdd(TKey key, TValue value)
+        {
+            if (!HasKey(key)) ForceAdd(key, value);
+        }
+
+        private void ForceAdd(TKey key, TValue value)
+        {
+            _valueByKey[key] = value;
+
+            if (_valueCount.TryGetValue(value, out int count))
+                _valueCount[value] = count + 1;
+            else
+            {
+                _valueCount[value] = 1;
+                valueAdded?.Invoke(value);
+            }
+        }
+
+        public void RemoveKey(TKey key)
+        {
+            if (_valueByKey.TryGetValue(key, out TValue value))
+            {
+                if (_valueCount.TryGetValue(value, out int count))
+                {
+                    count--;
+
+                    if (count == 0)
+                    {
+                        _valueCount.Remove(value);
+                        valueRemoved?.Invoke(value);
+                    }
+                    else
+                        _valueCount[value] = count;
+                }
+
+                _valueByKey.Remove(key);
+            }
+        }
+
+        public void UpdateKeys(HashSet<TKey> remainingKeys)
+        {
+            foreach (TKey key in _valueByKey.Keys)
+            {
+                if (!remainingKeys.Contains(key))
+                    _exited.Add(key);
+                //else
+                //    remainingKeys.Remove(key);
+            }
+
+            foreach (TKey source in _exited)
+                RemoveKey(source);
+
+            _exited.Clear();
+        }
+
+        public bool HasKey(TKey key) => _valueByKey.ContainsKey(key);
+
+        public bool HasValue(TValue value) => _valueCount.ContainsKey(value);
+
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _valueByKey.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => _valueByKey.GetEnumerator();
     }
 }

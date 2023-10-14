@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.UIElements;
 using VRPortalToolkit.Data;
 
 namespace VRPortalToolkit.Rendering.Universal
@@ -11,17 +12,18 @@ namespace VRPortalToolkit.Rendering.Universal
     {
         private static MaterialPropertyBlock propertyBlock;
 
-        public DrawBlankPortalsPass(PortalRenderFeature feature) : base(feature)
+        public Material material { get; set; }
+
+        public DrawBlankPortalsPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
             if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-
-            if (!feature.portalStereo)
+            if (!material)
             {
-                Debug.LogError(nameof(DrawTexturePortalsPass) + " requires feature.portalStereo!");
+                Debug.LogError(nameof(DrawBlankPortalsPass) + " requires a material!");
                 return;
             }
 
@@ -29,18 +31,18 @@ namespace VRPortalToolkit.Rendering.Universal
 
             //using (new ProfilingScope(cmd, profilingSampler))
             {
-                PortalRenderNode parentNode = feature.currentGroup.renderNode;
+                PortalRenderNode parentNode = PortalPassStack.Current.renderNode;
 
                 bool hasFrameBuffer = FrameBuffer.current != null && FrameBuffer.current.texture;
 
-                feature.currentGroup.SetViewAndProjectionMatrices(cmd);
+                PortalPassStack.Current.SetViewAndProjectionMatrices(cmd);
 
-                cmd.SetGlobalInt(PropertyID.PortalStencilRef, feature.currentGroup.stateBlock.stencilReference);
-                feature.portalStereo.SetTexture(PropertyID.MainTex, FrameBuffer.current.texture);
+                cmd.SetGlobalInt(PropertyID.PortalStencilRef, PortalPassStack.Current.stateBlock.stencilReference);
+                if (hasFrameBuffer) propertyBlock.SetTexture(PropertyID.MainTex, FrameBuffer.current.texture);
 
                 foreach (PortalRenderNode renderNode in parentNode.children)
                 {
-                    if (!renderNode.isValid && renderNode.renderer)
+                    if (!renderNode.isValid)
                     {
                         if (hasFrameBuffer && TryFindAncestorNode(renderNode, FrameBuffer.current.rootNode, out PortalRenderNode originalNode))
                         {
@@ -65,10 +67,14 @@ namespace VRPortalToolkit.Rendering.Universal
                             //else
                             //    UpdateScaleAndTranslation(renderNode.window, originalNext.parent.window, feature.portalStereo, PropertyID.MainTex_ST);
 
-                            renderNode.renderer.Render(renderingData.cameraData.camera, renderNode, cmd, feature.portalStereo, propertyBlock);
+                            foreach (IPortalRenderer renderer in renderNode.renderers)
+                                renderer.Render(renderNode, cmd, material, propertyBlock);
                         }
                         else
-                            renderNode.renderer.RenderDefault(renderingData.cameraData.camera, renderNode, cmd);
+                        {
+                            foreach (IPortalRenderer renderer in renderNode.renderers)
+                                renderer.RenderDefault(renderNode, cmd);
+                        }
                     }
                 }
 
@@ -106,10 +112,10 @@ namespace VRPortalToolkit.Rendering.Universal
 
             foreach (PortalRenderNode originalNode in GetPath(target))
             {
-                if (!TryGetChildWithRenderer(current, originalNode.renderer, out current))
+                if (!TryGetChildWithPortal(current, originalNode.portal, out current)) // TODO: clipping might make this different
                 {
                     // Try cycling back
-                    if (current != null && current.renderer == originalNode.renderer)
+                    if (current != null && current.portal == originalNode.portal) // TODO: clipping might make this different
                         current = lastValid;
                     else
                     {
@@ -118,24 +124,27 @@ namespace VRPortalToolkit.Rendering.Universal
                     }
                 }
 
-                if (current.renderer == target.renderer)
+                if (current.portal == target.portal) // TODO: clipping might make this different
                     lastValid = current;
 
-                if (current.parent.renderer == target.renderer && current.renderer)
+                if (current.parent.portal == target.portal && current.portal != null)
                     nextNode = current;
             }
 
             return nextNode != null;
         }
 
-        private bool TryGetChildWithRenderer(PortalRenderNode parent, PortalRenderer renderer, out PortalRenderNode child)
+        private bool TryGetChildWithPortal(PortalRenderNode parent, IPortal portal, out PortalRenderNode child)
         {
-            foreach (PortalRenderNode childNode in parent.children)
+            if (parent != null)
             {
-                if (childNode.renderer == renderer)
+                foreach (PortalRenderNode childNode in parent.children)
                 {
-                    child = childNode;
-                    return true;
+                    if (childNode.portal == portal)
+                    {
+                        child = childNode;
+                        return true;
+                    }
                 }
             }
 
@@ -157,20 +166,26 @@ namespace VRPortalToolkit.Rendering.Universal
         // Assumes view and proj are from the parent, not the node
         private ViewWindow GetWindow(Matrix4x4 view, Matrix4x4 proj, PortalRenderNode node)
         {
-            // These haven't been calculated because the node is invalid
-            Matrix4x4 localToWorld = node.renderer.portal.teleportMatrix * node.parent.localToWorldMatrix;
-            view = view * node.renderer.portal.connectedPortal.teleportMatrix;
+            if (node.portal.connected != null)
+            {
+                // These haven't been calculated because the node is invalid
+                Matrix4x4 localToWorld = node.portal.teleportMatrix * node.parent.localToWorldMatrix;
+                view = view * node.portal.connected.teleportMatrix;
 
-            node.renderer.TryGetWindow(localToWorld, view, proj, out ViewWindow window);
-            return window;
+                // TODO: Needs to get the window of all portals?
+                node.renderer.TryGetWindow(node, localToWorld.GetColumn(3), view, proj, out ViewWindow window);
+                return window;
+            }
+
+            return default;
         }
 
-        private IEnumerable<PortalRenderNode> GetLoop(PortalRenderNode current, PortalRenderer renderer)
+        private IEnumerable<PortalRenderNode> GetLoop(PortalRenderNode current, IPortal portal)
         {
             if (current != null && current.parent != null && current.parent.parent != null)
             {
-                if (current.parent.renderer != renderer)
-                    foreach (PortalRenderNode parent in GetLoop(current.parent, renderer))
+                if (current.parent.portal != portal)
+                    foreach (PortalRenderNode parent in GetLoop(current.parent, portal))
                         yield return parent;
 
                 yield return current.parent;

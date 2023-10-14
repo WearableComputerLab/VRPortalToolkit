@@ -8,41 +8,27 @@ namespace VRPortalToolkit.Rendering.Universal
 {
     public class StoreFramePass : PortalRenderPass
     {
-        private float _resolution;
-        private Material _stereoBlit;
+        private static Material _stereoBlit;
 
-        public StoreFramePass(PortalRenderFeature feature) : base(feature)
-        {
-            //renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
-            _stereoBlit = CoreUtils.CreateEngineMaterial("Hidden/Universal Render Pipeline/Blit");
-        }
+        public float resolution { get; set; } = 1f;
 
-        public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
+        //public PortalRenderNode rootRenderNode { get; set; }
+
+        public StoreFramePass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
-            if (FrameBuffer.current != null)
-            {
-                if (renderingData.cameraData.isPreviewCamera || renderingData.cameraData.isSceneViewCamera)
-                    _resolution = feature.editorBufferResolution;
-                else
-                    _resolution = feature.bufferResolution;
-            }
-            else
-            {
-                Debug.LogError("Frame buffer not found!");
-                _resolution = 0f;
-            }
+            if (!_stereoBlit) _stereoBlit = CoreUtils.CreateEngineMaterial("Hidden/Universal Render Pipeline/Blit");
         }
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
-            if (_resolution > 0)
+            if (resolution > 0)
             {
                 cameraTextureDescriptor.depthBufferBits = 0;
                 cameraTextureDescriptor.msaaSamples = 1;
 
                 cameraTextureDescriptor.dimension = TextureDimension.Tex2DArray;
-                cameraTextureDescriptor.width = Mathf.Max(1, (int)(cameraTextureDescriptor.width * _resolution));
-                cameraTextureDescriptor.height = Mathf.Max(1, (int)(cameraTextureDescriptor.height * _resolution));
+                cameraTextureDescriptor.width = Mathf.Max(1, (int)(cameraTextureDescriptor.width * resolution));
+                cameraTextureDescriptor.height = Mathf.Max(1, (int)(cameraTextureDescriptor.height * resolution));
 
                 FrameBuffer.current.UpdateTexture(cameraTextureDescriptor);
 
@@ -62,12 +48,12 @@ namespace VRPortalToolkit.Rendering.Universal
 
             //using (new ProfilingScope(cmd, profilingSampler))
             {
-                FrameBuffer.current.rootNode = feature.currentGroup.renderNode.root;
+                FrameBuffer.current.rootNode = PortalPassStack.Current.renderNode.root;
 
                 RenderTargetIdentifier source = renderingData.cameraData.renderer.cameraColorTarget;
                 cmd.SetRenderTarget(FrameBuffer.current.identifier);
 
-                if (feature.currentGroup.renderNode.isStereo)
+                if (PortalPassStack.Current.renderNode.isStereo)
                 {
                     cmd.SetGlobalTexture(PropertyID.SourceTex, source);
 

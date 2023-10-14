@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using static UnityEngine.UI.Image;
 
 namespace VRPortalToolkit.Cloning
 {
@@ -17,7 +19,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateMeshFilter(PortalCloneInfo<MeshFilter> cloneInfo)
+        public static void UpdateMeshFilter(this PortalCloneInfo<MeshFilter> cloneInfo)
         {
             MeshFilter original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -36,7 +38,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateRenderer<TRenderer>(PortalCloneInfo<TRenderer> cloneInfo, bool includePropertyBlocks = true) where TRenderer : Renderer
+        public static void UpdateRenderer<TRenderer>(this PortalCloneInfo<TRenderer> cloneInfo, bool includePropertyBlocks = true) where TRenderer : Renderer
         {
             Renderer original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -64,7 +66,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateRenderer(PortalCloneInfo<MeshRenderer> cloneInfo, bool includePropertyBlocks = true)
+        public static void UpdateRenderer(this PortalCloneInfo<MeshRenderer> cloneInfo, bool includePropertyBlocks = true)
         {
             MeshRenderer original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -82,7 +84,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateRenderer(PortalCloneInfo<SkinnedMeshRenderer> cloneInfo, bool includePropertyBlocks = true)
+        public static void UpdateRenderer(this PortalCloneInfo<SkinnedMeshRenderer> cloneInfo, bool includePropertyBlocks = true)
         {
             SkinnedMeshRenderer original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -100,7 +102,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateRenderer(PortalCloneInfo<LineRenderer> cloneInfo, bool includePropertyBlocks = true)
+        public static void UpdateRenderer(this PortalCloneInfo<LineRenderer> cloneInfo, bool includePropertyBlocks = true)
         {
             LineRenderer original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -203,6 +205,73 @@ namespace VRPortalToolkit.Cloning
                 else if (clone.HasPropertyBlock())
                     clone.SetPropertyBlock(null);
             }
+        }
+
+        public static bool CloneBones(SkinnedMeshRenderer clone)
+        {
+            if (TryGetCloneInfo(clone, out PortalCloneInfo<SkinnedMeshRenderer> cloneInfo))
+            {
+                CloneBones(cloneInfo);
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool CloneBones(this PortalCloneInfo<SkinnedMeshRenderer> cloneInfo)
+        {
+            if (!cloneInfo.original || !cloneInfo.clone) return false;
+
+            Dictionary<Transform, Transform> cloneByOriginal = new Dictionary<Transform, Transform>();
+            GetRoot(cloneInfo.original.transform, cloneInfo.clone.transform, out Transform originalRoot, out Transform cloneRoot);
+            FindCloneTransforms(originalRoot, cloneRoot, cloneByOriginal);
+
+            // Copy original to clone
+            Portal[] originalToClone = new Portal[cloneInfo.PortalCount];
+            for (int i = 0; i < originalToClone.Length; i++)
+                originalToClone[i] = cloneInfo.GetOriginalToClonePortal(i);
+
+            // Copy root
+            cloneInfo.clone.rootBone = CloneBone(originalRoot, cloneInfo.original.rootBone, cloneByOriginal, originalToClone);
+
+            // Copy all bones
+            Transform[] originalBones = cloneInfo.original.bones, cloneBones = new Transform[originalBones.Length];
+            for (int i = 0; i < cloneBones.Length; i++)
+                cloneBones[i] = CloneBone(originalRoot, originalBones[i], cloneByOriginal, originalToClone);
+            cloneInfo.clone.bones = cloneBones;
+
+            return true;
+        }
+
+        private static void GetRoot(Transform original, Transform clone, out Transform originalRoot, out Transform cloneRoot)
+        {
+            originalRoot = original;
+            cloneRoot = clone;
+
+            if (!original || !clone) return;
+
+            while (originalRoot.parent && cloneRoot.parent && originalRoot.parent != cloneRoot.parent)
+            {
+                originalRoot = originalRoot.parent;
+                cloneRoot = cloneRoot.parent;
+            }
+        }
+
+        private static Transform CloneBone(Transform parent, Transform original, Dictionary<Transform, Transform> cloneByOriginal, Portal[] originalToClone)
+        {
+            if (!original) return null;
+
+            if (!cloneByOriginal.TryGetValue(original, out Transform clone))
+            {
+                if (!original.IsChildOf(parent)) return null;
+
+                clone = new GameObject(original.gameObject.name).transform;
+                cloneByOriginal.Add(original, clone);
+                UpdateTransformLocal(new PortalCloneInfo<Transform>(original, clone, originalToClone));
+                CloneHierarchy(original, clone, originalToClone, cloneByOriginal);
+            }
+
+            return clone;
         }
     }
 }

@@ -33,8 +33,10 @@ using Misc.EditorHelpers;
 // Also, not on this behaviour, but do need 
 namespace VRPortalToolkit.Cloning
 {
-    public class PortalStaticCloneCollider : TriggerHandler
+    public class PortalStaticCloneCollider : MonoBehaviour
     {
+        private readonly static WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
+
         [SerializeField] private PortalLayer _portalLayer;
         public PortalLayer portalLayer {
             get => _portalLayer;
@@ -54,13 +56,13 @@ namespace VRPortalToolkit.Cloning
                     {
                         if (_staticCollidersOnly)
                         {
-                            foreach (Collider collider in GetColliders())
-                                if (collider && !collider.gameObject.isStatic) OnTriggerLastExit(collider);
+                            foreach (Collider collider in triggerHandler.Values)
+                                if (collider && !collider.gameObject.isStatic) OnTriggerExitContainer(collider);
                         }
                         else
                         {
-                            foreach (Collider collider in GetColliders())
-                                if (collider && !collider.gameObject.isStatic) OnTriggerFirstEnter(collider);
+                            foreach (Collider collider in triggerHandler.Values)
+                                if (collider && !collider.gameObject.isStatic) OnTriggerEnterContainer(collider);
                         }
                     }
                 }
@@ -103,6 +105,11 @@ namespace VRPortalToolkit.Cloning
         private static Transform _actualRoot;
         protected Transform _root => _actualRoot ? _actualRoot : _actualRoot = new GameObject("Portal Static Colliders").transform;
 
+
+        protected readonly TriggerHandler<Collider> triggerHandler = new TriggerHandler<Collider>();
+        protected readonly HashSet<Collider> _stayedColliders = new HashSet<Collider>();
+        private IEnumerator _waitFixedUpdateLoop;
+
         protected virtual void OnValidate()
         {
             Validate.FieldWithProperty(this, nameof(_staticCollidersOnly), nameof(staticCollidersOnly));
@@ -114,15 +121,26 @@ namespace VRPortalToolkit.Cloning
             if (!portalLayer) portalLayer = GetComponentInChildren<PortalLayer>(true);
         }
 
-        protected override void OnEnable()
+        protected virtual void Awake()
         {
-            base.OnEnable();
+            _waitFixedUpdateLoop = WaitFixedUpdateLoop();
+        }
+
+        protected virtual void OnEnable()
+        {
+            triggerHandler.valueAdded += OnTriggerEnterContainer;
+            triggerHandler.valueRemoved += OnTriggerExitContainer;
+            StartCoroutine(_waitFixedUpdateLoop);
+
             PortalPhysics.lateFixedUpdate += LateFixedUpdate;
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
-            base.OnDisable();
+            triggerHandler.valueAdded -= OnTriggerEnterContainer;
+            triggerHandler.valueRemoved -= OnTriggerExitContainer;
+            StopCoroutine(_waitFixedUpdateLoop);
+
             PortalPhysics.lateFixedUpdate -= LateFixedUpdate;
         }
 
@@ -168,7 +186,7 @@ namespace VRPortalToolkit.Cloning
                 _sliceNormals.Remove(_sliceNormals[_sliceNormals.Count - 1]);
         }*/
 
-        protected virtual void UpdateColliderClones(ColliderClones clones)
+        protected void UpdateColliderClones(ColliderClones clones)
         {
             // Make Sure the clones exist
             if (!clones.localClone || !clones.connectedClone)
@@ -206,7 +224,7 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
-        public virtual void RecalculateColliderClones()
+        public void RecalculateColliderClones()
         {
             foreach (ColliderClones clones in _colliderClones.Values)
             {
@@ -215,7 +233,7 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
-        protected virtual void CreateColliderClones(ColliderClones clones)
+        protected void CreateColliderClones(ColliderClones clones)
         {
             if (!clones.localCloneObject) clones.localCloneObject = new GameObject($"{clones.original.name} (Local Clone)");
             if (!clones.connectedCloneObject) clones.connectedCloneObject = new GameObject($"{clones.original.name} (Connected Clone)");
@@ -412,7 +430,7 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
-        protected virtual bool TrySliceMesh(ColliderClones colliderClones, Mesh mesh)
+        protected bool TrySliceMesh(ColliderClones colliderClones, Mesh mesh)
         {
             if (TryGetCuttingPlanes(colliderClones.localCloneObject.transform, out Plane[] cuttingPlanes, out int planeCount))
             {
@@ -452,7 +470,7 @@ namespace VRPortalToolkit.Cloning
         }
 
         protected Plane[] _planes;
-        protected virtual bool TryGetCuttingPlanes(Transform space, out Plane[] cuttingPlanes, out int planeCount)
+        protected bool TryGetCuttingPlanes(Transform space, out Plane[] cuttingPlanes, out int planeCount)
         {
             if (_planes == null || _planes.Length < 1)//_sliceNormals.Count)
                 _planes = new Plane[1];//_sliceNormals.Count];
@@ -495,7 +513,7 @@ namespace VRPortalToolkit.Cloning
         }
 
         protected int[][] _indices;
-        protected virtual void GetSubMeshes(Mesh sharedMesh, out int[][] subMeshes, out int subMeshCount)
+        protected void GetSubMeshes(Mesh sharedMesh, out int[][] subMeshes, out int subMeshCount)
         {
             if (_indices == null || _planes.Length < sharedMesh.subMeshCount)
                 _indices = new int[sharedMesh.subMeshCount][];
@@ -508,7 +526,7 @@ namespace VRPortalToolkit.Cloning
             subMeshCount = sharedMesh.subMeshCount;
         }
 
-        protected virtual void GetCollider<TCollider>(GameObject cloneObject, ref Collider clone, out TCollider cloneAsT) where TCollider : Collider
+        protected void GetCollider<TCollider>(GameObject cloneObject, ref Collider clone, out TCollider cloneAsT) where TCollider : Collider
         {
             if (clone)
             {
@@ -537,13 +555,37 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
-        protected override void OnTriggerEnter(Collider collider)
+        protected virtual void OnTriggerEnter(Collider other)
         {
-            if (!_ignoredColliders.Contains(collider))
-                base.OnTriggerEnter(collider);
+            if (!_ignoredColliders.Contains(other))
+                triggerHandler.Add(other, other);
         }
 
-        protected override void OnTriggerFirstEnter(Collider collider)
+        protected virtual void OnTriggerStay(Collider other)
+        {
+            if (!triggerHandler.HasCollider(other) && !_ignoredColliders.Contains(other))
+                triggerHandler.Add(other, other);
+
+            _stayedColliders.Add(other);
+        }
+
+        protected virtual void OnTriggerExit(Collider other)
+        {
+            triggerHandler.RemoveCollider(other);
+        }
+
+        private IEnumerator WaitFixedUpdateLoop()
+        {
+            while (true)
+            {
+                yield return _WaitForFixedUpdate;
+
+                triggerHandler.UpdateColliders(_stayedColliders);
+                _stayedColliders.Clear();
+            }
+        }
+
+        private void OnTriggerEnterContainer(Collider collider)
         {
             if (staticCollidersOnly && !collider.gameObject.isStatic)
                 return;
@@ -564,7 +606,7 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
-        protected override void OnTriggerLastExit(Collider collider)
+        private void OnTriggerExitContainer(Collider collider)
         {
             if (_colliderClones.TryGetValue(collider, out ColliderClones trackedCollider))
             {

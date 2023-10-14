@@ -9,17 +9,24 @@ namespace VRPortalToolkit.Portables
 {
     public class PortableCamera : MonoBehaviour
     {
-        [SerializeField] private Camera _camera;
-        public new Camera camera {
-            get => _camera;
-            set => _camera = value;
+        private Camera _camera;
+        public new Camera camera
+        {
+            get
+            {
+                if (_camera == null)
+                    _camera = GetComponent<Camera>();
+
+                return _camera;
+            }
         }
-        public void ClearCamera() => camera = null;
 
         [SerializeField] private Transform _source;
-        public Transform source {
+        public Transform source
+        {
             get => _source;
-            set {
+            set
+            {
                 if (_source != value)
                 {
                     if (isActiveAndEnabled && Application.isPlaying)
@@ -33,22 +40,32 @@ namespace VRPortalToolkit.Portables
                 }
             }
         }
-        public void ClearSource() => source = null;
 
         protected virtual void Reset()
         {
-            camera = GetComponent<Camera>();
             source = transform;
         }
+
         protected virtual void OnValidate()
         {
             Validate.FieldWithProperty(this, nameof(_source), nameof(source));
+        }
+
+        protected virtual void OnEnable()
+        {
+            AddTeleportListener(_source);
+        }
+
+        protected virtual void OnDisable()
+        {
+            RemoveTeleportListener(_source);
         }
 
         protected virtual void AddTeleportListener(Transform source)
         {
             if (source) PortalPhysics.AddPostTeleportListener(source, OnPostTeleport);
         }
+
         protected virtual void RemoveTeleportListener(Transform source)
         {
             if (source) PortalPhysics.RemovePostTeleportListener(source, OnPostTeleport);

@@ -4,17 +4,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.UIElements;
+using UnityEngine.XR.Interaction.Toolkit;
+using VRPortalToolkit.Data;
+using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
     public class PortalRenderFeature : ScriptableRendererFeature
     {
         [SerializeField] private RenderMode _renderMode;
-        public RenderMode renderMode
-        {
+        public RenderMode renderMode {
             get => _renderMode;
-            set
-            {
+            set {
                 if (_renderMode != value)
                 {
                     _isDirty = true;
@@ -24,8 +26,7 @@ namespace VRPortalToolkit.Rendering.Universal
         }
 
         [SerializeField] private PortalAlgorithm _algorithm = PortalAlgorithm.Predictive;
-        public PortalAlgorithm algorithm
-        {
+        public PortalAlgorithm algorithm {
             get => _algorithm;
             set => _algorithm = value;
         }
@@ -37,15 +38,13 @@ namespace VRPortalToolkit.Rendering.Universal
         }
 
         [Header("Filtering"), SerializeField] private LayerMask _opaqueLayerMask = -1;
-        public LayerMask opaqueLayerMask
-        {
+        public LayerMask opaqueLayerMask {
             get => _opaqueLayerMask;
             set => _opaqueLayerMask = value;
         }
 
         [SerializeField] private LayerMask _transparentLayerMask = -1;
-        public LayerMask transparentLayerMask
-        {
+        public LayerMask transparentLayerMask {
             get => _transparentLayerMask;
             set => _transparentLayerMask = value;
         }
@@ -62,29 +61,25 @@ namespace VRPortalToolkit.Rendering.Universal
         }
 
         [Header("Scene Settings"), SerializeField] private int _minDepth = 1;
-        public int minDepth
-        {
+        public int minDepth {
             get => _minDepth > 0 ? _minDepth : _minDepth = 0;
             set => _minDepth = value;
         }
 
         [SerializeField] private int _maxDepth = 32;
-        public int maxDepth
-        {
+        public int maxDepth {
             get => _maxDepth > 0 ? _maxDepth : _maxDepth = 0;
             set => _maxDepth = value;
         }
 
         [SerializeField] private int _maxRenders = 32;
-        public int maxRenders
-        {
+        public int maxRenders {
             get => _maxRenders > 0 ? _maxRenders : _maxRenders = 0;
             set => _maxRenders = value;
         }
 
         [SerializeField] private int _maxShadowDepth = 16;
-        public int maxShadowDepth
-        {
+        public int maxShadowDepth {
             get => _maxShadowDepth > 0 ? _maxShadowDepth : _maxShadowDepth = 0;
             set => _maxShadowDepth = value;
         }
@@ -95,43 +90,37 @@ namespace VRPortalToolkit.Rendering.Universal
         [ShowIf(nameof(showResolution), true, 1)]
 #endif
         [SerializeField, Range(0f, 1f)] private float _portalResolution = 1f;
-        public float portalResolution
-        {
+        public float portalResolution {
             get => _portalResolution;
             set => _portalResolution = Mathf.Clamp(value, 0f, 1f);
         }
 
         [SerializeField, Range(0f, 1f)] private float _bufferResolution = 1f;
-        public float bufferResolution
-        {
+        public float bufferResolution {
             get => _bufferResolution;
             set => _bufferResolution = Mathf.Clamp(value, 0f, 1f);
         }
 
         [Header("Editor Settings"), SerializeField] private int _editorMinDepth = 0;
-        public int editorMinDepth
-        {
+        public int editorMinDepth {
             get => _editorMinDepth > 0 ? _editorMinDepth : _editorMinDepth = 0;
             set => _editorMinDepth = value;
         }
 
         [SerializeField] private int _editorMaxDepth = 16;
-        public int editorMaxDepth
-        {
+        public int editorMaxDepth {
             get => _editorMaxDepth > 0 ? _editorMaxDepth : _editorMaxDepth = 0;
             set => _editorMaxDepth = value;
         }
 
         [SerializeField] private int _editorMaxRenders = 16;
-        public int editorMaxRenders
-        {
+        public int editorMaxRenders {
             get => _editorMaxRenders > 0 ? _editorMaxRenders : _editorMaxRenders = 0;
             set => _editorMaxRenders = value;
         }
 
         [SerializeField] private int _editorMaxShadowDepth = 16;
-        public int editorMaxShadowDepth
-        {
+        public int editorMaxShadowDepth {
             get => _editorMaxShadowDepth > 0 ? _editorMaxShadowDepth : _editorMaxShadowDepth = 0;
             set => _editorMaxShadowDepth = value;
         }
@@ -140,81 +129,66 @@ namespace VRPortalToolkit.Rendering.Universal
         [ShowIf(nameof(showResolution), true, 1)]
 #endif
         [SerializeField, Range(0f, 1f)] private float _editorPortalResolution = 1f;
-        public float editorPortalResolution
-        {
+        public float editorPortalResolution {
             get => _editorPortalResolution;
             set => _editorPortalResolution = Mathf.Clamp(value, 0f, 1f);
         }
 
         [SerializeField, Range(0f, 1f)] private float _editorBufferResolution = 1f;
-        public float editorBufferResolution
-        {
+        public float editorBufferResolution {
             get => _editorBufferResolution;
             set => _editorBufferResolution = Mathf.Clamp(value, 0f, 1f);
         }
 
         [Tooltip("Required for both Render Texture Portals, aswell as the buffer effect for Stencil Portals.")]
         [Header("Shaders"), SerializeField] private Material _portalStereo;
-        public Material portalStereo
-        {
+        public Material portalStereo {
             get => _portalStereo;
             set => _portalStereo = value;
         }
 
         [Tooltip("Required for Stencil Portals.")]
         [SerializeField] private Material _portalIncrease;
-        public Material portalIncrease
-        {
+        public Material portalIncrease {
             get => _portalIncrease;
             set => _portalIncrease = value;
         }
 
         [Tooltip("Required for Stencil Portals.")]
         [SerializeField] private Material _portalDecrease;
-        public Material portalDecrease
-        {
+        public Material portalDecrease {
             get => _portalDecrease;
             set => _portalDecrease = value;
         }
 
         [Tooltip("Required for Stencil Portals.")]
         [SerializeField] private Material _portalClearDepth;
-        public Material portalClearDepth
-        {
+        public Material portalClearDepth {
             get => _portalClearDepth;
             set => _portalClearDepth = value;
         }
 
         [Tooltip("Required for Stencil Portals.")]
         [SerializeField] private Material _portalDepthOnly;
-        public Material portalDepthOnly
-        {
+        public Material portalDepthOnly {
             get => _portalDepthOnly;
             set => _portalDepthOnly = value;
         }
 
-        [System.NonSerialized] public DrawingSettings opaqueDrawingSettings;
+        protected PortalPassNode rootPassNode;
 
-        [System.NonSerialized] public FilteringSettings opaqueFilteringSettings;
-
-        [System.NonSerialized] public DrawingSettings transparentDrawingSettings;
-
-        [System.NonSerialized] public FilteringSettings transparentFilteringSettings;
-
-        [System.NonSerialized] public PortalPassGroup currentGroup;
-
-        //[System.NonSerialized] public Buffer currentBuffer;
-
-        [System.NonSerialized] public Camera renderCamera;
+        public static Camera renderCamera;
 
         protected static ShaderTagId[] shaderByIds;
 
-        protected DrawOpaqueObjectsInPortalPass opaqueRenderPasses;
-        protected DrawTransparentObjectsInPortalPass renderTransparentsPass;
-        protected StoreFramePass storePreviousFramePass;
+        protected BeginPortalPass beginPass;
+        protected DrawObjectsInPortalPass drawOpaquesPass;
+        protected DrawObjectsInPortalPass drawTransparentsPass;
         protected DrawSkyboxInPortalPass drawSkyBoxPass;
         protected ShadowSettingsInPortalPass disableShadowSettingsPass;
         protected ShadowSettingsInPortalPass enableShadowSettingsPass;
+        protected CompletePortalPass completePass;
+        protected StoreFramePass storePreviousFramePass;
 
         protected DrawDepthOnlyPortalsPass depthOnlyPass;
 
@@ -229,15 +203,18 @@ namespace VRPortalToolkit.Rendering.Universal
         protected List<PortalStencilPasses> portalStencilPasses = new List<PortalStencilPasses>();
         protected List<PortalRenderPasses> portalRenderPasses = new List<PortalRenderPasses>();
 
+        protected BeginUndoStencilPortalPass beginUndoStencilPass;
+        protected CompleteUndoStencilPortalPass completeUndoStencilPass;
+
         protected class PortalStencilPasses : PortalShadowPasses
         {
             public BeginStencilPortalPass beginRenderPass { get; }
             public CompleteStencilPortalPass completeRenderPass { get; }
 
-            public PortalStencilPasses(PortalRenderFeature feature) : base(feature)
+            public PortalStencilPasses() : base()
             {
-                beginRenderPass = new BeginStencilPortalPass(feature);
-                completeRenderPass = new CompleteStencilPortalPass(feature);
+                beginRenderPass = new BeginStencilPortalPass();
+                completeRenderPass = new CompleteStencilPortalPass();
             }
         }
 
@@ -246,10 +223,10 @@ namespace VRPortalToolkit.Rendering.Universal
             public BeginTexturePortalPass beginRenderPass { get; }
             public CompleteTexturePortalPass completeRenderPass { get; }
 
-            public PortalRenderPasses(PortalRenderFeature feature) : base(feature)
+            public PortalRenderPasses() : base()
             {
-                beginRenderPass = new BeginTexturePortalPass(feature);
-                completeRenderPass = new CompleteTexturePortalPass(feature);
+                beginRenderPass = new BeginTexturePortalPass();
+                completeRenderPass = new CompleteTexturePortalPass();
             }
         }
 
@@ -258,10 +235,10 @@ namespace VRPortalToolkit.Rendering.Universal
             public MainLightShadowCasterInPortalPass mainLightShadowCasterPass { get; }
             public AdditionalLightsShadowCasterInPortalPass additionalLightsShadowCasterPass { get; }
 
-            public PortalShadowPasses(PortalRenderFeature feature)
+            public PortalShadowPasses()
             {
-                mainLightShadowCasterPass = new MainLightShadowCasterInPortalPass(feature);
-                additionalLightsShadowCasterPass = new AdditionalLightsShadowCasterInPortalPass(feature);
+                mainLightShadowCasterPass = new MainLightShadowCasterInPortalPass();
+                additionalLightsShadowCasterPass = new AdditionalLightsShadowCasterInPortalPass();
             }
         }
 
@@ -273,23 +250,33 @@ namespace VRPortalToolkit.Rendering.Universal
         /// <inheritdoc/>
         public override void Create()
         {
-            if (renderCamera == null) renderCamera = new GameObject("[Portal Render Camera]").AddComponent<Camera>();
-            renderCamera.gameObject.hideFlags = HideFlags.HideAndDontSave;
-            renderCamera.gameObject.SetActive(false);
+            if (!renderCamera)
+            {
+                renderCamera = new GameObject("[Portal Render Camera]").AddComponent<Camera>();
+                renderCamera.gameObject.hideFlags = HideFlags.HideAndDontSave;
+                renderCamera.gameObject.SetActive(false);
+            }
 
-            opaqueRenderPasses = new DrawOpaqueObjectsInPortalPass(this);
-            renderTransparentsPass = new DrawTransparentObjectsInPortalPass(this);
-            drawSkyBoxPass = new DrawSkyboxInPortalPass(this);
-            portalBlankRenderPass = new DrawBlankPortalsPass(this);
-            blankRenderPass = new DrawBlankPortalsPass(this);
-            portalRenderBufferPass = new DrawTexturePortalsPass(this);
-            depthOnlyPass = new DrawDepthOnlyPortalsPass(this);
-            renderBufferPass = new DrawTexturePortalsPass(this);
-            storePreviousFramePass = new StoreFramePass(this);
-            enableShadowSettingsPass = new ShadowSettingsInPortalPass(this, true);
-            disableShadowSettingsPass = new ShadowSettingsInPortalPass(this, false);
+            PortalPassGroupPool.Release(rootPassNode);
+            rootPassNode = PortalPassGroupPool.Get();
 
-            shaderByIds = new ShaderTagId[]
+            beginPass = new BeginPortalPass() { portalPassNode = rootPassNode };
+            drawOpaquesPass = new DrawObjectsInPortalPass();
+            drawTransparentsPass = new DrawObjectsInPortalPass();
+            drawSkyBoxPass = new DrawSkyboxInPortalPass();
+            portalBlankRenderPass = new DrawBlankPortalsPass();
+            blankRenderPass = new DrawBlankPortalsPass();
+            portalRenderBufferPass = new DrawTexturePortalsPass();
+            depthOnlyPass = new DrawDepthOnlyPortalsPass();
+            renderBufferPass = new DrawTexturePortalsPass();
+            storePreviousFramePass = new StoreFramePass();
+            enableShadowSettingsPass = new ShadowSettingsInPortalPass(true);
+            disableShadowSettingsPass = new ShadowSettingsInPortalPass(false);
+            completePass = new CompletePortalPass();
+            beginUndoStencilPass = new BeginUndoStencilPortalPass();
+            completeUndoStencilPass = new CompleteUndoStencilPortalPass();
+
+            if (shaderByIds == null) shaderByIds = new ShaderTagId[]
             {
                 new ShaderTagId("SRPDefaultUnlit"),
                 new ShaderTagId("UniversalForward"),
@@ -306,13 +293,25 @@ namespace VRPortalToolkit.Rendering.Universal
         {
             if (_isDirty) Create();
 
+            renderer.EnqueuePass(beginPass);
+
             // Copy the camera
             Camera camera = renderingData.cameraData.camera;
             renderCamera.CopyFrom(camera);
             renderCamera.clearFlags = camera.clearFlags;
-            renderCamera.worldToCameraMatrix = renderingData.cameraData.GetViewMatrix(0);
-            renderCamera.projectionMatrix = renderingData.cameraData.GetProjectionMatrix(0);
             renderCamera.targetTexture = null;
+
+            if (renderingData.cameraData.xrRendering && XRGraphics.stereoRenderingMode != XRGraphics.StereoRenderingMode.MultiPass)
+            {
+                camera.TryGetCullingParameters(true, out var cullingParameters);
+                renderCamera.projectionMatrix = cullingParameters.stereoProjectionMatrix;
+                renderCamera.worldToCameraMatrix = cullingParameters.stereoViewMatrix;
+            }
+            else
+            {
+                renderCamera.worldToCameraMatrix = renderingData.cameraData.GetViewMatrix(0);
+                renderCamera.projectionMatrix = renderingData.cameraData.GetProjectionMatrix(0);
+            }
 
             if (renderingData.cameraData.xrRendering && XRGraphics.stereoRenderingMode == XRGraphics.StereoRenderingMode.MultiPass)
             {
@@ -324,11 +323,9 @@ namespace VRPortalToolkit.Rendering.Universal
             else
                 FrameBuffer.SetCurrent(camera);
 
-            if (currentGroup == null) currentGroup = PortalPassGroupPool.Get();
-            currentGroup.mainLightShadowCasterPass = null;
-            currentGroup.additionalLightsShadowCasterPass = null;
-            currentGroup.parent = null;
-            currentGroup.stateBlock = new RenderStateBlock(RenderStateMask.Depth)
+            rootPassNode.mainLightShadowCasterPass = null;
+            rootPassNode.additionalLightsShadowCasterPass = null;
+            rootPassNode.stateBlock = new RenderStateBlock(RenderStateMask.Depth)
             {
                 depthState = new DepthState(true, CompareFunction.Less),
                 stencilReference = 0,
@@ -357,10 +354,10 @@ namespace VRPortalToolkit.Rendering.Universal
             if (_algorithm == PortalAlgorithm.BreadthFirst)
             {
                 if (renderingData.cameraData.xrRendering && XRGraphics.stereoRenderingMode != XRGraphics.StereoRenderingMode.MultiPass)
-                    currentGroup.renderNode = PortalAlgorithms.GetStereoTree(renderCamera.transform.localToWorldMatrix, renderCamera.worldToCameraMatrix, renderCamera.projectionMatrix, renderCamera.cullingMask, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0),
-                        renderingData.cameraData.GetViewMatrix(1), renderingData.cameraData.GetProjectionMatrix(1), minDepth, maxDepth, maxRenders, PortalRenderer.allRenderers);
+                    rootPassNode.renderNode = PortalAlgorithms.GetStereoTree(camera, camera.transform.localToWorldMatrix, renderCamera.worldToCameraMatrix, renderCamera.projectionMatrix, renderCamera.cullingMask, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0),
+                        renderingData.cameraData.GetViewMatrix(1), renderingData.cameraData.GetProjectionMatrix(1), minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers());
                 else
-                    currentGroup.renderNode = PortalAlgorithms.GetTree(renderCamera.transform.localToWorldMatrix, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0), renderCamera.cullingMask, minDepth, maxDepth, maxRenders, PortalRenderer.allRenderers);
+                    rootPassNode.renderNode = PortalAlgorithms.GetTree(camera, camera.transform.localToWorldMatrix, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0), renderCamera.cullingMask, minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers());
             }
             else
             {
@@ -369,72 +366,209 @@ namespace VRPortalToolkit.Rendering.Universal
                 Vector2? focus = null;//new Vector2(0.5f, 0.5f);
 
                 if (renderingData.cameraData.xrRendering && XRGraphics.stereoRenderingMode != XRGraphics.StereoRenderingMode.MultiPass)
-                    currentGroup.renderNode = PortalAlgorithms.GetPredictiveStereoTree(renderCamera.transform.localToWorldMatrix, renderCamera.worldToCameraMatrix, renderCamera.projectionMatrix, renderCamera.cullingMask, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0),
-                        renderingData.cameraData.GetViewMatrix(1), renderingData.cameraData.GetProjectionMatrix(1), minDepth, maxDepth, maxRenders, PortalRenderer.allRenderers, focus);
+                    rootPassNode.renderNode = PortalAlgorithms.GetPredictiveStereoTree(camera, camera.transform.localToWorldMatrix, renderCamera.worldToCameraMatrix, renderCamera.projectionMatrix, renderCamera.cullingMask, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0),
+                        renderingData.cameraData.GetViewMatrix(1), renderingData.cameraData.GetProjectionMatrix(1), minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers(), focus);
                 else
-                    currentGroup.renderNode = PortalAlgorithms.GetPredictiveTree(renderCamera.transform.localToWorldMatrix, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0), renderCamera.cullingMask, minDepth, maxDepth, maxRenders, PortalRenderer.allRenderers, focus);
+                    rootPassNode.renderNode = PortalAlgorithms.GetPredictiveTree(camera, camera.transform.localToWorldMatrix, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0), renderCamera.cullingMask, minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers(), focus);
             }
 
-            currentGroup.viewport = new Rect(0f, 0f, renderingData.cameraData.cameraTargetDescriptor.width, renderingData.cameraData.cameraTargetDescriptor.height);
+            rootPassNode.viewport = new Rect(0f, 0f, renderingData.cameraData.cameraTargetDescriptor.width, renderingData.cameraData.cameraTargetDescriptor.height);
 
             // TODO: Dont have access to ForwardRenderingData.shadowTransparentReceive
             bool disableTransparentShadows = false && (renderingData.shadowData.supportsMainLightShadows || renderingData.shadowData.supportsAdditionalLightShadows);
 
             Shader.SetGlobalInt(PropertyID.PortalStencilRef, 0);
 
+            GetDrawingSettings(renderingData, camera, out DrawingSettings opaqueDrawing, out FilteringSettings opaqueFiltering, out DrawingSettings transparentDrawing, out FilteringSettings transparentFiltering);
+            drawOpaquesPass.drawingSettings = opaqueDrawing;
+            drawOpaquesPass.filteringSettings = opaqueFiltering;
+            drawTransparentsPass.drawingSettings = transparentDrawing;
+            drawTransparentsPass.filteringSettings = transparentFiltering;
+
+            blankRenderPass.material = _portalStereo;
+            renderBufferPass.material = _portalStereo;
+            portalBlankRenderPass.material = _portalStereo;
+            portalRenderBufferPass.material = _portalStereo;
+
+            depthOnlyPass.depthOnlyMaterial = _portalDepthOnly;
+
             if (_renderMode == RenderMode.RenderTexture)
             {
                 if (portalStereo) portalStereo.SetInt(PropertyID.StencilComp, (int)CompareFunction.Disabled);
 
-                EnqueueRenderNodes(renderer, ref renderingData, currentGroup, maxShadowDepth, disableTransparentShadows);
+                EnqueueRenderNodes(renderer, ref renderingData, rootPassNode, maxShadowDepth, disableTransparentShadows);
             }
             else
             {
                 if (portalStereo) portalStereo.SetInt(PropertyID.StencilComp, (int)CompareFunction.Equal);
 
                 if (_renderMode == RenderMode.Stencil)
-                    EnqueueStencilNodes(renderer, ref renderingData, currentGroup, maxShadowDepth, disableTransparentShadows, 0);
+                    EnqueueStencilNodes(renderer, ref renderingData, rootPassNode, maxShadowDepth, disableTransparentShadows, 0);
                 else if (_renderMode == RenderMode.StencilEarly)
-                    EnqueueStencilNodes(renderer, ref renderingData, currentGroup, maxShadowDepth, disableTransparentShadows, 1);
+                    EnqueueStencilNodes(renderer, ref renderingData, rootPassNode, maxShadowDepth, disableTransparentShadows, 1);
                 else
-                    EnqueueStencilNodes(renderer, ref renderingData, currentGroup, maxShadowDepth, disableTransparentShadows, -1);
+                    EnqueueStencilNodes(renderer, ref renderingData, rootPassNode, maxShadowDepth, disableTransparentShadows, -1);
             }
 
             if (bufferResolution > 0f)
+            {
+                //storePreviousFramePass.rootRenderNode = rootPassNode.renderNode;
+                storePreviousFramePass.resolution = bufferResolution;
                 renderer.EnqueuePass(storePreviousFramePass);
+            }
 
-            // Create setting
-            DrawingSettings transparent, opaque = new DrawingSettings(shaderByIds[0],
-                new SortingSettings(camera) { criteria = SortingCriteria.CommonOpaque })
+            renderer.EnqueuePass(completePass);
+        }
+
+        private void GetDrawingSettings(in RenderingData renderingData, Camera camera, out DrawingSettings opaqueDrawingSettings, out FilteringSettings opaqueFilteringSettings, out DrawingSettings transparentDrawingSettings, out FilteringSettings transparentFilteringSettings)
+        {
+            opaqueDrawingSettings = new DrawingSettings(shaderByIds[0],
+                            new SortingSettings(camera) { criteria = SortingCriteria.CommonOpaque })
             {
                 perObjectData = renderingData.perObjectData,
                 mainLightIndex = renderingData.lightData.mainLightIndex,
                 enableDynamicBatching = renderingData.supportsDynamicBatching,
                 enableInstancing = !renderingData.cameraData.isPreviewCamera
             };
-
             for (int i = 1; i < shaderByIds.Length; i++)
-                opaque.SetShaderPassName(i, shaderByIds[i]);
+                opaqueDrawingSettings.SetShaderPassName(i, shaderByIds[i]);
 
-            transparent = opaque;
-            transparent.sortingSettings = new SortingSettings(camera) { criteria = SortingCriteria.CommonTransparent };
+            transparentDrawingSettings = opaqueDrawingSettings;
+            transparentDrawingSettings.sortingSettings = new SortingSettings(camera) { criteria = SortingCriteria.CommonTransparent };
 
             // Create portal settings to reuse for all portals
-            opaqueDrawingSettings = opaque;
             opaqueFilteringSettings = new FilteringSettings(RenderQueueRange.opaque, opaqueLayerMask);
-            transparentDrawingSettings = transparent;
             transparentFilteringSettings = new FilteringSettings(RenderQueueRange.transparent, transparentLayerMask);
         }
 
-        protected virtual void EnqueueStencilNodes(ScriptableRenderer renderer, ref RenderingData renderingData, PortalPassGroup passGroup, int maxShadowDepth, bool disableTransparentShadows, int order)
+        protected virtual void EnqueueStencilNodes(ScriptableRenderer renderer, ref RenderingData renderingData, PortalPassNode passGroup, int maxShadowDepth, bool disableTransparentShadows, int order)
         {
-            EnqueueStencilNodesRecursive(renderer, ref renderingData, passGroup, maxShadowDepth, disableTransparentShadows, order);
+            PortalRenderNode undoNode = TryGetTransitionNode(renderingData, passGroup.renderNode);
+
+            EnqueueStencilNodesRecursive(renderer, ref renderingData, passGroup, maxShadowDepth, disableTransparentShadows, order, undoNode);
 
             if (passGroup.renderNode.invalidChildCount > 0)
                 renderer.EnqueuePass(blankRenderPass);
         }
 
-        protected virtual void EnqueueStencilNodesRecursive(ScriptableRenderer renderer, ref RenderingData renderingData, PortalPassGroup passGroup, int maxShadowDepth, bool disableTransparentShadows, int order)
+        private static PortalRenderNode TryGetTransitionNode(RenderingData renderingData, PortalRenderNode renderNode)
+        {
+            if (PortalRendering.TryGetTransition(renderingData.cameraData.camera, out IPortal portal, out Vector3 transitionCentre, out Vector3 transitionNormal))
+            {
+                if (!TryFindChild(renderNode, portal, out PortalRenderNode portalNode) && portalNode.isValid)
+                    return null;
+
+                // Check if one eye is atleast on the other side
+                if (renderNode.isStereo)
+                {
+                    bool leftTransitioned = !IsFrontSide(transitionCentre, transitionNormal, renderNode.GetStereoViewMatrix(0).inverse.MultiplyPoint(Vector3.zero)),
+                        rightTransitioned = !IsFrontSide(transitionCentre, transitionNormal, renderNode.GetStereoViewMatrix(1).inverse.MultiplyPoint(Vector3.zero));
+
+                    if (!leftTransitioned && !rightTransitioned) return null;
+
+                    if (leftTransitioned) portalNode.SetStereoProjectionMatrix(0, portalNode.root.GetStereoProjectionMatrix(0));
+                    if (rightTransitioned) portalNode.SetStereoProjectionMatrix(1, portalNode.root.GetStereoProjectionMatrix(1));
+                }
+                else
+                {
+                    if (IsFrontSide(transitionCentre, transitionNormal, renderNode.worldToCameraMatrix.inverse.MultiplyPoint(Vector3.zero)))
+                        return null;
+
+                    portalNode.worldToCameraMatrix = portalNode.root.worldToCameraMatrix;
+                }
+
+                IPortal connected = portal.connected;
+                PortalRenderNode undoNode = null;
+                foreach (IPortalRenderer portalRenderer in PortalRendering.GetAllPortalRenderers())
+                {
+                    if (portalRenderer.portal == connected)
+                    {
+                        PortalRenderNode other = GetOrAddChild(portalNode, portalRenderer);
+                        if (other != null) undoNode = other;
+                    }
+                }
+
+                if (undoNode != null)
+                {
+                    renderNode.SortChildren(new RenderNodeComparer(portalNode));
+                    undoNode.ComputeMaskAndMatrices();
+                    undoNode.isValid = true;
+                    return undoNode;
+                }
+            }
+
+            return null;
+        }
+
+
+        public static PortalRenderNode GetOrAddChild(PortalRenderNode parent, IPortalRenderer renderer)
+        {
+            if (parent.isStereo)
+            {
+                if (((1 << renderer.layer) & parent.cullingMask) == 0) return null;
+
+                Matrix4x4 leftView = parent.GetStereoViewMatrix(0), leftProj = parent.root.GetStereoProjectionMatrix(0),
+                    rightView = parent.GetStereoViewMatrix(1), rightProj = parent.root.GetStereoProjectionMatrix(1);
+
+                bool leftValid = renderer.TryGetWindow(parent, leftView.inverse.MultiplyPoint(Vector3.zero), leftView, leftProj, out ViewWindow leftWindow),
+                    rightValid = renderer.TryGetWindow(parent, rightView.inverse.MultiplyPoint(Vector3.zero), rightView, rightProj, out ViewWindow rightWindow);
+
+                if ((!leftValid || !leftWindow.IsVisibleThrough(parent.cullingWindow)) && (!rightValid || !rightWindow.IsVisibleThrough(parent.cullingWindow)))
+                    return null;
+
+                return parent.GetOrAddChild(renderer, leftWindow, rightWindow);
+            }
+            else
+            {
+                if (((1 << renderer.layer) & parent.cullingMask) == 0) return null;
+
+                if (renderer.TryGetWindow(parent, parent.localToWorldMatrix.GetColumn(3), parent.worldToCameraMatrix, parent.root.projectionMatrix, out ViewWindow window) && window.IsVisibleThrough(parent.cullingWindow))
+                    return parent.GetOrAddChild(renderer, window);
+            }
+
+            return null;
+        }
+
+        private static bool TryFindChild(PortalRenderNode renderNode, IPortal portal, out PortalRenderNode child)
+        {
+            foreach (PortalRenderNode other in renderNode.children)
+            {
+                if (other.portal == portal)
+                {
+                    child = other;
+                    return true;
+                }
+            }
+
+            child = null;
+            return false;
+        }
+
+        private static bool IsFrontSide(Vector3 transitionCentre, Vector3 transitionNormal, Vector3 position) =>
+            Vector3.Dot(position - transitionCentre, transitionNormal) > 0f;
+
+        private readonly struct RenderNodeComparer : IComparer<PortalRenderNode>
+        {
+            private readonly PortalRenderNode firstNode;
+
+            public RenderNodeComparer(PortalRenderNode firstNode)
+            {
+                this.firstNode = firstNode;
+            }
+
+            public int Compare(PortalRenderNode x, PortalRenderNode y)
+            {
+                if (x == firstNode)
+                {
+                    if (y == firstNode) return 0;
+                    return -1;
+                }
+                if (y == firstNode) return 1;
+                return 0;
+            }
+        }
+
+        internal void EnqueueStencilNodesRecursive(ScriptableRenderer renderer, ref RenderingData renderingData, PortalPassNode passGroup, int maxShadowDepth, bool disableTransparentShadows, int order, PortalRenderNode undoNode = null)
         {
             renderer.EnqueuePass(depthOnlyPass);
 
@@ -445,13 +579,11 @@ namespace VRPortalToolkit.Rendering.Universal
                     int index = child.validIndex - 1;
 
                     while (portalStencilPasses.Count <= index)
-                        portalStencilPasses.Add(new PortalStencilPasses(this));
+                        portalStencilPasses.Add(new PortalStencilPasses());
 
                     // Begin group
-                    PortalStencilPasses passPair = portalStencilPasses[index];
-                    PortalPassGroup childGroup = passPair.beginRenderPass.passGroup = PortalPassGroupPool.Get();
+                    PortalPassNode childGroup = PortalPassGroupPool.Get();
                     childGroup.renderNode = child;
-                    childGroup.parent = passGroup;
 
                     // Setup state block
                     childGroup.stateBlock = new RenderStateBlock(RenderStateMask.Depth | RenderStateMask.Stencil)
@@ -461,58 +593,94 @@ namespace VRPortalToolkit.Rendering.Universal
                         stencilState = new StencilState(true, 255, 255, CompareFunction.Equal),
                     };
 
-                    renderer.EnqueuePass(passPair.beginRenderPass);
+                    PortalStencilPasses passPair = portalStencilPasses[index];
+
+                    if (child != undoNode)
+                    {
+                        passPair.beginRenderPass.passNode = childGroup;
+                        passPair.beginRenderPass.increaseMaterial = _portalIncrease;
+                        passPair.beginRenderPass.clearDepthMaterial = _portalClearDepth;
+                        renderer.EnqueuePass(passPair.beginRenderPass);
+                    }
+                    else
+                    {
+                        // Undo node for transitions through stereo
+                        beginUndoStencilPass.passNode = childGroup;
+                        beginUndoStencilPass.increaseMaterial = _portalIncrease;
+                        beginUndoStencilPass.clearDepthMaterial = _portalClearDepth;
+                        renderer.EnqueuePass(beginUndoStencilPass);
+                    }
 
                     // Recursive
                     if (order < 0)
-                        EnqueueStencilNodesRecursive(renderer, ref renderingData, childGroup, maxShadowDepth, disableTransparentShadows, order);
-                    
-                    // Main shadows
-                    if (child.depth <= maxShadowDepth && renderingData.shadowData.supportsMainLightShadows)
-                    {
-                        childGroup.mainLightShadowCasterPass = passPair.mainLightShadowCasterPass;
-                        renderer.EnqueuePass(childGroup.mainLightShadowCasterPass);
-                    }
-                    else childGroup.mainLightShadowCasterPass = null;
+                        EnqueueStencilNodesRecursive(renderer, ref renderingData, childGroup, maxShadowDepth, disableTransparentShadows, order, undoNode);
 
-                    // Additional shadows
-                    if (child.depth <= maxShadowDepth && renderingData.shadowData.supportsAdditionalLightShadows)
+                    // TODO: For now, undo node does not support shadows. For some reason, it leads to:
+                    // "ArgumentException: RenderTextureDesc width must be greater than zero." in Shadow Utils
+                    if (child != undoNode)
                     {
-                        childGroup.additionalLightsShadowCasterPass = passPair.additionalLightsShadowCasterPass;
-                        renderer.EnqueuePass(passPair.additionalLightsShadowCasterPass);
+                        // Main shadows
+                        if (child.depth <= maxShadowDepth && renderingData.shadowData.supportsMainLightShadows)
+                        {
+                            childGroup.mainLightShadowCasterPass = passPair.mainLightShadowCasterPass;
+                            renderer.EnqueuePass(childGroup.mainLightShadowCasterPass);
+                        }
+                        else childGroup.mainLightShadowCasterPass = null;
+
+                        if (child != undoNode)
+                            // Additional shadows
+                            if (child.depth <= maxShadowDepth && renderingData.shadowData.supportsAdditionalLightShadows)
+                            {
+                                childGroup.additionalLightsShadowCasterPass = passPair.additionalLightsShadowCasterPass;
+                                renderer.EnqueuePass(passPair.additionalLightsShadowCasterPass);
+                            }
+                            else childGroup.additionalLightsShadowCasterPass = null;
                     }
-                    else childGroup.additionalLightsShadowCasterPass = null;
 
                     // Render Opaques
-                    renderer.EnqueuePass(opaqueRenderPasses);
+                    renderer.EnqueuePass(drawOpaquesPass);
 
                     // Render Blank portals
                     if (child.invalidChildCount > 0)
                         renderer.EnqueuePass(portalBlankRenderPass);
 
                     if (order == 0)
-                        EnqueueStencilNodesRecursive(renderer, ref renderingData, childGroup, maxShadowDepth, disableTransparentShadows, order);
+                        EnqueueStencilNodesRecursive(renderer, ref renderingData, childGroup, maxShadowDepth, disableTransparentShadows, order, undoNode);
 
                     // Render Transparents
                     if (disableTransparentShadows)
                         renderer.EnqueuePass(disableShadowSettingsPass);
 
-                    renderer.EnqueuePass(renderTransparentsPass);
+                    renderer.EnqueuePass(drawTransparentsPass);
 
                     // Render Skybox
                     renderer.EnqueuePass(drawSkyBoxPass);
 
                     if (order > 0)
-                        EnqueueStencilNodesRecursive(renderer, ref renderingData, childGroup, maxShadowDepth, disableTransparentShadows, order);
+                        EnqueueStencilNodesRecursive(renderer, ref renderingData, childGroup, maxShadowDepth, disableTransparentShadows, order, undoNode);
 
                     // Complete group
-                    renderer.EnqueuePass(passPair.completeRenderPass);
+                    if (child != undoNode)
+                    {
+                        passPair.completeRenderPass.clearDepthMaterial = _portalClearDepth;
+                        passPair.completeRenderPass.decreaseMaterial = _portalDecrease;
+                        passPair.completeRenderPass.depthMaterial = _portalDepthOnly;
+                        renderer.EnqueuePass(passPair.completeRenderPass);
+                    }
+                    else
+                    {
+                        // Undo node for transitions through stereo
+                        completeUndoStencilPass.decreaseMaterial = _portalDecrease;
+                        renderer.EnqueuePass(completeUndoStencilPass);
+                    }
                 }
             }
         }
 
-        protected virtual void EnqueueRenderNodes(ScriptableRenderer renderer, ref RenderingData renderingData, PortalPassGroup passGroup, int maxShadowDepth, bool disableTransparentShadows)
+        protected virtual void EnqueueRenderNodes(ScriptableRenderer renderer, ref RenderingData renderingData, PortalPassNode passGroup, int maxShadowDepth, bool disableTransparentShadows)
         {
+            float resolution = (renderingData.cameraData.isPreviewCamera || renderingData.cameraData.isSceneViewCamera) ? editorPortalResolution : portalResolution;
+
             foreach (PortalRenderNode child in passGroup.renderNode.GetPostorderDepthFirst())
             {
                 if (child.isValid && child != passGroup.renderNode)
@@ -520,13 +688,12 @@ namespace VRPortalToolkit.Rendering.Universal
                     int index = child.validIndex - 1;
 
                     while (portalRenderPasses.Count <= index)
-                        portalRenderPasses.Add(new PortalRenderPasses(this));
+                        portalRenderPasses.Add(new PortalRenderPasses());
 
                     // Begin group
                     PortalRenderPasses passPair = portalRenderPasses[index];
-                    PortalPassGroup childGroup = passPair.beginRenderPass.passGroup = PortalPassGroupPool.Get();
+                    PortalPassNode childGroup = passPair.beginRenderPass.portalPassNode = PortalPassGroupPool.Get();
                     childGroup.renderNode = child;
-                    childGroup.parent = passGroup; // HMMM
 
                     // Setup state block
                     childGroup.stateBlock = new RenderStateBlock(RenderStateMask.Depth)
@@ -535,6 +702,7 @@ namespace VRPortalToolkit.Rendering.Universal
                         stencilReference = child.depth,
                     };
 
+                    passPair.beginRenderPass.Resolution = resolution;
                     renderer.EnqueuePass(passPair.beginRenderPass);
 
                     // Main shadows
@@ -554,7 +722,7 @@ namespace VRPortalToolkit.Rendering.Universal
                     else childGroup.additionalLightsShadowCasterPass = null;
 
                     // Render Opaques
-                    renderer.EnqueuePass(opaqueRenderPasses);
+                    renderer.EnqueuePass(drawOpaquesPass);
 
                     // Render Child Portals
                     if (child.validChildCount > 0)
@@ -567,7 +735,7 @@ namespace VRPortalToolkit.Rendering.Universal
                     if (disableTransparentShadows)
                         renderer.EnqueuePass(disableShadowSettingsPass);
 
-                    renderer.EnqueuePass(renderTransparentsPass);
+                    renderer.EnqueuePass(drawTransparentsPass);
 
                     // Render Skybox
                     renderer.EnqueuePass(drawSkyBoxPass);

@@ -6,11 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/Testing/Testing Scene.unity
-    guid: 1f1ad34103a2eee4499c8159644a8212
+    path: 
+    guid: 00000000000000000000000000000000
   - enabled: 0
-    path: Assets/Testing/Benchmark.unity
-    guid: 6683dcceb2384934a920ebac21619679
+    path: 
+    guid: 00000000000000000000000000000000
+  - enabled: 0
+    path: Assets/Samples/XR Interaction Toolkit/2.3.2/Starter Assets/DemoScene2.unity
+    guid: 423abb06d4a9976408a2d288ea8d5c4e
+  - enabled: 1
+    path: Assets/VRPortalToolkit/Examples/Scenes/PointAndPortal.unity
+    guid: e8b5403f810209340825203bbbc1c7f6
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 0055f3b559c412246859f6589c8ac5a8, type: 2}
     Unity.XR.OpenVR.Settings: {fileID: 11400000, guid: 87f3d906a5a44b946a1380d6044fb4cb, type: 2}

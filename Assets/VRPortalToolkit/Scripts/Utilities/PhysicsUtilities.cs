@@ -34,7 +34,7 @@ namespace VRPortalToolkit.Utilities
             Collider collider;
             int startCount = results.Count;
 
-            rigidbody.GetComponentsInChildren<Collider>(includeInactive, results);
+            rigidbody.GetComponentsInChildren(includeInactive, results);
 
             for (int i = startCount; i < results.Count;)
             {

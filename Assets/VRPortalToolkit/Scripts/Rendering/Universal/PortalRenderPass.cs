@@ -19,12 +19,9 @@ namespace VRPortalToolkit.Rendering.Universal
     {
         protected static ForwardLights forwardLights;
 
-        public PortalRenderFeature feature { get; protected set; }
-        
-        public PortalRenderPass(PortalRenderFeature feature) : base()
+        public PortalRenderPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base()
         {
-            this.feature = feature;
-            renderPassEvent = RenderPassEvent.AfterRenderingOpaques;
+            this.renderPassEvent = renderPassEvent;
 
             profilingSampler = new ProfilingSampler(GetType().Name);
 
@@ -33,8 +30,8 @@ namespace VRPortalToolkit.Rendering.Universal
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
-            if (feature && feature.currentGroup != null && feature.currentGroup.colorTexture)
-                ConfigureTarget(feature.currentGroup.colorTarget);
+            if (PortalPassStack.Current != null && PortalPassStack.Current.colorTexture)
+                ConfigureTarget(PortalPassStack.Current.colorTarget);
         }
     }
 }

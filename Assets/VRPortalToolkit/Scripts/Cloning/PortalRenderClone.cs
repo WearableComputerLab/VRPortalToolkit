@@ -1,8 +1,6 @@
-using Misc.Physics;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
 using Misc.EditorHelpers;
 using VRPortalToolkit.Physics;
 using VRPortalToolkit.Cloning;
@@ -13,10 +11,13 @@ namespace VRPortalToolkit
     // TODO: Can still accidently make one more clone than it needs when teleported
     // This happens because you enter a transition, before you leave another one
 
-    public class PortalRenderClone : Misc.Physics.TriggerHandler
+    [DefaultExecutionOrder(1030)]
+    public class PortalRenderClone : MonoBehaviour
     {
+        private static readonly WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
+
         [SerializeField] private GameObject _original;
-        public virtual GameObject original
+        public GameObject original
         {
             get => _original;
             set
@@ -34,10 +35,10 @@ namespace VRPortalToolkit
         }
 
         [SerializeField] private GameObject _template;
-        public virtual GameObject template { get => _template; set => _template = value; }
+        public GameObject template { get => _template; set => _template = value; }
 
         [SerializeField] private int _maxCloneCount = -1;
-        public virtual int maxCloneCount
+        public int maxCloneCount
         {
             get => _maxCloneCount;
             set
@@ -50,7 +51,7 @@ namespace VRPortalToolkit
                     {
                         if (_maxCloneCount < 0)
                         {
-                            foreach (PortalTransition transition in transitionHandler.GetComponents())
+                            foreach (PortalTransition transition in triggerHandler.Values)
                                 AddClone(transition);
                         }
 
@@ -71,16 +72,14 @@ namespace VRPortalToolkit
             public List<PortalCloneInfo<MeshFilter>> filters = new List<PortalCloneInfo<MeshFilter>>();
         }
 
-        /*[Header("Transition Events")]
-        public SerializableEvent<PortalTransition> enteredTransition = new SerializableEvent<PortalTransition>();
-        public SerializableEvent<PortalTransition> exitedTransition = new SerializableEvent<PortalTransition>();*/
-
-        protected List<PortalTransition> sortedTransitions = new List<PortalTransition>();
-        protected Dictionary<PortalTransition, CloneHandler> currentClones = new Dictionary<PortalTransition, CloneHandler>();
-        protected ObjectPool<CloneHandler> clonePool = new ObjectPool<CloneHandler>(() => new CloneHandler(), null,
+        protected readonly List<PortalTransition> sortedTransitions = new List<PortalTransition>();
+        protected readonly Dictionary<PortalTransition, CloneHandler> currentClones = new Dictionary<PortalTransition, CloneHandler>();
+        protected readonly ObjectPool<CloneHandler> clonePool = new ObjectPool<CloneHandler>(() => new CloneHandler(), null,
                 i => i.clone?.SetActive(false), i => { if (i.clone) Destroy(i.clone); }, 0);
 
-        protected ComponentHandler<Transform, PortalTransition> transitionHandler = new ComponentHandler<Transform, PortalTransition>();
+        protected readonly TriggerHandler<PortalTransition> triggerHandler = new TriggerHandler<PortalTransition>();
+        protected readonly HashSet<Collider> _stayedColliders = new HashSet<Collider>();
+        private IEnumerator _waitFixedUpdateLoop;
 
         protected bool teleportOverride;
 
@@ -97,16 +96,14 @@ namespace VRPortalToolkit
 
         protected virtual void Awake()
         {
-            transitionHandler.componentEntered = OnTriggerEnterTransition;
-            transitionHandler.componentExited = OnTriggerExitTransition;
-            transitionHandler.getComponentsMode = GetComponentsMode.GetComponents;
-            transitionHandler.exitOnComponentDisabled = transitionHandler.exitOnSourceDestroyed = false;
-            transitionHandler.enabled = true;
+            _waitFixedUpdateLoop = WaitFixedUpdateLoop();
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
+            triggerHandler.valueAdded += OnTriggerEnterTransition;
+            triggerHandler.valueRemoved += OnTriggerExitTransition;
+            StartCoroutine(_waitFixedUpdateLoop);
 
             PortalPhysics.AddPreTeleportListener(transform, OnPreTeleport);
             PortalPhysics.AddPostTeleportListener(transform, OnPostTeleport);
@@ -114,9 +111,11 @@ namespace VRPortalToolkit
             GenerateClones();
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
-            base.OnDisable();
+            triggerHandler.valueAdded -= OnTriggerEnterTransition;
+            triggerHandler.valueRemoved -= OnTriggerExitTransition;
+            StopCoroutine(_waitFixedUpdateLoop);
 
             PortalPhysics.RemovePreTeleportListener(transform, OnPreTeleport);
             PortalPhysics.RemovePostTeleportListener(transform, OnPostTeleport);
@@ -124,14 +123,49 @@ namespace VRPortalToolkit
             ClearClones();
         }
 
-        protected virtual void OnDestroy()
-        {
-            clonePool.Clear();
-        }
-
         protected virtual void LateUpdate()
         {
             Apply();
+        }
+
+        protected virtual void OnTriggerEnter(Collider other)
+        {
+            AddTransition(other);
+        }
+
+        protected virtual void OnTriggerStay(Collider other)
+        {
+            if (!triggerHandler.HasCollider(other))
+                AddTransition(other);
+
+            _stayedColliders.Add(other);
+        }
+
+        private void AddTransition(Collider other)
+        {
+            PortalTransition transition = other.attachedRigidbody ? other.attachedRigidbody.GetComponent<PortalTransition>() : other.GetComponent<PortalTransition>();
+            if (transition) triggerHandler.Add(other, transition);
+        }
+
+        protected virtual void OnTriggerExit(Collider other)
+        {
+            triggerHandler.RemoveCollider(other);
+        }
+
+        private IEnumerator WaitFixedUpdateLoop()
+        {
+            while (true)
+            {
+                yield return _WaitForFixedUpdate;
+
+                triggerHandler.UpdateColliders(_stayedColliders);
+                _stayedColliders.Clear();
+            }
+        }
+
+        protected virtual void OnDestroy()
+        {
+            clonePool.Clear();
         }
 
         public virtual void Apply()
@@ -142,13 +176,7 @@ namespace VRPortalToolkit
                 UpdateCloneHandler(pair.Key, pair.Value);
         }
 
-        protected override void OnTriggerEnterContainer(Transform other)
-            => transitionHandler.EnterSource(other);
-
         protected virtual void OnTriggerEnterTransition(PortalTransition transition) { }
-
-        protected override void OnTriggerExitContainer(Transform other)
-            => transitionHandler.ExitSource(other);
 
         protected virtual void OnTriggerExitTransition(PortalTransition transition) { }
 
@@ -157,7 +185,7 @@ namespace VRPortalToolkit
             if (teleportOverride) return;
 
             // Remove all the transitions that are no longer used
-            foreach (PortalTransition transition in transitionHandler.GetComponents())
+            foreach (PortalTransition transition in triggerHandler.Values)
                 sortedTransitions.Remove(transition);
 
             for (int i = 0; i < sortedTransitions.Count; i++)
@@ -166,7 +194,7 @@ namespace VRPortalToolkit
             sortedTransitions.Clear();
 
             // Add back all the ones that are still in use
-            foreach (PortalTransition transition in transitionHandler.GetComponents())
+            foreach (PortalTransition transition in triggerHandler.Values)
                 if (transition) sortedTransitions.Add(transition);
 
             sortedTransitions.Sort(SortTransitions);
@@ -178,7 +206,7 @@ namespace VRPortalToolkit
             for (int i = maxClones; i < sortedTransitions.Count; i++)
                 RemoveClone(sortedTransitions[i]);
 
-            // TODO: Will only add clone if required
+            // Will only add clone if required
             for (int i = 0; i < maxClones; i++)
                 AddClone(sortedTransitions[i]);
         }
@@ -191,7 +219,7 @@ namespace VRPortalToolkit
 
         protected virtual void ClearClones()
         {
-            foreach (PortalTransition transition in transitionHandler.GetComponents())
+            foreach (PortalTransition transition in triggerHandler.Values)
                 RemoveClone(transition);
         }
 
@@ -259,6 +287,15 @@ namespace VRPortalToolkit
                         handler.clone = new GameObject();
                         PortalCloning.CreateClones(handler.original, handler.clone, portalAsArray, handler.renderers);
                         PortalCloning.CreateClones(handler.original, handler.clone, portalAsArray, handler.filters);
+
+                        //Dictionary<Transform, Transform> clonesByOriginal = null;
+
+                        // Handle unique skinned renderer issue
+                        foreach (PortalCloneInfo<Renderer> cloneInfo in handler.renderers)
+                        {
+                            if (cloneInfo.TryAs(out PortalCloneInfo<SkinnedMeshRenderer> skinnedCloneInfo))
+                                skinnedCloneInfo.CloneBones();
+                        }
                     }
 
                     PortalCloning.AddClones(handler.original, handler.clone, portalAsArray, handler.transforms);
@@ -272,6 +309,16 @@ namespace VRPortalToolkit
                 if (handler.clone)
                     handler.clone.SetActive(original.activeSelf);
             }
+        }
+
+        private static void FindCloneTransforms(Transform original, Transform clone, Dictionary<Transform, Transform> cloneByOriginal)
+        {
+            cloneByOriginal.Add(original, clone);
+
+            int childCount = Mathf.Min(original.childCount, clone.childCount);
+
+            for (int i = 0; i < childCount; i++)
+                FindCloneTransforms(original.GetChild(i), clone.GetChild(i), cloneByOriginal);
         }
 
         private static void UpdateHandlerPortal(PortalTransition transition, CloneHandler handler)
@@ -316,8 +363,6 @@ namespace VRPortalToolkit
             else handler.clone.SetActive(false);
         }
 
-        private static WaitForFixedUpdate waitForFixed = new WaitForFixedUpdate();
-
         protected virtual void OnPreTeleport(Teleportation args) { }
 
         protected virtual void OnPostTeleport(Teleportation args)
@@ -347,7 +392,7 @@ namespace VRPortalToolkit
 
         protected virtual IEnumerator DisableOverrideAfterFixedUpdate()
         {
-            yield return waitForFixed;
+            yield return _WaitForFixedUpdate;
 
             teleportOverride = false;
         }

@@ -63,19 +63,19 @@ MonoBehaviour:
     m_Bits: 4294967295
   _transparentLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967263
-  _minDepth: 2
-  _maxDepth: 1000
-  _maxRenders: 16
-  _maxShadowDepth: 1000
+    m_Bits: 4294967295
+  _minDepth: 1
+  _maxDepth: 8
+  _maxRenders: 8
+  _maxShadowDepth: 0
   _portalResolution: 1
   _bufferResolution: 1
-  _editorMinDepth: 2
+  _editorMinDepth: 3
   _editorMaxDepth: 2000
   _editorMaxRenders: 16
-  _editorMaxShadowDepth: 1000
+  _editorMaxShadowDepth: 0
   _editorPortalResolution: 1
-  _editorBufferResolution: 1
+  _editorBufferResolution: 0
   _portalStereo: {fileID: 2100000, guid: 5b4b59fca78fdd54ea72d3b37270eb85, type: 2}
   _portalIncrease: {fileID: 2100000, guid: b37df06b0d97d3c439b9960600476bf5, type: 2}
   _portalDecrease: {fileID: 2100000, guid: 1610932ed2cb46d4a89736052e6d551a, type: 2}

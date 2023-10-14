@@ -19,7 +19,6 @@ namespace VRPortalToolkit
             get => _portalTransition;
             set => _portalTransition = value;
         }
-        public void ClearPortalTransition() => portalTransition = null;
 
         [SerializeField] private PortalLayer _connectedLayer;
         public PortalLayer connectedLayer {
@@ -36,7 +35,6 @@ namespace VRPortalToolkit
                 }
             }
         }
-        public void ClearConnectedSpace() => connectedLayer = null;
 
         [SerializeField] protected List<PortalLayerConversion> _layerConversion;
         public HeapAllocationFreeReadOnlyList<PortalLayerConversion> readonlyLayerConversion => _layerConversion;
@@ -68,7 +66,7 @@ namespace VRPortalToolkit
             if (portalTransition)
             {
                 GameObject connected = portalTransition.connectedTransition ? portalTransition.connectedTransition.gameObject
-                    : (portalTransition.portal && portalTransition.portal.connectedPortal ? portalTransition.portal.connectedPortal.gameObject : null);
+                    : (portalTransition.portal && portalTransition.portal.connected ? portalTransition.portal.connected.gameObject : null);
 
                 if (connected)
                 {

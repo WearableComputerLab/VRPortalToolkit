@@ -8,13 +8,15 @@ namespace VRPortalToolkit.Rendering.Universal
 {
     public class DrawDepthOnlyPortalsPass : PortalRenderPass
     {
-        public DrawDepthOnlyPortalsPass(PortalRenderFeature feature) : base(feature) { }
+        public Material depthOnlyMaterial { get; set; }
+
+        public DrawDepthOnlyPortalsPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            if (!feature.portalDepthOnly)
+            if (!depthOnlyMaterial)
             {
-                Debug.LogError(nameof(DrawDepthOnlyPortalsPass) + " requires feature.portalDepthOnly!");
+                Debug.LogError(nameof(DrawDepthOnlyPortalsPass) + " requires a depthOnlyMaterial!");
                 return;
             }
 
@@ -22,16 +24,16 @@ namespace VRPortalToolkit.Rendering.Universal
 
             //using (new ProfilingScope(cmd, profilingSampler))
             {
-                PortalRenderNode parentNode = feature.currentGroup.renderNode;
+                PortalRenderNode parentNode = PortalPassStack.Current.renderNode;
 
-                feature.currentGroup.SetViewAndProjectionMatrices(cmd);
+                PortalPassStack.Current.SetViewAndProjectionMatrices(cmd);
 
-                cmd.SetGlobalInt(PropertyID.PortalStencilRef, feature.currentGroup.stateBlock.stencilReference);
+                cmd.SetGlobalInt(PropertyID.PortalStencilRef, PortalPassStack.Current.stateBlock.stencilReference);
 
                 foreach (PortalRenderNode renderNode in parentNode.children)
                 {
-                    if (renderNode.renderer)
-                        renderNode.renderer.Render(renderingData.cameraData.camera, renderNode, cmd, feature.portalDepthOnly);
+                    foreach (IPortalRenderer renderer in renderNode.renderers)
+                        renderer.Render(renderNode, cmd, depthOnlyMaterial);
                 }
 
                 context.ExecuteCommandBuffer(cmd);

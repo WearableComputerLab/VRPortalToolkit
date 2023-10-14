@@ -19,7 +19,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateRigidbody(PortalCloneInfo<Rigidbody> cloneInfo)
+        public static void UpdateRigidbody(this PortalCloneInfo<Rigidbody> cloneInfo)
         {
             Rigidbody original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -83,7 +83,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateCollider<TCollider>(PortalCloneInfo<TCollider> cloneInfo) where TCollider : Collider
+        public static void UpdateCollider<TCollider>(this PortalCloneInfo<TCollider> cloneInfo) where TCollider : Collider
         {
             Collider original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -115,7 +115,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateCollider(PortalCloneInfo<SphereCollider> cloneInfo)
+        public static void UpdateCollider(this PortalCloneInfo<SphereCollider> cloneInfo)
         {
             SphereCollider original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -133,7 +133,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateCollider(PortalCloneInfo<BoxCollider> cloneInfo)
+        public static void UpdateCollider(this PortalCloneInfo<BoxCollider> cloneInfo)
         {
             BoxCollider original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -151,7 +151,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateCollider(PortalCloneInfo<CapsuleCollider> cloneInfo)
+        public static void UpdateCollider(this PortalCloneInfo<CapsuleCollider> cloneInfo)
         {
             CapsuleCollider original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -169,7 +169,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateCollider(PortalCloneInfo<MeshCollider> cloneInfo)
+        public static void UpdateCollider(this PortalCloneInfo<MeshCollider> cloneInfo)
         {
             MeshCollider original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -188,7 +188,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateCollider(PortalCloneInfo<CharacterController> cloneInfo)
+        public static void UpdateCollider(this PortalCloneInfo<CharacterController> cloneInfo)
         {
             CharacterController original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -197,31 +197,31 @@ namespace VRPortalToolkit.Cloning
 
         private static void UpdateSphereCollider(SphereCollider original, SphereCollider clone)
         {
-            UpdateCollider(original, clone);
-
             clone.center = original.center;
             clone.radius = original.radius;
+
+            UpdateCollider(original, clone);
         }
 
         private static void UpdateBoxCollider(BoxCollider original, BoxCollider clone)
         {
-            UpdateCollider(original, clone);
-
             clone.center = original.center;
             clone.size = original.size;
-            clone.size = original.size;
+
+            UpdateCollider(original, clone);
         }
 
         private static void UpdateCapsuleCollider(CapsuleCollider original, CapsuleCollider clone)
         {
             UpdateCollider(original, clone);
-
         }
 
         private static void UpdateMeshCollider(MeshCollider original, MeshCollider clone)
         {
-            UpdateCollider(original, clone);
+            clone.sharedMesh = original.sharedMesh;
+            clone.convex = original.convex;
 
+            UpdateCollider(original, clone);
         }
 
         private static void UpdateCharacterController(CharacterController original, CharacterController clone)

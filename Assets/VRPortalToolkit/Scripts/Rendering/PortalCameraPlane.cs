@@ -51,13 +51,13 @@ namespace VRPortalToolkit.Rendering
 
         private class PortalPlane
         {
-            public PortalRenderer renderer;
+            public PortalRendererBase renderer;
 
             public Vector3 position;
 
             public Vector3 normal;
 
-            public PortalPlane(PortalRenderer renderer, Vector3 position, Vector3 normal)
+            public PortalPlane(PortalRendererBase renderer, Vector3 position, Vector3 normal)
             {
                 this.renderer = renderer;
                 this.position = position;
@@ -65,7 +65,7 @@ namespace VRPortalToolkit.Rendering
             }
         }
 
-        public static void AddPlane(Camera camera, PortalRenderer renderer, Vector3 position, Vector3 normal)
+        public static void AddPlane(Camera camera, PortalRendererBase renderer, Vector3 position, Vector3 normal)
         {
             //cameraPlanes[camera] = new PortalPlane(renderer, position, normal);
         }
@@ -84,7 +84,7 @@ namespace VRPortalToolkit.Rendering
             return false;
         }
 
-        public static bool TryGetPlane(Camera camera, out PortalRenderer renderer, out Vector3 position, out Vector3 normal)
+        public static bool TryGetPlane(Camera camera, out PortalRendererBase renderer, out Vector3 position, out Vector3 normal)
         {
             //if (cameraPlanes.TryGetValue(camera, out PortalPlane plane) && plane.renderer)
             //{

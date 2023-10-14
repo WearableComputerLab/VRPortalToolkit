@@ -1,5 +1,9 @@
+using System.Drawing;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.UIElements;
+using VRPortalToolkit.Portables;
+using VRPortalToolkit.Rendering.Universal;
 
 namespace VRPortalToolkit.Utilities
 {
@@ -64,63 +68,52 @@ namespace VRPortalToolkit.Utilities
             }
         }
 
-        // TODO: Instead of limit, just shift the plane back a bit, might work
-        public static Matrix4x4 CalculateObliqueMatrix(this Camera camera, Vector3 clippingPlaneCentre, Vector3 clippingPlaneNormal, float nearClipLimit = 0.05f)
+        public static Matrix4x4 CalculateObliqueMatrix(Matrix4x4 view, Matrix4x4 proj, Vector3 clippingPlaneCentre, Vector3 clippingPlaneNormal)
         {
+            Plane clippingPlane = new Plane(-clippingPlaneNormal, clippingPlaneCentre);
+            Vector4 clipPlane = new Vector4(clippingPlane.normal.x, clippingPlane.normal.y, clippingPlane.normal.z, clippingPlane.distance);
+            Vector4 clipPlaneCameraSpace = Matrix4x4.Transpose(Matrix4x4.Inverse(view)) * clipPlane;
+
+            // Old
             // From: http://www.terathon.com/lengyel/Lengyel-Oblique.pdf
-            int dot = System.Math.Sign(Vector3.Dot(clippingPlaneNormal, clippingPlaneCentre - camera.transform.position));
+            //float dot = Mathf.Sign(Vector3.Dot(clippingPlaneNormal, clippingPlaneCentre - view.inverse.MultiplyPoint(Vector3.zero)));
 
-            Vector3 camSpacePos = camera.worldToCameraMatrix.MultiplyPoint(clippingPlaneCentre);
-            Vector3 camSpaceNormal = camera.worldToCameraMatrix.MultiplyVector(clippingPlaneNormal) * dot;
+            //Vector3 camSpacePos = view.MultiplyPoint(clippingPlaneCentre);
+            //Vector3 camSpaceNormal = (view.MultiplyVector(clippingPlaneNormal) * dot);
 
-            float camSpaceDst = -Vector3.Dot(camSpacePos, camSpaceNormal); // TODO: + nearClipOffset;
+            //float camSpaceDst = -Vector3.Dot(camSpacePos, camSpaceNormal); // TODO: + nearClipOffset;
 
             // Don't use oblique clip plane if very close to portal as it seems this can cause some visual artifacts
-            if (Mathf.Abs(camSpaceDst) > nearClipLimit)
-            {
-                Vector4 clipPlaneCameraSpace = new Vector4(camSpaceNormal.x, camSpaceNormal.y, camSpaceNormal.z, camSpaceDst);
-                Matrix4x4 projectionMatrix = camera.projectionMatrix;
-                CalculateObliqueMatrix(ref projectionMatrix, clipPlaneCameraSpace);
-                return projectionMatrix;
-                //return camera.CalculateObliqueMatrix(clipPlaneCameraSpace); << Doesnt work
-            }
+            //if (Mathf.Abs(camSpaceDst) > nearClipLimit)
+            //{
+            //Vector4 clipPlaneCameraSpace = new Vector4(camSpaceNormal.x, camSpaceNormal.y, camSpaceNormal.z, camSpaceDst);
+            //CalculateObliqueMatrix(ref proj, clipPlaneCameraSpace);
+            //return proj;
+            //}*/
 
-            return camera.projectionMatrix;
-        }
+            Matrix4x4 obliqueProj = CalculateObliqueMatrix(proj, clipPlaneCameraSpace);
 
-        // TODO: Instead of limit, just shift the plane back a bit, might work
-        public static Matrix4x4 CalculateObliqueMatrix(Matrix4x4 view, Matrix4x4 proj, Vector3 position, Vector3 clippingPlaneCentre, Vector3 clippingPlaneNormal, float nearClipLimit = 0.05f)
-        {
-            // From: http://www.terathon.com/lengyel/Lengyel-Oblique.pdf
-            int dot = System.Math.Sign(Vector3.Dot(clippingPlaneNormal, clippingPlaneCentre - position));
-
-            Vector3 camSpacePos = view.MultiplyPoint(clippingPlaneCentre);
-            Vector3 camSpaceNormal = view.MultiplyVector(clippingPlaneNormal) * dot;
-
-            float camSpaceDst = -Vector3.Dot(camSpacePos, camSpaceNormal); // TODO: + nearClipOffset;
-
-            // Don't use oblique clip plane if very close to portal as it seems this can cause some visual artifacts
-            if (Mathf.Abs(camSpaceDst) > nearClipLimit)
-            {
-                Vector4 clipPlaneCameraSpace = new Vector4(camSpaceNormal.x, camSpaceNormal.y, camSpaceNormal.z, camSpaceDst);
-                CalculateObliqueMatrix(ref proj, clipPlaneCameraSpace);
-                return proj;
-            }
+            if (obliqueProj[14] <= -0.001f)
+                return obliqueProj;
+            // For whatever reason, sometimes this comes back with a positive number, which flips the depth, so we have to fix it
+            //proj[14] = Mathf.Min(-0.001f, proj[14]);
 
             return proj;
         }
 
-        private static void CalculateObliqueMatrix(ref Matrix4x4 projection, Vector4 clipPlane)
+        private static Matrix4x4 CalculateObliqueMatrix(Matrix4x4 projection, Vector4 clipPlane)
         {
             // From: https://forum.unity.com/threads/problem-camera-calculateobliquematrix.252916/
-            Vector4 q = projection.inverse * new Vector4( Mathf.Sign(clipPlane.x), Mathf.Sign(clipPlane.y), 1.0f, 1.0f);
+            Vector4 q = projection.inverse * new Vector4(Mathf.Sign(clipPlane.x), Mathf.Sign(clipPlane.y), 1.0f, 1.0f);
             Vector4 c = clipPlane * (2.0F / (Vector4.Dot(clipPlane, q)));
-            
+
             // third row = clip plane - fourth row
             projection[2] = c.x - projection[3];
             projection[6] = c.y - projection[7];
             projection[10] = c.z - projection[11];
             projection[14] = c.w - projection[15];
+
+            return projection;
         }
 
         public static bool PlaneIntersection(this Camera camera, Vector3 centre, Vector3 normal, out Vector2 viewPosition, out Vector2 viewDirecion, Camera.MonoOrStereoscopicEye eye = Camera.MonoOrStereoscopicEye.Mono)
@@ -145,11 +138,33 @@ namespace VRPortalToolkit.Utilities
             return false;
         }
 
-        private static bool PlaneIntersection(Vector3 centreA, Vector3 normalA, Vector3 centreB, Vector3 normalB, out Vector3 position, out Vector3 direction)
-        {
-            direction = Vector3.Cross(normalA, normalB);
+        public static bool PlaneIntersection(Plane planeA, Plane planeB, out Vector3 linePoint, out Vector3 lineDirection) =>
+            PlaneIntersection(planeA.distance * planeA.normal, planeA.normal, planeB.distance * planeB.normal, planeB.normal, out linePoint, out lineDirection);
 
-            Vector3 ldir = Vector3.Cross(normalB, direction);
+        public static bool PlaneIntersection(Vector3 centreA, Vector3 normalA, Vector3 centreB, Vector3 normalB, out Vector3 linePoint, out Vector3 lineDirection)
+        {
+            lineDirection = Vector3.Cross(normalA, normalB);
+
+            // Check if the planes are parallel or coincident
+            if (lineDirection.magnitude < Mathf.Epsilon)
+            {
+                lineDirection = default;
+                linePoint = default;
+                return false;
+            }
+
+            // Calculate a point on the intersection line
+            linePoint = Vector3.zero;
+            float d1 = -Vector3.Dot(normalA, centreA);
+            float d2 = -Vector3.Dot(normalB, centreB);
+            float det = 1.0f / Vector3.Dot(lineDirection, lineDirection);
+            linePoint = (Vector3.Cross(normalB, lineDirection) * d1 +
+                         Vector3.Cross(lineDirection, normalA) * d2) * det;
+
+            return true;
+            /*lineDirection = Vector3.Cross(normalA, normalB);
+
+            Vector3 ldir = Vector3.Cross(normalB, lineDirection);
 
             float numerator = Vector3.Dot(normalA, ldir);
 
@@ -157,14 +172,14 @@ namespace VRPortalToolkit.Utilities
             if (Mathf.Abs(numerator) > float.Epsilon)
             {
                 float t = Vector3.Dot(normalA, centreA - centreB) / numerator;
-                position = centreB + t * ldir;
+                linePoint = centreB + t * ldir;
 
                 return true;
             }
 
-            position = Vector3.zero;
-            direction = Vector3.forward;
-            return false;
+            linePoint = Vector3.zero;
+            lineDirection = Vector3.forward;
+            return false;*/
         }
 
         public static Matrix4x4 CalculateScissorMatrix(this Matrix4x4 proj, Rect rect)
@@ -213,7 +228,7 @@ namespace VRPortalToolkit.Utilities
             return m2 * m1 * camera.projectionMatrix;
         }
 
-        public static Vector3 WorldToViewportPoint(Matrix4x4 view, Matrix4x4 proj, Vector3 point)
+        public static Vector3 WorldToViewportPoint(in Matrix4x4 view, in Matrix4x4 proj, Vector3 point)
         {
             Matrix4x4 VP = proj * view;
 
@@ -234,21 +249,16 @@ namespace VRPortalToolkit.Utilities
 
             return result;
         }
-
-        // https://answers.unity.com/questions/1461036/worldtoviewportpoint-and-viewporttoworldpointworld.html
         public static Vector3 ViewportToWorldPoint(Matrix4x4 view, Matrix4x4 proj, Vector3 point)
         {
-            Matrix4x4 VP = proj * view;
+            // Calculate the homogenous clip-space coordinates
+            Vector4 clipPos = new Vector4(point.x * 2 - 1, point.y * 2 - 1, point.z, 1f );
 
-            // get projection W by Z
-            Vector4 projW = proj * new Vector4(0, 0, -point.z, 1);
+            Vector4 worldPos = proj.inverse * clipPos;
 
-            // restore point4
-            Vector4 point4 = new Vector4((point.x * 2.0f) - 1.0f, (point.y * 2.0f) - 1.0f, projW.z / projW.w, 1);
+            worldPos = view.inverse.MultiplyPoint(worldPos);
 
-            Vector4 result4 = VP.inverse * point4;  // multiply 4 components
-
-            return result4 / result4.w;  // store 3 components of the resulting 4 components // TODO: I made this negative cause something should be, but I'm not sure
+            return worldPos;
         }
 
         public static readonly int UNITY_STEREO_MATRIX_V = Shader.PropertyToID("unity_StereoMatrixV");

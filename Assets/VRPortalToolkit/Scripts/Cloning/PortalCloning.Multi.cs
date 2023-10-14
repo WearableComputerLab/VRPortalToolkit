@@ -106,24 +106,48 @@ namespace VRPortalToolkit.Cloning
                     UpdateTransformLocal(new PortalCloneInfo<Transform>(originalTransform, cloneTransform, originalToClone));
 
                     AddComponent(cloneTransform.gameObject, originalComponent, originalToClone, list);
-
-                    while (originalTransform.parent)
-                    {
-                        if (cloneByOriginal.TryGetValue(originalTransform.parent, out Transform cloneParent))
-                        {
-                            cloneTransform.SetParent(cloneParent, false);
-                            break;
-                        }
-
-                        cloneParent = new GameObject(originalTransform.parent.name).transform;
-                        cloneTransform.SetParent(cloneParent, false);
-                        cloneByOriginal.Add(originalTransform.parent, cloneParent);
-                        UpdateTransformLocal(new PortalCloneInfo<Transform>(originalTransform.parent, cloneParent, originalToClone));
-
-                        originalTransform = originalTransform.parent;
-                        cloneTransform = cloneParent;
-                    }
+                    CloneHierarchy(originalTransform, cloneTransform, originalToClone, cloneByOriginal);
                 }
+            }
+        }
+
+        private static void CloneHierarchy(Transform original, Transform clone, Portal[] originalToClone, Dictionary<Transform, Transform> cloneByOriginal)
+        {
+            if (!original || !clone || cloneByOriginal == null) return;
+
+            while (original.parent)
+            {
+                if (cloneByOriginal.TryGetValue(original.parent, out Transform cloneParent))
+                {
+                    InsertSiblings(originalToClone, cloneByOriginal, original, cloneParent);
+                    clone.SetParent(cloneParent, false);
+                    break;
+                }
+
+                cloneParent = new GameObject(original.parent.name).transform;
+                InsertSiblings(originalToClone, cloneByOriginal, original, cloneParent);
+
+                clone.SetParent(cloneParent, false);
+                cloneByOriginal.Add(original.parent, cloneParent);
+                UpdateTransformLocal(new PortalCloneInfo<Transform>(original.parent, cloneParent, originalToClone));
+
+                original = original.parent;
+                clone = cloneParent;
+            }
+        }
+
+        private static void InsertSiblings(Portal[] originalToClone, Dictionary<Transform, Transform> cloneByOriginal, Transform originalTransform, Transform cloneParent)
+        {
+            // Need to insert some children to make sure the hierarchy is duplicated correctly
+            int siblingIndex = originalTransform.GetSiblingIndex();
+            while (siblingIndex > cloneParent.childCount)
+            {
+                Transform originalSibling = originalTransform.parent.GetChild(cloneParent.childCount),
+                    cloneSibling = new GameObject(originalSibling.name).transform;
+
+                cloneSibling.SetParent(cloneParent, false);
+                cloneByOriginal.Add(originalSibling, cloneSibling);
+                UpdateTransformLocal(new PortalCloneInfo<Transform>(originalSibling, cloneSibling, originalToClone));
             }
         }
 

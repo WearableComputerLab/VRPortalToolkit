@@ -5,6 +5,7 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.Data
 {
+    // TODO: Need to work on how this handles destroyed portals
     public class PortalTrace : IEnumerable<Portal>, IEnumerable, IReadOnlyCollection<Portal>, IReadOnlyList<Portal>
     {
         public int Capacity { get => _startToEnd.Capacity; set => _startToEnd.Capacity = value; }
@@ -41,12 +42,16 @@ namespace VRPortalToolkit.Data
 
         public void AddStartTeleport(Portal portal)
         {
-            if (portal && portal.connectedPortal)
+            if (portal && portal.connected)
             {
+                // Remove destroyed
+                while (_startToEnd.Count > 0 && !_startToEnd[0])
+                    _startToEnd.RemoveAt(0);
+
                 if (_startToEnd.Count > 0 && _startToEnd[0] == portal)
                     _startToEnd.RemoveAt(0);
                 else
-                    _startToEnd.Insert(0, portal.connectedPortal);
+                    _startToEnd.Insert(0, portal.connected);
             }
         }
 
@@ -58,9 +63,13 @@ namespace VRPortalToolkit.Data
 
         public void AddEndTeleport(Portal portal)
         {
-            if (portal && portal.connectedPortal)
+            if (portal && portal.connected)
             {
-                if (_startToEnd.Count > 0 && _startToEnd[_startToEnd.Count - 1] == portal.connectedPortal)
+                // Remove destroyed
+                while (_startToEnd.Count > 0 && !_startToEnd[_startToEnd.Count - 1])
+                    _startToEnd.RemoveAt(_startToEnd.Count - 1);
+
+                if (_startToEnd.Count > 0 && _startToEnd[_startToEnd.Count - 1] == portal.connected)
                     _startToEnd.RemoveAt(_startToEnd.Count - 1);
                 else
                     _startToEnd.Add(portal);
@@ -69,7 +78,7 @@ namespace VRPortalToolkit.Data
 
         public Portal GetPortal(int index) => _startToEnd[index];
 
-        public Portal GetUndoPortal(int index) => _startToEnd[_startToEnd.Count - index - 1]?.connectedPortal;
+        public Portal GetUndoPortal(int index) => _startToEnd[_startToEnd.Count - index - 1]?.connected;
 
         public IEnumerable<Portal> GetPortals()
         {
@@ -80,10 +89,10 @@ namespace VRPortalToolkit.Data
         public IEnumerable<Portal> GetUndoPortals()
         {
             for (int i = 1; i <= _startToEnd.Count; i++)
-                yield return _startToEnd[_startToEnd.Count - i]?.connectedPortal;
+                yield return _startToEnd[_startToEnd.Count - i]?.connected;
         }
 
-        public void ApplyPortals(Transform target)
+        /*public void ApplyPortals(Transform target)
         {
             if (target)
             {
@@ -96,6 +105,7 @@ namespace VRPortalToolkit.Data
                 target.localScale = localToWorld.lossyScale;
             }
         }
+
         public void ApplyUndoPortals(Transform target)
         {
             if (target)
@@ -108,7 +118,7 @@ namespace VRPortalToolkit.Data
                 target.SetPositionAndRotation(localToWorld.GetColumn(3), localToWorld.rotation);
                 target.localScale = localToWorld.lossyScale;
             }
-        }
+        }*/
 
         public void TeleportPortals(Transform target)
         {
@@ -136,6 +146,12 @@ namespace VRPortalToolkit.Data
 
         public void TeleportDifference(Transform target, IEnumerable<Portal> newStartToEndPortals)
         {
+            if (newStartToEndPortals == null)
+            {
+                BackTrackPortals(target, 0);
+                return;
+            }
+
             IEnumerator<Portal> newEnumator = newStartToEndPortals.GetEnumerator();
 
             if (newEnumator.MoveNext())
@@ -164,7 +180,8 @@ namespace VRPortalToolkit.Data
                     }
                     else
                     {
-                        // TODO: This portal has been destroyed, so what do we do?
+                        _startToEnd.RemoveAt(i--);
+                        // TODO: This portal has been destroyed, there is nothing much that can be done
                     }
                 }
 
@@ -190,8 +207,10 @@ namespace VRPortalToolkit.Data
             {
                 Portal portal = _startToEnd[i];
 
-                if (portal && portal.connectedPortal)
-                    PortalPhysics.Teleport(target, portal.connectedPortal);
+                if (portal && portal.connected)
+                    PortalPhysics.Teleport(target, portal.connected);
+                else
+                    _startToEnd.RemoveAt(i++);
             }
 
             // Just incase

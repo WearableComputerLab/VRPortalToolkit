@@ -20,11 +20,10 @@ namespace VRPortalToolkit
         [SerializeField] private Bounds _bounds = new Bounds(Vector3.zero, Vector3.one);
         public Bounds bounds { get => _bounds; set => _bounds = value; }
 
-        [Header("Events")]
-        public UnityEvent<Camera> expanded = new UnityEvent<Camera>();
-        public UnityEvent<Camera> flattened = new UnityEvent<Camera>();
+        public UnityAction<Camera> expanded;
+        public UnityAction<Camera> flattened;
 
-        protected virtual void OnDrawGizmos()
+        protected virtual void OnDrawGizmosSelected()
         {
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = Color.blue;
@@ -40,8 +39,8 @@ namespace VRPortalToolkit
             RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
 
-            PortalRenderer.onPreRender += OnPortalPreRender;
-            PortalRenderer.onPostRender += OnPortalPostRender;
+            PortalRendering.onPreRender += OnPortalPreRender;
+            PortalRendering.onPostRender += OnPortalPostRender;
         }
 
         protected virtual void OnDisable()
@@ -52,8 +51,8 @@ namespace VRPortalToolkit
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
 
-            PortalRenderer.onPreRender -= OnPortalPreRender;
-            PortalRenderer.onPostRender -= OnPortalPostRender;
+            PortalRendering.onPreRender -= OnPortalPreRender;
+            PortalRendering.onPostRender -= OnPortalPostRender;
         }
 
         protected virtual void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera) => CheckCamera(camera, camera.transform.position);
@@ -64,14 +63,14 @@ namespace VRPortalToolkit
 
         protected virtual void OnCameraPostRender(Camera camera) => Flatten(camera, camera.transform.position);
 
-        protected virtual void OnPortalPreRender(Camera camera, PortalRenderNode renderNode)
+        protected virtual void OnPortalPreRender(PortalRenderNode renderNode)
         {
-            CheckCamera(camera, renderNode.localToWorldMatrix.GetColumn(3));
+            CheckCamera(renderNode.camera, renderNode.localToWorldMatrix.GetColumn(3));
         }
 
-        protected virtual void OnPortalPostRender(Camera camera, PortalRenderNode renderNode)
+        protected virtual void OnPortalPostRender(PortalRenderNode renderNode)
         {
-            CheckCamera(camera, renderNode.parent.localToWorldMatrix.GetColumn(3));
+            CheckCamera(renderNode.camera, renderNode.parent.localToWorldMatrix.GetColumn(3));
         }
 
         //bool isExpanded = false;

@@ -39,7 +39,7 @@ namespace VRPortalToolkit.Rendering
 
                     while (parent != null)
                     {
-                        if (parent.renderer == renderNode.renderer)
+                        if (parent.portal == renderNode.portal) // TODO: Different culling will make this different
                         {
                             hasPattern = true;
                             break;
@@ -85,33 +85,33 @@ namespace VRPortalToolkit.Rendering
         private static List<PredictiveNode> _predictiveNodes = new List<PredictiveNode>();
         private static List<BreadthFirstNode> _breadthFirstNodes = new List<BreadthFirstNode>();
 
-        public static PortalRenderNode GetTree(Camera camera, int minDepth, int maxDepth, int maxRenders, IEnumerable<PortalRenderer> portals)
-            => GetTree(camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, minDepth, maxDepth, maxRenders, portals);
+        public static PortalRenderNode GetTree(Camera camera, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> portals)
+            => GetTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, minDepth, maxDepth, maxRenders, portals);
 
 
-        public static PortalRenderNode GetTree(Matrix4x4 localToWorld, Matrix4x4 view, Matrix4x4 proj, int layerMask, int minDepth, int maxDepth, int maxRenders, IEnumerable<PortalRenderer> visiblePortals)
+        public static PortalRenderNode GetTree(Camera camera, Matrix4x4 localToWorld, Matrix4x4 view, Matrix4x4 proj, int layerMask, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> visiblePortals)
         {
-            PortalRenderNode root = GetRoot(localToWorld, view, proj, layerMask);
+            PortalRenderNode root = GetRoot(camera, localToWorld, view, proj, layerMask);
 
             GetTree(root, visiblePortals, minDepth, maxDepth, maxRenders);
 
             return root;
         }
 
-        public static PortalRenderNode GetStereoTree(Camera camera, int minDepth, int maxDepth, int maxRenders, IEnumerable<PortalRenderer> portals)
-            => GetStereoTree(camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
+        public static PortalRenderNode GetStereoTree(Camera camera, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> portals)
+            => GetStereoTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
                 camera.GetStereoViewMatrix(Camera.StereoscopicEye.Right), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right), minDepth, maxDepth, maxRenders, portals);
 
-        public static PortalRenderNode GetStereoTree(Matrix4x4 localToWorld, Matrix4x4 cullView, Matrix4x4 cullProj, int layerMask, Matrix4x4 leftView, Matrix4x4 leftProj, Matrix4x4 rightView, Matrix4x4 rightProj, int minDepth, int maxDepth, int maxRenders, IEnumerable<PortalRenderer> visiblePortals)
+        public static PortalRenderNode GetStereoTree(Camera camera, Matrix4x4 localToWorld, Matrix4x4 cullView, Matrix4x4 cullProj, int layerMask, Matrix4x4 leftView, Matrix4x4 leftProj, Matrix4x4 rightView, Matrix4x4 rightProj, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> visiblePortals)
         {
-            PortalRenderNode root = GetStereoRoot(localToWorld, cullView, cullProj, layerMask, leftView, leftProj, rightView, rightProj);
+            PortalRenderNode root = GetStereoRoot(camera, localToWorld, cullView, cullProj, layerMask, leftView, leftProj, rightView, rightProj);
 
             GetTree(root, visiblePortals, minDepth, maxDepth, maxRenders);
 
             return root;
         }
 
-        private static void GetTree(PortalRenderNode root, IEnumerable<PortalRenderer> visiblePortals, int minDepth, int maxDepth, int maxRenders)
+        private static void GetTree(PortalRenderNode root, IEnumerable<IPortalRenderer> visiblePortals, int minDepth, int maxDepth, int maxRenders)
         {
             _breadthFirstNodes.Clear();
 
@@ -137,7 +137,7 @@ namespace VRPortalToolkit.Rendering
                 next.isValid = true;
                 count++;
 
-                CreateChildrenNodes(next, next.renderer.visiblePortals);
+                CreateChildrenNodes(next, PortalRendering.GetVisiblePortalRenderers(next.portal));
 
                 if (next.depth < minDepth)
                     AddChildrenToRequiredNodes(next);
@@ -155,39 +155,39 @@ namespace VRPortalToolkit.Rendering
                 next.renderNode.isValid = true;
                 count++;
 
-                CreateChildrenNodes(next.renderNode, next.renderNode.renderer.visiblePortals);
+                CreateChildrenNodes(next.renderNode, PortalRendering.GetVisiblePortalRenderers(next.renderNode.portal));
 
                 if (next.renderNode.depth < maxDepth && count < maxRenders)
                     AddChildrenToBreadthFirstNodes(next.renderNode);
             }
         }
 
-        public static PortalRenderNode GetSmartTree(Camera camera, int maxDepth, int maxRenders, IEnumerable<PortalRenderer> portals, Vector2? focus = null)
-            => GetPredictiveTree(camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, 0, maxDepth, maxRenders, portals, focus);
-        
-        public static PortalRenderNode GetPredictiveTree(Matrix4x4 localToWorld, Matrix4x4 view, Matrix4x4 proj, int layerMask, int minDepth, int maxDepth, int maxRenders, IEnumerable<PortalRenderer> visiblePortals, Vector2? focus = null)
+        public static PortalRenderNode GetSmartTree(Camera camera, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> portals, Vector2? focus = null)
+            => GetPredictiveTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, 0, maxDepth, maxRenders, portals, focus);
+
+        public static PortalRenderNode GetPredictiveTree(Camera camera, Matrix4x4 localToWorld, Matrix4x4 view, Matrix4x4 proj, int layerMask, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> visiblePortals, Vector2? focus = null)
         {
-            PortalRenderNode root = GetRoot(localToWorld, view, proj, layerMask);
+            PortalRenderNode root = GetRoot(camera, localToWorld, view, proj, layerMask);
 
             GetPredictiveTree(root, visiblePortals, minDepth, maxDepth, maxRenders, focus);
 
             return root;
         }
 
-        public static PortalRenderNode GetSmartStereoTree(Camera camera, int maxDepth, int maxRenders, IEnumerable<PortalRenderer> portals, Vector2? focus = null)
-            => GetPredictiveStereoTree(camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
+        public static PortalRenderNode GetSmartStereoTree(Camera camera, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> portals, Vector2? focus = null)
+            => GetPredictiveStereoTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
                 camera.GetStereoViewMatrix(Camera.StereoscopicEye.Right), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right), 0, maxDepth, maxRenders, portals, focus);
 
-        public static PortalRenderNode GetPredictiveStereoTree(Matrix4x4 localToWorld, Matrix4x4 cullView, Matrix4x4 cullProj, int layerMask, Matrix4x4 leftView, Matrix4x4 leftProj, Matrix4x4 rightView, Matrix4x4 rightProj, int minDepth, int maxDepth, int maxRenders, IEnumerable<PortalRenderer> visiblePortals, Vector2? focus = null)
+        public static PortalRenderNode GetPredictiveStereoTree(Camera camera, Matrix4x4 localToWorld, Matrix4x4 cullView, Matrix4x4 cullProj, int layerMask, Matrix4x4 leftView, Matrix4x4 leftProj, Matrix4x4 rightView, Matrix4x4 rightProj, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> visiblePortals, Vector2? focus = null)
         {
-            PortalRenderNode root = GetStereoRoot(localToWorld, cullView, cullProj, layerMask, leftView, leftProj, rightView, rightProj);
+            PortalRenderNode root = GetStereoRoot(camera, localToWorld, cullView, cullProj, layerMask, leftView, leftProj, rightView, rightProj);
 
             GetPredictiveTree(root, visiblePortals, minDepth, maxDepth, maxRenders, focus);
 
             return root;
         }
 
-        private static void GetPredictiveTree(PortalRenderNode root, IEnumerable<PortalRenderer> visiblePortals, int minDepth, int maxDepth, int maxRenders, Vector2? focus = null)
+        private static void GetPredictiveTree(PortalRenderNode root, IEnumerable<IPortalRenderer> visiblePortals, int minDepth, int maxDepth, int maxRenders, Vector2? focus = null)
         {
             _predictiveNodes.Clear();
 
@@ -213,12 +213,15 @@ namespace VRPortalToolkit.Rendering
                 next.isValid = true;
                 count++;
 
-                CreateChildrenNodes(next, next.renderer.visiblePortals);
+                //if (next.depth == 1)
+                //    CreateChildrenNodes(next, PortalRendering.GetAllPortalRenderers());
+                //else
+                CreateChildrenNodes(next, PortalRendering.GetVisiblePortalRenderers(next.portal));
 
-                if (next.depth < minDepth)
-                    AddChildrenToRequiredNodes(next);
-                else if (next.depth < maxDepth && count < maxRenders)
-                    AddChildrenToPredictiveNodes(next, focus);
+                //if (next.depth < minDepth)
+                //    AddChildrenToRequiredNodes(next);
+                //else if (next.depth < maxDepth && count < maxRenders)
+                AddChildrenToPredictiveNodes(next, focus);
             }
 
             // Anything after this point is an extra, but not required
@@ -231,16 +234,19 @@ namespace VRPortalToolkit.Rendering
                 next.renderNode.isValid = true;
                 count++;
 
-                CreateChildrenNodes(next.renderNode, next.renderNode.renderer.visiblePortals);
+                //if (next.renderNode.depth == 1)
+                //    CreateChildrenNodes(next.renderNode, PortalRendering.GetAllPortalRenderers());
+                //else
+                CreateChildrenNodes(next.renderNode, PortalRendering.GetVisiblePortalRenderers(next.renderNode.portal));
 
                 if (next.renderNode.depth < maxDepth && count < maxRenders)
                     AddChildrenToPredictiveNodes(next.renderNode, focus);
             }
         }
 
-        private static PortalRenderNode GetStereoRoot(Matrix4x4 localToWorld, Matrix4x4 cullView, Matrix4x4 cullProj, int layerMask, Matrix4x4 leftView, Matrix4x4 leftProj, Matrix4x4 rightView, Matrix4x4 rightProj)
+        private static PortalRenderNode GetStereoRoot(Camera camera, Matrix4x4 localToWorld, Matrix4x4 cullView, Matrix4x4 cullProj, int layerMask, Matrix4x4 leftView, Matrix4x4 leftProj, Matrix4x4 rightView, Matrix4x4 rightProj)
         {
-            PortalRenderNode root = PortalRenderNode.GetStereo(null, new ViewWindow(1f, 1f, 0f), new ViewWindow(1f, 1f, 0f));
+            PortalRenderNode root = PortalRenderNode.GetStereo(camera, null, new ViewWindow(1f, 1f, 0f), new ViewWindow(1f, 1f, 0f));
             root.isValid = true;
 
             root.connectedTeleportMatrix = root.teleportMatrix = Matrix4x4.identity;
@@ -254,9 +260,9 @@ namespace VRPortalToolkit.Rendering
             return root;
         }
 
-        private static PortalRenderNode GetRoot(Matrix4x4 localToWorld, Matrix4x4 view, Matrix4x4 proj, int layerMask)
+        private static PortalRenderNode GetRoot(Camera camera, Matrix4x4 localToWorld, Matrix4x4 view, Matrix4x4 proj, int layerMask)
         {
-            PortalRenderNode root = PortalRenderNode.Get(null, new ViewWindow(1f, 1f, 0f));
+            PortalRenderNode root = PortalRenderNode.Get(camera);
             root.isValid = true;
 
             root.connectedTeleportMatrix = root.teleportMatrix = Matrix4x4.identity;
@@ -267,39 +273,10 @@ namespace VRPortalToolkit.Rendering
             return root;
         }
 
-        private static void CreateChildrenNodes(PortalRenderNode parent, IEnumerable<PortalRenderer> visiblePortals)
+        private static void CreateChildrenNodes(PortalRenderNode parent, IEnumerable<IPortalRenderer> visiblePortals)
         {
-            PortalRenderNode root = parent.root;
-
-            if (parent.isStereo)
-            {
-                foreach (PortalRenderer renderer in visiblePortals)
-                {
-                    if (!renderer || ((1 << renderer.gameObject.layer) & parent.cullingMask) == 0) continue;
-
-                    bool leftValid = renderer.TryGetWindow(parent.localToWorldMatrix, parent.GetStereoViewMatrix(0), root.GetStereoProjectionMatrix(0), out ViewWindow leftWindow),
-                        rightValid = renderer.TryGetWindow(parent.localToWorldMatrix, parent.GetStereoViewMatrix(1), root.GetStereoProjectionMatrix(1), out ViewWindow rightWindow);
-
-                    if ((!leftValid || !leftWindow.IsVisibleThrough(parent.cullingWindow)) && (!rightValid || !rightWindow.IsVisibleThrough(parent.cullingWindow)))
-                        continue;
-
-                    PortalRenderNode child = PortalRenderNode.GetStereo(renderer, leftWindow, rightWindow, parent);
-                    child.isValid = false;
-                }
-            }
-            else
-            {
-                foreach (PortalRenderer renderer in visiblePortals)
-                {
-                    if (!renderer || ((1 << renderer.gameObject.layer) & parent.cullingMask) == 0) continue;
-
-                    if (renderer.TryGetWindow(parent.localToWorldMatrix, parent.worldToCameraMatrix, root.projectionMatrix, out ViewWindow window) && window.IsVisibleThrough(parent.cullingWindow))
-                    {
-                        PortalRenderNode child = PortalRenderNode.Get(renderer, window, parent);
-                        child.isValid = false;
-                    }
-                }
-            }
+            foreach (IPortalRenderer renderer in visiblePortals)
+                parent.GetOrAddChild(renderer);
         }
 
         private static void AddChildrenToBreadthFirstNodes(PortalRenderNode parent)

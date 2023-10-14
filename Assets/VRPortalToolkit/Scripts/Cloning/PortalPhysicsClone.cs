@@ -1,5 +1,3 @@
-using System;
-using Misc.Physics;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,8 +11,11 @@ namespace VRPortalToolkit
     // TODO: get rid of local layer
     // I dont know how, I just know I dont like it (and right now its broken)
 
-    public class PortalPhysicsClone : Misc.Physics.TriggerHandler
+    [DefaultExecutionOrder(1010)]
+    public class PortalPhysicsClone : MonoBehaviour
     {
+        private static readonly WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
+
         [SerializeField] private GameObject _original;
         public virtual GameObject original
         {
@@ -32,11 +33,9 @@ namespace VRPortalToolkit
                 }
             }
         }
-        public void ClearOriginal() => original = null;
 
         [SerializeField] private GameObject _template;
         public virtual GameObject template { get => _template; set => _template = value; }
-        public void ClearTemplate() => template = null;
 
         [SerializeField] private int _maxCloneCount = -1;
         public virtual int maxCloneCount
@@ -114,8 +113,10 @@ namespace VRPortalToolkit
         protected ObjectPool<CloneHandler> _clonePool = new ObjectPool<CloneHandler>(() => new CloneHandler(), null,
                 i => i.clone?.SetActive(false), i => { if (i.clone) Destroy(i.clone); });
 
-        protected ComponentHandler<Transform, PortalTransition> transitionHandler = new ComponentHandler<Transform, PortalTransition>();
-        protected ComponentHandler<Transform, PortalLayer> layerHandler = new ComponentHandler<Transform, PortalLayer>();
+        protected readonly TriggerHandler<PortalTransition> transitionHandler = new TriggerHandler<PortalTransition>();
+        protected readonly TriggerHandler<PortalLayer> layerHandler = new TriggerHandler<PortalLayer>();
+        protected readonly HashSet<Collider> _stayedColliders = new HashSet<Collider>();
+        private IEnumerator _waitFixedUpdateLoop;
 
         private PortalLayer _localLayer;
         protected PortalLayer localLayer
@@ -181,22 +182,16 @@ namespace VRPortalToolkit
         }
         protected virtual void Awake()
         {
-            transitionHandler.componentEntered = OnTriggerEnterTransition;
-            transitionHandler.componentExited = OnTriggerExitTransition;
-            transitionHandler.getComponentsMode = GetComponentsMode.GetComponents;
-            transitionHandler.exitOnComponentDisabled = transitionHandler.exitOnSourceDestroyed = false;
-            transitionHandler.enabled = true;
-
-            layerHandler.componentEntered = OnTriggerEnterLayer;
-            layerHandler.componentExited = OnTriggerExitLayer;
-            layerHandler.getComponentsMode = GetComponentsMode.GetComponents;
-            layerHandler.exitOnComponentDisabled = transitionHandler.exitOnSourceDestroyed = false;
-            layerHandler.enabled = true;
+            _waitFixedUpdateLoop = WaitFixedUpdateLoop();
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
+            transitionHandler.valueAdded += OnTriggerEnterTransition;
+            transitionHandler.valueRemoved += OnTriggerExitTransition;
+            layerHandler.valueAdded += OnTriggerEnterLayer;
+            layerHandler.valueRemoved += OnTriggerExitLayer;
+            StartCoroutine(_waitFixedUpdateLoop);
 
             PortalPhysics.lateFixedUpdate += LateFixedUpdate;
 
@@ -206,9 +201,13 @@ namespace VRPortalToolkit
             GenerateClones();
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
-            base.OnDisable();
+            transitionHandler.valueAdded -= OnTriggerEnterTransition;
+            transitionHandler.valueRemoved -= OnTriggerExitTransition;
+            layerHandler.valueAdded -= OnTriggerEnterLayer;
+            layerHandler.valueRemoved -= OnTriggerExitLayer;
+            StopCoroutine(_waitFixedUpdateLoop);
 
             PortalPhysics.lateFixedUpdate -= LateFixedUpdate;
 
@@ -216,6 +215,53 @@ namespace VRPortalToolkit
             PortalPhysics.RemovePostTeleportListener(transform, OnPostTeleport);
 
             ClearClones();
+        }
+
+        protected virtual void OnTriggerEnter(Collider other)
+        {
+            AddTransition(other);
+            AddLayer(other);
+        }
+
+        protected virtual void OnTriggerStay(Collider other)
+        {
+            if (!transitionHandler.HasCollider(other))
+                AddTransition(other);
+
+            if (!layerHandler.HasCollider(other))
+                AddLayer(other);
+
+            _stayedColliders.Add(other);
+        }
+
+        private void AddTransition(Collider other)
+        {
+            PortalTransition transition = other.attachedRigidbody ? other.attachedRigidbody.GetComponent<PortalTransition>() : other.GetComponent<PortalTransition>();
+            if (transition) transitionHandler.Add(other, transition);
+        }
+
+        private void AddLayer(Collider other)
+        {
+            PortalLayer layer = other.attachedRigidbody ? other.attachedRigidbody.GetComponent<PortalLayer>() : other.GetComponent<PortalLayer>();
+            if (layer) layerHandler.Add(other, layer);
+        }
+
+        protected virtual void OnTriggerExit(Collider other)
+        {
+            transitionHandler.RemoveCollider(other);
+            layerHandler.RemoveCollider(other);
+        }
+
+        private IEnumerator WaitFixedUpdateLoop()
+        {
+            while (true)
+            {
+                yield return _WaitForFixedUpdate;
+
+                transitionHandler.UpdateColliders(_stayedColliders);
+                layerHandler.UpdateColliders(_stayedColliders);
+                _stayedColliders.Clear();
+            }
         }
 
         protected virtual void OnDestroy()
@@ -268,7 +314,7 @@ namespace VRPortalToolkit
         {
             if (localLayer)
             {
-                if (localLayer.portalTransition && transitionHandler.HasComponent(localLayer.portalTransition))
+                if (localLayer.portalTransition && transitionHandler.HasValue(localLayer.portalTransition))
                     localState = PortalLayer.State.Inside;
                 else
                     localState = PortalLayer.State.Between;
@@ -301,6 +347,12 @@ namespace VRPortalToolkit
                         handler.clone = new GameObject();
                         PortalCloning.CreateClones(handler.original, handler.clone, portalAsArray, handler.rigidbodies);
                         PortalCloning.CreateClones(handler.original, handler.clone, portalAsArray, handler.colliders);
+
+                        foreach (PortalCloneInfo<Rigidbody> info in handler.rigidbodies)
+                            info.clone.gameObject.AddComponent<CloneCollisionEvents>();
+
+                        foreach (PortalCloneInfo<Collider> info in handler.colliders)
+                            if (!info.clone.attachedRigidbody) info.clone.gameObject.AddComponent<CloneCollisionEvents>();
                     }
 
                     PortalCloning.AddClones(handler.original, handler.clone, portalAsArray, handler.transforms);
@@ -422,7 +474,7 @@ namespace VRPortalToolkit
             if (component is PortalLayer)
             {
                 layer = (PortalLayer)component;
-                state = (layer.portalTransition && transitionHandler.HasComponent(layer.portalTransition)) ? PortalLayer.State.Inside : PortalLayer.State.Between;
+                state = (layer.portalTransition && transitionHandler.HasValue(layer.portalTransition)) ? PortalLayer.State.Inside : PortalLayer.State.Between;
 
                 portal = layer.portal;
             }
@@ -504,18 +556,6 @@ namespace VRPortalToolkit
 
         #region Trigger Events
 
-        protected override void OnTriggerEnterContainer(Transform container)
-        {
-            transitionHandler.EnterSource(container);
-            layerHandler.EnterSource(container);
-        }
-
-        protected override void OnTriggerExitContainer(Transform container)
-        {
-            transitionHandler.ExitSource(container);
-            layerHandler.ExitSource(container);
-        }
-
         protected virtual void OnTriggerEnterLayer(PortalLayer layer)
         {
             if (teleportOverride == layer) return;
@@ -542,7 +582,7 @@ namespace VRPortalToolkit
                 if (currentClones.ContainsKey(layer))
                 {
                     // Use the remainding portal transition if its available
-                    if (layer.portalTransition && transitionHandler.HasComponent(layer.portalTransition))
+                    if (layer.portalTransition && transitionHandler.HasValue(layer.portalTransition))
                     {
                         // Make sure no other layers use this transition
                         foreach (Component component in sortedTransitionsAndLayers)
@@ -595,10 +635,10 @@ namespace VRPortalToolkit
             }
 
             // Remove all the transitions/layers that are no longer used
-            foreach (PortalTransition transition in transitionHandler.GetComponents())
+            foreach (PortalTransition transition in transitionHandler.Values)
                 sortedTransitionsAndLayers.Remove(transition);
 
-            foreach (PortalLayer layer in layerHandler.GetComponents())
+            foreach (PortalLayer layer in layerHandler.Values)
                 sortedTransitionsAndLayers.Remove(layer);
 
             for (int i = 0; i < sortedTransitionsAndLayers.Count; i++)
@@ -607,12 +647,12 @@ namespace VRPortalToolkit
             sortedTransitionsAndLayers.Clear();
 
             // Add back all the ones that are still in use
-            foreach (PortalTransition transition in transitionHandler.GetComponents())
+            foreach (PortalTransition transition in transitionHandler.Values)
                 if (transition) sortedTransitionsAndLayers.Add(transition);
 
             int transitionCount = sortedTransitionsAndLayers.Count, index;
 
-            foreach (PortalLayer layer in layerHandler.GetComponents())
+            foreach (PortalLayer layer in layerHandler.Values)
             {
                 if (layer && layer.portalTransition)
                 {
@@ -654,10 +694,10 @@ namespace VRPortalToolkit
 
         protected virtual void ClearClones()
         {
-            foreach (PortalTransition transition in transitionHandler.GetComponents())
+            foreach (PortalTransition transition in transitionHandler.Values)
                 RemoveClone(transition);
 
-            foreach (PortalLayer layer in layerHandler.GetComponents())
+            foreach (PortalLayer layer in layerHandler.Values)
                 RemoveClone(layer);
         }
 
@@ -740,7 +780,7 @@ namespace VRPortalToolkit
                         ReplaceClone(layer, layer.connectedLayer);
 
                         localLayer = layer.connectedLayer;
-                        localState = transitionHandler.HasComponent(layer.portalTransition) ? PortalLayer.State.Inside : PortalLayer.State.Between;
+                        localState = transitionHandler.HasValue(layer.portalTransition) ? PortalLayer.State.Inside : PortalLayer.State.Between;
                         continue;
                     }
                 }

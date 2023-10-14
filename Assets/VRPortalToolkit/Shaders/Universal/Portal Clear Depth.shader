@@ -17,7 +17,7 @@ Shader "VRPortalToolkit/Clear Depth"
 		Pass
 		{
 			ZWrite On
-			Cull[_CullMode]
+			Cull[_PortalCullMode]
 			ZTest Always
 			ColorMask 0
 

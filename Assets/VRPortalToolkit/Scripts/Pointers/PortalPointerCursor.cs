@@ -217,7 +217,7 @@ namespace VRPortalToolkit.Pointers
             {
                 portal = raycaster.GetPortalRay(i).fromPortal;
 
-                if (portal && portal.usesTeleport) endMatrix = portal.connectedPortal.ModifyMatrix(endMatrix);
+                if (portal && portal.usesTeleport) endMatrix = portal.connected.ModifyMatrix(endMatrix);
             }
 
             origin = endMatrix.GetColumn(3);
@@ -274,7 +274,7 @@ namespace VRPortalToolkit.Pointers
                     // Need to unteleport
                     for (int j = portalTrace.Count - 1; j >= portalIndex; j--)
                     {
-                        tracePortal = portalTrace[j].connectedPortal;
+                        tracePortal = portalTrace[j].connected;
                         portalTrace.RemoveAt(j);
 
                         if (tracePortal) PortalPhysics.Teleport(_target, tracePortal);
@@ -301,7 +301,7 @@ namespace VRPortalToolkit.Pointers
             {
                 Portal portal = raycaster.GetPortalRay(i).fromPortal;
 
-                if (portal && portal.usesTeleport) portal.connectedPortal.ModifyDirection(ref direction);
+                if (portal && portal.usesTeleport) portal.connected.ModifyDirection(ref direction);
             }
 
             return direction.normalized;
@@ -330,14 +330,14 @@ namespace VRPortalToolkit.Pointers
 
         protected virtual void RaycasterPostTeleport(Teleportation args)
         {
-            if (args.fromPortal && args.fromPortal.connectedPortal)
+            if (args.fromPortal && args.fromPortal.connected)
             {
-                if (portalTrace.Count > 0 && portalTrace[0].connectedPortal == args.fromPortal.connectedPortal)
+                if (portalTrace.Count > 0 && portalTrace[0].connected == args.fromPortal.connected)
                     portalTrace.RemoveAt(0);
                 else
                 {
-                    raycasterEnd = args.fromPortal.connectedPortal.ModifyMatrix(raycasterEnd);
-                    portalTrace.Insert(0, args.fromPortal.connectedPortal);
+                    raycasterEnd = args.fromPortal.connected.ModifyMatrix(raycasterEnd);
+                    portalTrace.Insert(0, args.fromPortal.connected);
                 }
             }
             else

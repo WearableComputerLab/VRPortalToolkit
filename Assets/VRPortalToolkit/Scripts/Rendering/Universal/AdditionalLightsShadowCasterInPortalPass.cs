@@ -10,8 +10,6 @@ namespace VRPortalToolkit.Rendering.Universal
 {
     public class AdditionalLightsShadowCasterInPortalPass : AdditionalLightsShadowCasterPass
     {
-        public PortalRenderFeature feature { get; protected set; }
-
         public bool enabled { get; set; } = true;
 
         protected Texture prevShadowTexture;
@@ -22,9 +20,8 @@ namespace VRPortalToolkit.Rendering.Universal
         protected Vector4[] prevShadowOffset = new Vector4[4];
         protected Vector4 prevShadowmapSize;
 
-        public AdditionalLightsShadowCasterInPortalPass(PortalRenderFeature feature) : base(RenderPassEvent.AfterRenderingOpaques)
+        public AdditionalLightsShadowCasterInPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
-            this.feature = feature;
             profilingSampler = new ProfilingSampler(nameof(AdditionalLightsShadowCasterInPortalPass));
         }
 
@@ -50,7 +47,7 @@ namespace VRPortalToolkit.Rendering.Universal
         {
             if (enabled)
             {
-                if (feature.currentGroup.renderNode.isStereo)
+                if (PortalPassStack.Current.renderNode.isStereo)
                 {
                     CommandBuffer cmd = CommandBufferPool.Get();
 

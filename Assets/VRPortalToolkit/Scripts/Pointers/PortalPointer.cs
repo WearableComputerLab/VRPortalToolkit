@@ -5,10 +5,10 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.Pointers
 {
-    [DefaultExecutionOrder(100)]
+    [DefaultExecutionOrder(200)]
     public class PortalPointer : MonoBehaviour
     {
-        [SerializeField] private LayerMask _portalMask = 1 << 3; // TODO: change this on reset to default to a user defined value
+        [SerializeField] private LayerMask _portalMask = 1 << 3;
         public virtual LayerMask portalMask
         {
             get => _portalMask;
@@ -66,10 +66,8 @@ namespace VRPortalToolkit.Pointers
             set => _raycastTriggerInteraction = value;
         }
 
-        [Header("Raycast Events")]
-        public UnityEvent<PortalPointer> onRaycastEntered = new UnityEvent<PortalPointer>();
-        //public UnityEvent<PortalPointer> onRaycastStay;
-        public UnityEvent<PortalPointer> onRaycastExited = new UnityEvent<PortalPointer>();
+        public UnityAction<RaycastHit> raycastEntered;
+        public UnityAction<RaycastHit> raycastExited;
 
         [Header("Optional"), SerializeField] private PortalCaster _portalCaster;
         public PortalCaster portalCaster
@@ -113,6 +111,8 @@ namespace VRPortalToolkit.Pointers
 
         protected virtual void Reset()
         {
+            _portalMask = PortalPhysics.defaultPortalLayerMask;
+            _raycastMask = ~0 & ~(1 << 2) & ~(_portalMask);
             portalCaster = GetComponentInChildren<PortalCaster>();
         }
 
@@ -131,13 +131,13 @@ namespace VRPortalToolkit.Pointers
             if (hitPortalRaysIndex >= 0)
             {
                 RaycastExited();
-                hitInfo = default(RaycastHit);
+                hitInfo = default;
                 hitPortalRaysIndex = -1;
                 _portalRaysCount = 0;
             }
         }
 
-        protected virtual void OnDrawGizmos()
+        protected virtual void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.red;
 
@@ -154,6 +154,11 @@ namespace VRPortalToolkit.Pointers
                 PortalRay ray = GetPortalRay(i);
                 Gizmos.DrawRay(ray.origin, ray.direction);
             }
+        }
+
+        public virtual void Update()
+        {
+            Apply();
         }
 
         public virtual void FixedUpdate()
@@ -250,7 +255,7 @@ namespace VRPortalToolkit.Pointers
         protected virtual void RaycastEntered()
         {
             // Enter the raycast
-            onRaycastEntered?.Invoke(this);
+            raycastEntered?.Invoke(hitInfo);
         }
 
         /*protected virtual void RaycastUpdated()
@@ -262,7 +267,7 @@ namespace VRPortalToolkit.Pointers
         protected virtual void RaycastExited()
         {
             // Exit the previous one
-            onRaycastExited?.Invoke(this);
+            raycastExited?.Invoke(hitInfo);
         }
 
         public virtual int GetPortalRays(PortalRay[] portalRays)
@@ -282,6 +287,9 @@ namespace VRPortalToolkit.Pointers
 
             return portalRays[index];
         }
+
+        /// <inheritdoc />
+        public virtual bool TryGetHitInfo(out RaycastHit hitInfo) => TryGetHitInfo(out hitInfo, out int _);
 
         /// <inheritdoc />
         public virtual bool TryGetHitInfo(out RaycastHit hitInfo, out int portalRayIndex)

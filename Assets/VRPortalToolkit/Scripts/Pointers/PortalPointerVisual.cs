@@ -8,8 +8,6 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.Pointers
 {
-    // TODO: Need to make a serializable object ppol
-
     public class PortalPointerVisual : MonoBehaviour
     {
         [SerializeField] private PortalPointer _portalPointer;
@@ -33,24 +31,8 @@ namespace VRPortalToolkit.Pointers
             set => _stopAtContact = value;
         }
 
-        /*[SerializeField] private int _poolCapacity = -1;
-        public int poolCapacity
-        {
-            get => linePool.Count;
-            set
-            {
-                _poolCapacity = value;
-                if (linePool != null) linePool. = value;
-            }
-        }*/
-
         protected LinkedList<Transform> lines = new LinkedList<Transform>();
         protected ObjectPool<Transform> linePool;
-
-        /*protected virtual void OnValidate()
-        {
-            poolCapacity = _poolCapacity;
-        }*/
 
         protected virtual void Reset()
         {
@@ -63,16 +45,26 @@ namespace VRPortalToolkit.Pointers
             linePool = new ObjectPool<Transform>(CreateLine, null, null, DestroyLine);
         }
 
+        protected virtual void OnEnable()
+        {
+            Apply();
+        }
+
+        protected virtual void OnDisable()
+        {
+            UpdateRenderersCount(0);
+        }
+
         protected virtual Transform CreateLine()
         {
-            GameObject lineObject;
+            Transform line;
 
-            if (linePrefab) lineObject = Instantiate(linePrefab, transform.position, transform.rotation);
-            else lineObject = new GameObject($"[{gameObject.name}] Line Renderer");
+            if (linePrefab) line = Instantiate(linePrefab, transform.position, transform.rotation).transform;
+            else line = new GameObject($"[{gameObject.name}] Line Renderer").transform;
 
-            lineObject.transform.SetParent(transform, false);
+            line.SetParent(transform, false);
 
-            return lineObject.transform;
+            return line;
         }
 
         protected virtual void DestroyLine(Transform line)
@@ -87,7 +79,7 @@ namespace VRPortalToolkit.Pointers
 
         public virtual void Apply()
         {
-            if (portalPointer)
+            if (_portalPointer && _portalPointer.enabled)
             {
                 // TODO: Could optimise by only creating line renderers when a new portal rocks up in the array...
                 if (_stopAtContact && _portalPointer.TryGetHitInfo(out RaycastHit hitInfo, out int portalRayIndex))
@@ -107,6 +99,8 @@ namespace VRPortalToolkit.Pointers
                     ApplyPortalRaysToRenderers();
                 }
             }
+            else
+                UpdateRenderersCount(0);
         }
 
         protected void ApplyPortalRaysToRenderers()

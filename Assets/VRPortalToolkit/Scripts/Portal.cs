@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using UnityEngine;
 using UnityEngine.Events;
+using VRPortalToolkit.Physics;
 using VRPortalToolkit.Utilities;
 
 // Seam appear on objects going through portals
@@ -20,14 +21,14 @@ namespace VRPortalToolkit
 {
     public class Portal : MonoBehaviour, IPortal
     {
-        private Matrix4x4 _previousLocalToWorldMatrix;
+        private Matrix4x4 _previousWorldToLocalMatrix;
         internal Matrix4x4 previousWorldToLocalMatrix {
-            get => _previousLocalToWorldMatrix;
-            set => _previousLocalToWorldMatrix = value;
+            get => _previousWorldToLocalMatrix;
+            set => _previousWorldToLocalMatrix = value;
         }
 
         [SerializeField] private Portal _connectedPortal;
-        public Portal connectedPortal {
+        public Portal connected {
             get => _connectedPortal;
             set {
                 if (_connectedPortal != value && value != this)
@@ -42,6 +43,7 @@ namespace VRPortalToolkit
                 }
             }
         }
+        IPortal IPortal.connected => _connectedPortal;
 
         [Header("Local World")]
         [SerializeField] private Transform _localAnchor;
@@ -61,6 +63,9 @@ namespace VRPortalToolkit
             get => _localTags;
         }
 
+        public TeleportAction preTeleport;
+        public TeleportAction postTeleport;
+
         protected virtual void Reset()
         {
             localAnchor = transform;
@@ -68,7 +73,7 @@ namespace VRPortalToolkit
 
         protected virtual void OnValidate()
         {
-            Validate.FieldWithProperty(this, nameof(_connectedPortal), nameof(connectedPortal));
+            if (Application.isPlaying) Validate.FieldWithProperty(this, nameof(_connectedPortal), nameof(connected));
         }
 
         /// <inheritdoc/>
@@ -83,7 +88,7 @@ namespace VRPortalToolkit
             && _connectedPortal && _connectedPortal._localTags != null && _connectedPortal._localTags.Length != 0;
 
         /// <inheritdoc/>
-        public virtual Matrix4x4 teleportMatrix => _connectedPortal._localAnchor.localToWorldMatrix * _localAnchor.worldToLocalMatrix;
+        public virtual Matrix4x4 teleportMatrix => _connectedPortal ? _connectedPortal._localAnchor.localToWorldMatrix * _localAnchor.worldToLocalMatrix : Matrix4x4.identity;
 
         private Rigidbody _rigidbody;
         public new Rigidbody rigidbody {
@@ -92,30 +97,28 @@ namespace VRPortalToolkit
 
         private List<Collider> _colliders = new List<Collider>();
         private ReadOnlyCollection<Collider> _readOnlyColliders;
-        public IReadOnlyCollection<Collider> colliders {
-            get {
-                if (_readOnlyColliders == null)
-                {
-                    gameObject.GetColliders(false, _colliders);
-                    _readOnlyColliders = new ReadOnlyCollection<Collider>(_colliders);
-                }
-
-                return _readOnlyColliders;
-            }
-        }
+        public IReadOnlyCollection<Collider> colliders => _readOnlyColliders;
 
         #region Unity Functions
+
+        protected virtual void Awake()
+        {
+            GetComponentsInChildren(true, _colliders);
+            _readOnlyColliders = new ReadOnlyCollection<Collider>(_colliders);
+        }
 
         /// <summary>Add this to all portals.</summary>
         protected virtual void OnEnable()
         {
             PortalPhysics.RegisterPortal(this);
+            PortalPhysics.AddPostTeleportListener(transform, OnPostTeleport);
         }
 
         /// <summary>Remove this from all portals.</summary>
         protected virtual void OnDisable()
         {
             PortalPhysics.UnregisterPortal(this);
+            PortalPhysics.RemovePostTeleportListener(transform, OnPostTeleport);
         }
 
         /*protected virtual void OnDrawGizmos()
@@ -128,6 +131,11 @@ namespace VRPortalToolkit
         }*/
 
         #endregion
+
+        private void OnPostTeleport(Teleportation teleportation)
+        {
+            _previousWorldToLocalMatrix = transform.worldToLocalMatrix;
+        }
 
         #region Physics Casting Functions
 
@@ -173,16 +181,16 @@ namespace VRPortalToolkit
         {
             if (usesTeleport)
             {
-                Matrix4x4 matrix = ModifyMatrix(transform.localToWorldMatrix);
+                Matrix4x4 matrix = this.ModifyMatrix(transform.localToWorldMatrix);
 
                 transform.position = matrix.GetColumn(3);
                 transform.rotation = matrix.rotation;
                 transform.localScale = matrix.lossyScale;
 
-                if (rigidbody)
+                if (rigidbody && !rigidbody.isKinematic)
                 {
-                    rigidbody.velocity = ModifyVector(rigidbody.velocity);
-                    rigidbody.angularVelocity = ModifyVector(rigidbody.angularVelocity);
+                    rigidbody.velocity = this.ModifyVector(rigidbody.velocity);
+                    rigidbody.angularVelocity = this.ModifyVector(rigidbody.angularVelocity);
                 }
             }
 
@@ -191,19 +199,19 @@ namespace VRPortalToolkit
                 foreach (Transform child in transform)
                 {
                     if (usesTag)
-                        child.tag = ModifyTag(child.tag);
+                        child.tag = this.ModifyTag(child.tag);
 
                     if (usesLayers)
-                        child.gameObject.layer = ModifyLayer(child.gameObject.layer);
+                        child.gameObject.layer = this.ModifyLayer(child.gameObject.layer);
                 }
             }
             else
             {
                 if (usesTag)
-                    transform.tag = ModifyTag(transform.tag);
+                    transform.tag = this.ModifyTag(transform.tag);
 
                 if (usesLayers)
-                    transform.gameObject.layer = ModifyLayer(transform.gameObject.layer);
+                    transform.gameObject.layer = this.ModifyLayer(transform.gameObject.layer);
             }
         }
 
@@ -261,12 +269,6 @@ namespace VRPortalToolkit
             return false;
         }
 
-        public virtual int ModifyLayer(int layer)
-        {
-            ModifyLayer(ref layer);
-            return layer;
-        }
-
         /// <inheritdoc/>
         public virtual bool ModifyTag(ref string tag)
         {
@@ -288,12 +290,6 @@ namespace VRPortalToolkit
             return false;
         }
 
-        public virtual string ModifyTag(string tag)
-        {
-            ModifyTag(ref tag);
-            return tag;
-        }
-
         #region Teleport Functions
 
         /// <inheritdoc/>
@@ -308,12 +304,6 @@ namespace VRPortalToolkit
             return false;
         }
 
-        public virtual Matrix4x4 ModifyMatrix(Matrix4x4 localToWorldMatrix)
-        {
-            ModifyMatrix(ref localToWorldMatrix);
-            return localToWorldMatrix;
-        }
-
         /// <inheritdoc/>
         public virtual bool ModifyPoint(ref Vector3 point)
         {
@@ -324,12 +314,6 @@ namespace VRPortalToolkit
             }
 
             return false;
-        }
-
-        public virtual Vector3 ModifyPoint(Vector3 point)
-        {
-            ModifyPoint(ref point);
-            return point;
         }
 
         /// <inheritdoc/>
@@ -344,12 +328,6 @@ namespace VRPortalToolkit
             return false;
         }
 
-        public virtual Vector3 ModifyDirection(Vector3 direction)
-        {
-            ModifyDirection(ref direction);
-            return direction;
-        }
-
         /// <inheritdoc/>
         public virtual bool ModifyVector(ref Vector3 vector)
         {
@@ -362,12 +340,6 @@ namespace VRPortalToolkit
             return false;
         }
 
-        public virtual Vector3 ModifyVector(Vector3 vector)
-        {
-            ModifyVector(ref vector);
-            return vector;
-        }
-
         /// <inheritdoc/>
         public virtual bool ModifyRotation(ref Quaternion rotation)
         {
@@ -378,11 +350,6 @@ namespace VRPortalToolkit
             }
 
             return false;
-        }
-        public virtual Quaternion ModifyRotation(Quaternion rotation)
-        {
-            ModifyRotation(ref rotation);
-            return rotation;
         }
 
         #endregion

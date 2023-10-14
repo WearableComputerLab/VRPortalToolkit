@@ -20,7 +20,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateTag<TComponent>(PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
+        public static void UpdateTag<TComponent>(this PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -48,7 +48,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateLayer<TComponent>(PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
+        public static void UpdateLayer<TComponent>(this PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -76,7 +76,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateActiveAndEnabled<TComponent>(PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
+        public static void UpdateActiveAndEnabled<TComponent>(this PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -107,7 +107,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateEnabled<TComponent>(PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
+        public static void UpdateEnabled<TComponent>(this PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -132,7 +132,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateTransformWorld(PortalCloneInfo<Transform> cloneInfo)
+        public static void UpdateTransformWorld(this PortalCloneInfo<Transform> cloneInfo)
         {
             Transform original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -160,7 +160,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateTransformLocal(PortalCloneInfo<Transform> cloneInfo)
+        public static void UpdateTransformLocal(this PortalCloneInfo<Transform> cloneInfo)
         {
             Transform original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -235,7 +235,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateFields(PortalCloneInfo<Component> cloneInfo)
+        public static void UpdateFields(this PortalCloneInfo<Component> cloneInfo)
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
 
@@ -288,7 +288,7 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        public static void UpdateProperties(PortalCloneInfo<Component> cloneInfo)
+        public static void UpdateProperties(this PortalCloneInfo<Component> cloneInfo)
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
 

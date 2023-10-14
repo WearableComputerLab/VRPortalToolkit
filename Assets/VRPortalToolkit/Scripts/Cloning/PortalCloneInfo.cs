@@ -56,7 +56,7 @@ namespace VRPortalToolkit.Cloning
         {
             Portal other = _originalToClone[_originalToClone.Length - index - 1];
 
-            if (other != null) return other.connectedPortal;
+            if (other != null) return other.connected;
 
             return null;
         }

@@ -91,7 +91,7 @@ namespace VRPortalToolkit.Data
         /// Returns true if this is visible through another portal.
         /// </summary>
         public bool IsVisibleThrough(ViewWindow outerWindow)
-            => (zMax > outerWindow.zMin && xMax > outerWindow.xMin && xMin < outerWindow.xMax && yMax > outerWindow.yMin && yMin < outerWindow.yMax);
+            => (zMax >= outerWindow.zMin && xMax > outerWindow.xMin && xMin < outerWindow.xMax && yMax > outerWindow.yMin && yMin < outerWindow.yMax);
 
         public void ClampInside(ViewWindow outerWindow)
         {

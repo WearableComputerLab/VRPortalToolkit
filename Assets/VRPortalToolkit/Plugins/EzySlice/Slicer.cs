@@ -132,7 +132,7 @@ namespace EzySlice {
          * Returns null if no intersection has been found or the GameObject does not contain
          * a valid mesh to cut.
          */
-        // TODO: Modify up a version of this, should allow the vertices and things to be manually given
+        // VRPortalToolkit: Modified a verion of this, should allow the vertices and things to be manually given
         public static SlicedHull Slice(Mesh sharedMesh, Plane pl, TextureRegion region, int crossIndex) {
             if (sharedMesh == null) {
                 return null;

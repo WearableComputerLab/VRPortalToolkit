@@ -26,7 +26,7 @@ Shader "VRPortalToolkit/Portal Stereo"
          {
               ZWrite On
               ZTest[_ZTest]
-              Cull[_CullMode]
+              Cull[_PortalCullMode]
 
               Stencil
               {

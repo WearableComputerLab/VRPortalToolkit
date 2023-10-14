@@ -87,7 +87,7 @@ namespace VRPortalToolkit.Portables
         }
 
         // These are deprecated
-        //[Header("Portal Events")]
+        [Header("Portal Events")]
         [HideInInspector] public UnityEvent<Portal> preTeleport;
         [HideInInspector] public UnityEvent<Portal> postTeleport;
 
@@ -130,14 +130,14 @@ namespace VRPortalToolkit.Portables
 
         protected virtual void OnEnable()
         {
+            PortalPhysics.RegisterPortable(transform, this);
             AddTeleportListeners(transform);
-            PortalPhysics.TrackPortable(transform, this);
         }
 
         protected virtual void OnDisable()
         {
+            PortalPhysics.UnregisterPortable(transform, this);
             RemoveTeleportListeners(transform);
-            PortalPhysics.UntrackPortable(transform, this);
         }
 
         protected virtual void AddTeleportListeners(Transform source)

@@ -8,16 +8,20 @@ namespace VRPortalToolkit.Rendering.Universal
 {
     public class DrawSkyboxInPortalPass : PortalRenderPass
     {
-        public DrawSkyboxInPortalPass(PortalRenderFeature feature) : base(feature) { }
+        public DrawSkyboxInPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
+            if (renderingData.cameraData.camera.clearFlags != CameraClearFlags.Skybox)
+                return;
+
             CommandBuffer cmd = CommandBufferPool.Get();
 
             //using (new ProfilingScope(cmd, profilingSampler))
             {
-                Camera renderCamera = feature.renderCamera;
-                PortalRenderNode renderNode = feature.currentGroup.renderNode;
+                // TODO: Should not use portal render feature
+                Camera renderCamera = PortalRenderFeature.renderCamera;
+                PortalRenderNode renderNode = PortalPassStack.Current.renderNode;
 
                 // Need to clear the viewport for this to work
                 cmd.SetViewport(new Rect(0f, 0f, renderingData.cameraData.cameraTargetDescriptor.width, renderingData.cameraData.cameraTargetDescriptor.height));

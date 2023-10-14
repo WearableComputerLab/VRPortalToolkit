@@ -15,54 +15,137 @@ namespace VRPortalToolkit.Rendering
         private static ObjectPool<PortalRenderNode> _nodePool = new ObjectPool<PortalRenderNode>(() => new PortalRenderNode(false));
         private static ObjectPool<PortalRenderNode> _stereoNodePool = new ObjectPool<PortalRenderNode>(() => new PortalRenderNode(true));
 
-        public static PortalRenderNode Get(PortalRenderer renderer, ViewWindow window, PortalRenderNode parent = null)
+        public static PortalRenderNode Get(Camera camera)
         {
-            PortalRenderNode child = _nodePool.Get();
-            child.cullingWindow = child.window = window;
-            child._renderer = renderer;
+            PortalRenderNode node = _nodePool.Get();
+            node.cullingWindow = node.window = new ViewWindow(1f, 1f, 0f);
+            node.camera = camera;
 
-            Update(parent, child);
+            node._portal = null;
+            node._renderers.Clear();
+            node._parent = null;
+            node._depth = 0;
+            node._root = node;
+            node._children.Clear();
+            node._isValid = false;
+            node._root._isDirty = true;
+            node._isValid = false;
 
-            return child;
+            return node;
         }
 
-        public static PortalRenderNode GetStereo(PortalRenderer renderer, ViewWindow leftWindow, ViewWindow rightWindow, PortalRenderNode parent = null)
+        public static PortalRenderNode GetStereo(Camera camera, IPortalRenderer renderer, ViewWindow leftWindow, ViewWindow rightWindow)
         {
-            PortalRenderNode child = _stereoNodePool.Get();
-            child.cullingWindow = child.window = ViewWindow.Combine(leftWindow, rightWindow);
-            child._renderer = renderer;
+            PortalRenderNode node = _stereoNodePool.Get();
+            node.cullingWindow = node.window = new ViewWindow(1f, 1f, 0f);
+            node.camera = camera;
 
-            child._windows[0] = leftWindow;
-            child._windows[1] = rightWindow;
+            node._portal = null;
+            node._renderers.Clear();
+            node._parent = null;
+            node._depth = 0;
+            node._root = node;
+            node._children.Clear();
+            node._isValid = false;
+            node._root._isDirty = true;
+            node._isValid = false;
 
-            Update(parent, child);
+            node._windows[0] = node.window;
+            node._windows[1] = node.window;
 
-            return child;
+            return node;
         }
 
-        private static void Update(PortalRenderNode parent, PortalRenderNode child)
+        public PortalRenderNode GetOrAddChild(IPortalRenderer renderer)
         {
-            child._children.Clear();
-
-            if (parent == null)
+            if (_isStereo)
             {
-                child._parent = null;
-                child._depth = 0;
-                child._root = child;
+                if (((1 << renderer.layer) & cullingMask) == 0) return null;
+
+                bool leftValid = renderer.TryGetWindow(this, localToWorldMatrix.GetColumn(3), GetStereoViewMatrix(0), root.GetStereoProjectionMatrix(0), out ViewWindow leftWindow),
+                    rightValid = renderer.TryGetWindow(this, localToWorldMatrix.GetColumn(3), GetStereoViewMatrix(1), root.GetStereoProjectionMatrix(1), out ViewWindow rightWindow);
+
+                if ((!leftValid || !leftWindow.IsVisibleThrough(cullingWindow)) && (!rightValid || !rightWindow.IsVisibleThrough(cullingWindow)))
+                    return null;
+
+                return GetOrAddChild(renderer, leftWindow, rightWindow);
             }
             else
             {
-                child._parent = parent;
-                parent._children.Add(child);
+                if (((1 << renderer.layer) & cullingMask) == 0) return null;
 
-                child._depth = parent.depth + 1;
-                child._root = parent._root;
-                child.cullingWindow.ClampInside(parent.cullingWindow);
+                if (renderer.TryGetWindow(this, localToWorldMatrix.GetColumn(3), worldToCameraMatrix, root.projectionMatrix, out ViewWindow window) && window.IsVisibleThrough(cullingWindow))
+                    return GetOrAddChild(renderer, window);
+            }
+
+            return null;
+        }
+
+        public PortalRenderNode GetOrAddChild(IPortalRenderer renderer, ViewWindow window)
+        {
+            if (renderer == null || renderer.portal == null) return null;
+
+            if (TryGetChild(renderer.portal, out PortalRenderNode child))
+            {
+                // Already exists
+                child._renderers.Add(renderer);
+                child.cullingWindow = child.window = ViewWindow.Combine(child.window, window);
+            }
+            else
+            {
+                // First one to be added
+                child = isStereo ? _stereoNodePool.Get() : _nodePool.Get();
+                child._children.Clear();
+
+                child.cullingWindow = child.window = window;
+                child._renderers.Add(renderer);
+                child._portal = renderer?.portal;
+                child.camera = camera;
+
+                child._parent = this;
+                _children.Add(child);
+
+                child._depth = depth + 1;
+                child._root = _root;
             }
 
             child._isValid = false;
-
             child._root._isDirty = true;
+            child.cullingWindow.ClampInside(cullingWindow);
+
+            return child;
+        }
+
+        public PortalRenderNode GetOrAddChild(IPortalRenderer renderer, ViewWindow leftWindow, ViewWindow rightWindow)
+        {
+            if (renderer == null || renderer.portal == null) return null;
+
+            ViewWindow window = ViewWindow.Combine(leftWindow, rightWindow);
+
+            PortalRenderNode child = GetOrAddChild(renderer, window);
+
+            if (child.isStereo)
+            {
+                child._windows[0] = leftWindow;
+                child._windows[1] = rightWindow;
+            }
+
+            return child;
+        }
+
+        private bool TryGetChild(IPortal portal, out PortalRenderNode child)
+        {
+            foreach (PortalRenderNode other in _children)
+            {
+                if (other.portal == portal)
+                {
+                    child = other;
+                    return true;
+                }
+            }
+
+            child = null;
+            return false;
         }
 
         public static void Release(PortalRenderNode node)
@@ -78,11 +161,20 @@ namespace VRPortalToolkit.Rendering
                 _stereoNodePool.Release(node);
             else
                 _nodePool.Release(node);
+
+            node._portal = null;
+            node._renderers.Clear();
         }
 
         /// <summary>The portal to track.</summary>
-        private PortalRenderer _renderer;
-        public PortalRenderer renderer => _renderer;
+        //private IPortalRenderer _renderer;_
+        private readonly List<IPortalRenderer> _renderers = new List<IPortalRenderer>(1);
+        public IEnumerable<IPortalRenderer> renderers => _renderers;
+        public IPortalRenderer renderer => _renderers.Count > 0 ? _renderers[0] : null;
+
+        private IPortal _portal;
+        public IPortal portal => _portal;
+
 
         private PortalRenderNode _root;
         public PortalRenderNode root => _root;
@@ -205,6 +297,8 @@ namespace VRPortalToolkit.Rendering
             }
         }
 
+        public Camera camera;
+
         public Matrix4x4 connectedTeleportMatrix;
 
         public Matrix4x4 teleportMatrix;
@@ -215,21 +309,21 @@ namespace VRPortalToolkit.Rendering
 
         public Matrix4x4 projectionMatrix;
 
-        private Matrix4x4[] _viewMatrices;
+        private readonly Matrix4x4[] _viewMatrices;
 
-        private Matrix4x4[] _projectionMatrices;
+        private readonly Matrix4x4[] _projectionMatrices;
 
         /// <summary>The viewport window this portal can be seen through.</summary>
         public ViewWindow cullingWindow;
 
         public ViewWindow window;
 
-        private ViewWindow[] _windows;
+        private readonly ViewWindow[] _windows;
 
         private PortalRenderNode _parent;
-        public PortalRenderNode parent => _parent; 
+        public PortalRenderNode parent => _parent;
 
-        private List<PortalRenderNode> _children = new List<PortalRenderNode>(2);
+        private readonly List<PortalRenderNode> _children = new List<PortalRenderNode>(2);
 
         public IEnumerable<PortalRenderNode> children
         {
@@ -314,21 +408,21 @@ namespace VRPortalToolkit.Rendering
             return $"PortalRenderNode(index: {index}, depth: {depth}, isValid: {isValid}, validIndex: {validIndex}, isStero: {isStereo}, parentIndex: {parentToString})";
         }
 
-        /*public void SetStereoWindow(int index, ViewWindow window)
+        public void SetStereoWindow(int index, ViewWindow window)
         {
-            if (_windows == null) _windows = new ViewWindow[2];
+            if (_windows != null)
 
-            _windows[index] = window;
+                _windows[index] = window;
         }
 
         public void SetStereoWindows(ViewWindow leftWindow, ViewWindow rightWindow)
         {
-            if (_windows == null) _windows = new ViewWindow[2];
+            if (_windows != null)
             {
                 _windows[0] = leftWindow;
                 _windows[1] = rightWindow;
             }
-        }*/
+        }
 
         public void Dispose()
         {
@@ -393,19 +487,32 @@ namespace VRPortalToolkit.Rendering
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        public void SortChildren(IComparer<PortalRenderNode> comparer, bool recursive = false)
+        {
+            _children.Sort(comparer);
+
+            if (recursive)
+            {
+                foreach (PortalRenderNode child in _children)
+                    child.SortChildren(comparer, recursive);
+            }
+
+            _root._isDirty = true;
+        }
+
         // This node will be used for rendering, so need to calculate matrices
         public void ComputeMaskAndMatrices()
         {
-            if (_parent != null && renderer != null)
+            if (_parent != null && portal != null)
             {
-                if (_renderer.portal.usesLayers)
-                    cullingMask = _renderer.portal.ModifyLayerMask(_parent.cullingMask);
+                if (_portal.usesLayers)
+                    cullingMask = _portal.ModifyLayerMask(_parent.cullingMask);
                 else
                     cullingMask = _parent.cullingMask;
 
-                if (_renderer.portal.usesTeleport)
+                if (_portal.usesTeleport)
                 {
-                    Matrix4x4 teleport = _renderer.portal.teleportMatrix, connectedTeleport = _renderer.portal.connectedPortal.teleportMatrix;
+                    Matrix4x4 teleport = _portal.teleportMatrix, connectedTeleport = _portal.connected.teleportMatrix;
 
                     teleportMatrix = teleport * _parent.teleportMatrix;
                     connectedTeleportMatrix = connectedTeleport * _parent.connectedTeleportMatrix;
@@ -442,17 +549,19 @@ namespace VRPortalToolkit.Rendering
                 }
 
                 // Clip the projection matrix by the plane
-                if (_renderer.TryGetClippingPlane(null, _parent, out Vector3 clippingCentre, out Vector3 clippingNormal))
+                foreach (IPortalRenderer renderer in _renderers)
                 {
-                    projectionMatrix = CameraUtility.CalculateObliqueMatrix(_parent.worldToCameraMatrix, projectionMatrix,
-                        _parent.localToWorldMatrix.GetColumn(3), clippingCentre, clippingNormal);
-
-                    if (_isStereo)
+                    if (renderer.TryGetClippingPlane(_parent, out Vector3 clippingCentre, out Vector3 clippingNormal))
                     {
-                        _projectionMatrices[0] = CameraUtility.CalculateObliqueMatrix(_parent._viewMatrices[0], _projectionMatrices[0],
-                            _parent.localToWorldMatrix.GetColumn(3), clippingCentre, clippingNormal);
-                        _projectionMatrices[1] = CameraUtility.CalculateObliqueMatrix(_parent._viewMatrices[1], _projectionMatrices[1],
-                            _parent.localToWorldMatrix.GetColumn(3), clippingCentre, clippingNormal);
+                        projectionMatrix = CameraUtility.CalculateObliqueMatrix(_parent.worldToCameraMatrix, projectionMatrix, clippingCentre, clippingNormal);
+
+                        if (_isStereo)
+                        {
+                            _projectionMatrices[0] = CameraUtility.CalculateObliqueMatrix(_parent._viewMatrices[0], _projectionMatrices[0], clippingCentre, clippingNormal);
+                            _projectionMatrices[1] = CameraUtility.CalculateObliqueMatrix(_parent._viewMatrices[1], _projectionMatrices[1], clippingCentre, clippingNormal);
+                        }
+
+                        break;
                     }
                 }
 

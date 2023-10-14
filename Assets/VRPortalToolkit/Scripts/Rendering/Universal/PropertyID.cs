@@ -6,6 +6,9 @@ namespace VRPortalToolkit.Rendering
 {
     public static class PropertyID
     {
+        public static readonly int ClippingCentre = Shader.PropertyToID("_ClippingCentre");
+        public static readonly int ClippingNormal = Shader.PropertyToID("_ClippingNormal");
+
         public static readonly int MainTex = Shader.PropertyToID("_MainTex");
         public static readonly int MainTex_ST = Shader.PropertyToID("_MainTex_ST");
         public static readonly int MainTex_ST_2 = Shader.PropertyToID("_MainTex_ST_2");
@@ -16,6 +19,9 @@ namespace VRPortalToolkit.Rendering
         public static readonly int StencilOp = Shader.PropertyToID("_StencilOp");
         public static readonly int StencilReadMask = Shader.PropertyToID("_StencilReadMask");
         public static readonly int StencilWriteMask = Shader.PropertyToID("_StencilWriteMask");
+
+        public static readonly int PortalCullMode = Shader.PropertyToID("_PortalCullMode");
+        public static readonly int CullMode = Shader.PropertyToID("_CullMode");
 
         public static readonly int CameraColorTexture = Shader.PropertyToID("_CameraColorTexture");
 

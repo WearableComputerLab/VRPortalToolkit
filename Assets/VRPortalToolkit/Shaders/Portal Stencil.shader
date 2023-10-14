@@ -24,7 +24,7 @@ Shader "VRPortalToolkit/Portal Stencil"
          {
               ZWrite[_ZWrite]
               ZTest[_ZTest]
-              Cull[_CullMode]
+              Cull[_PortalCullMode]
               ColorMask 0
 
               Stencil

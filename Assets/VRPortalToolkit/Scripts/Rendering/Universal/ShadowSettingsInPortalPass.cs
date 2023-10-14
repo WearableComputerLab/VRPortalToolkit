@@ -11,7 +11,7 @@ namespace VRPortalToolkit.Rendering.Universal
     {
         public bool supportsShadows { get; set; }
 
-        public ShadowSettingsInPortalPass(PortalRenderFeature feature, bool supportsShadows) : base(feature)
+        public ShadowSettingsInPortalPass(bool supportsShadows, RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
             this.supportsShadows = supportsShadows;
         }

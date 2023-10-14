@@ -80,8 +80,8 @@ namespace VRPortalToolkit
             RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             //RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
 
-            PortalRenderer.onPreRender += OnPortalPreCull;
-            PortalRenderer.onPostRender += OnPortalPostRender;
+            PortalRendering.onPreRender += OnPortalPreCull;
+            PortalRendering.onPostRender += OnPortalPostRender;
 
             if (_showing) show?.Invoke();
             else hide?.Invoke();
@@ -95,8 +95,8 @@ namespace VRPortalToolkit
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             //RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
 
-            PortalRenderer.onPreRender -= OnPortalPreCull;
-            PortalRenderer.onPostRender -= OnPortalPostRender;
+            PortalRendering.onPreRender -= OnPortalPreCull;
+            PortalRendering.onPostRender -= OnPortalPostRender;
         }
 
         protected virtual void OnBeginCameraRendering(ScriptableRenderContext _, Camera camera) => CheckNonPortal(camera);
@@ -115,17 +115,17 @@ namespace VRPortalToolkit
                 showing = _inverted;
         }
 
-        protected virtual void OnPortalPreCull(Camera camera, PortalRenderNode renderNode) => CheckPortal(camera, renderNode);
+        protected virtual void OnPortalPreCull(PortalRenderNode renderNode) => CheckPortal(renderNode);
 
-        protected virtual void OnPortalPostRender(Camera camera, PortalRenderNode renderNode)
+        protected virtual void OnPortalPostRender(PortalRenderNode renderNode)
         {
-            if (renderNode.parent.renderer)
-                CheckPortal(camera, renderNode.parent);
+            if (renderNode.parent.portal != null)
+                CheckPortal(renderNode.parent);
             else
-                CheckNonPortal(camera);
+                CheckNonPortal(renderNode.camera);
         }
 
-        protected virtual void CheckPortal(Camera camera, PortalRenderNode renderNode)
+        protected virtual void CheckPortal(PortalRenderNode renderNode)
         {
             //previousEnabled = showing;
 
@@ -136,10 +136,10 @@ namespace VRPortalToolkit
             {
                 PortalRenderNode firstNode = renderNode;
 
-                while (firstNode.parent != null && firstNode.parent.renderer)
+                while (firstNode.parent != null && firstNode.parent.portal != null)
                     firstNode = firstNode.parent;
 
-                Portal first = firstNode.renderer.portal;
+                Portal first = firstNode.portal as Portal;
 
                 foreach (Portal portal in portals)
                 {
@@ -154,7 +154,7 @@ namespace VRPortalToolkit
             // LastMatchesAnyPortal
             if (_includes.HasFlag(Include.LastMatchesAnyPortal))
             {
-                Portal last = renderNode.renderer.portal;
+                Portal last = renderNode.portal as Portal;
 
                 foreach (Portal portal in portals)
                 {
@@ -174,7 +174,7 @@ namespace VRPortalToolkit
 
                 do
                 {
-                    current = currentNode.renderer.portal;
+                    current = currentNode.portal as Portal;
 
                     foreach (Portal portal in portals)
                     {
@@ -185,7 +185,7 @@ namespace VRPortalToolkit
                         }
                     }
 
-                } while (currentNode != null && currentNode.renderer);
+                } while (currentNode != null && currentNode.portal != null);
             }
 
             // StartMatchesPortalsAsPath
