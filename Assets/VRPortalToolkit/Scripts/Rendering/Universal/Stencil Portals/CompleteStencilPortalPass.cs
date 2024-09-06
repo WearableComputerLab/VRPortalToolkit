@@ -27,6 +27,10 @@ namespace VRPortalToolkit.Rendering.Universal
                 PortalPassNode passNode = PortalPassStack.Pop();
                 PortalRenderNode renderNode = passNode.renderNode;
 
+                Material decreaseMaterial = renderNode.overrides.portalDecrease ? renderNode.overrides.portalDecrease : this.decreaseMaterial,
+                    depthMaterial = renderNode.overrides.portalDepthOnly ? renderNode.overrides.portalDepthOnly : this.depthMaterial,
+                    clearDepthMaterial = renderNode.overrides.portalClearDepth ? renderNode.overrides.portalClearDepth : this.clearDepthMaterial;
+
                 // Release shadow textures
                 if (passNode.mainLightShadowCasterPass != null)
                     passNode.mainLightShadowCasterPass.OnPortalCleanup(cmd);

@@ -20,12 +20,6 @@ namespace VRPortalToolkit.Rendering.Universal
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            if (!material)
-            {
-                Debug.LogError(nameof(DrawTexturePortalsPass) + " requires a material!");
-                return;
-            }
-
             CommandBuffer cmd = CommandBufferPool.Get();
 
             //using (new ProfilingScope(cmd, profilingSampler))
@@ -51,6 +45,8 @@ namespace VRPortalToolkit.Rendering.Universal
                 {
                     if (renderNode.isValid)
                     {
+                        Material material = renderNode.overrides.portalStereo ? renderNode.overrides.portalStereo : this.material;
+
                         if (RenderPortalsBuffer.TryGetBuffer(renderNode, out RenderPortalsBuffer buffer))
                         {
                             propertyBlock.SetTexture(PropertyID.MainTex, buffer.texture);

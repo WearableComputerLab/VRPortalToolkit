@@ -35,6 +35,9 @@ namespace VRPortalToolkit.Rendering.Universal
                 PortalPassStack.Push(passNode);
                 PortalRenderNode renderNode = passNode.renderNode;
 
+                Material increaseMaterial = renderNode.overrides.portalIncrease ? renderNode.overrides.portalIncrease : this.increaseMaterial,
+                    clearDepthMaterial = renderNode.overrides.portalClearDepth ? renderNode.overrides.portalClearDepth : this.clearDepthMaterial;
+
                 PortalPassStack.Parent.SetViewAndProjectionMatrices(cmd);
 
                 // Masking

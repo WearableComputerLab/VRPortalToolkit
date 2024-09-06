@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,35 +10,11 @@ namespace VRPortalToolkit.Rendering
 {
     public abstract class PortalRendererBase : MonoBehaviour, IPortalRenderer
     {
-        [SerializeField] private Portal _portal;
-        /// <summary>The portal this is required to render.</summary>
-        public Portal portal
-        {
-            get =>_portal;
-            set => _portal = value;
-        }
+        int IPortalRenderer.Layer => gameObject.layer;
 
-        int IPortalRenderer.layer => gameObject.layer;
-        IPortal IPortalRenderer.portal => portal;
+        public virtual PortalRendererSettings Overrides => default;
 
-        /*[SerializeField] private Texture _texture;
-        public Texture texture {
-            get => _texture;
-            set => _texture = value;
-        }
-
-        [SerializeField] private Color _color = Color.white;
-        public Color color {
-            get => _color;
-            set => _color = value;
-        }*/
-
-        protected virtual void Reset()
-        {
-            _portal = GetComponentInChildren<Portal>(true);
-
-            if (!_portal) _portal = GetComponentInParent<Portal>();
-        }
+        public abstract IPortal Portal { get; }
 
         protected virtual void OnEnable()
         {

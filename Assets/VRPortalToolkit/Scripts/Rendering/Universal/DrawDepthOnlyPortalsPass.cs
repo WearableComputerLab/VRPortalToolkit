@@ -32,6 +32,8 @@ namespace VRPortalToolkit.Rendering.Universal
 
                 foreach (PortalRenderNode renderNode in parentNode.children)
                 {
+                    Material depthOnlyMaterial = renderNode.overrides.portalDepthOnly ? renderNode.overrides.portalDepthOnly : this.depthOnlyMaterial;
+
                     foreach (IPortalRenderer renderer in renderNode.renderers)
                         renderer.Render(renderNode, cmd, depthOnlyMaterial);
                 }

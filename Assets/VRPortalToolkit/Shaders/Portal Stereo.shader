@@ -6,9 +6,7 @@ Shader "VRPortalToolkit/Portal Stereo"
         [MainColor] _Color("Color", Color) = (1, 1, 1, 1)
 
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest("Z Test", Float) = 4
-        [Enum(UnityEngine.Rendering.CullMode)] _CullMode("Cull Mode", Float) = 0
         [Enum(UnityEngine.Rendering.CompareFunction)] _StencilComp("Stencil Comparison", Float) = 8
-        //_StencilRef("Stencil Reference", Float) = 0
         [Enum(UnityEngine.Rendering.StencilOp)] _StencilOp("Stencil Operation", Float) = 0
         _StencilReadMask("Stencil Read Mask", Float) = 255
         _StencilWriteMask("Stencil Write Mask", Float) = 255

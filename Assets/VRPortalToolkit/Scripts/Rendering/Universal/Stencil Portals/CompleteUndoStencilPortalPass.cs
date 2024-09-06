@@ -41,6 +41,8 @@ namespace VRPortalToolkit.Rendering.Universal
                 PortalPassStack.Current.RestoreState(cmd, ref renderingData);
                 PortalPassStack.Current.SetViewAndProjectionMatrices(cmd);
 
+                Material decreaseMaterial = renderNode.overrides.portalDecrease ? renderNode.overrides.portalDecrease : this.decreaseMaterial;
+
                 // Unmask
                 if (decreaseMaterial)
                 {

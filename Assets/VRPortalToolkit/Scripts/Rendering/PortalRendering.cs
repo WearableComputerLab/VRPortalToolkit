@@ -1,4 +1,5 @@
 using Misc;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -17,11 +18,33 @@ namespace VRPortalToolkit.Rendering
         void GetTransitionPlane(out Vector3 planeCentre, out Vector3 planeNormal);
     }
 
+    [Serializable]
+    public struct PortalRendererSettings : IEquatable<PortalRendererSettings>
+    {
+        public Material portalStereo;
+
+        public Material portalIncrease;
+
+        public Material portalDecrease;
+
+        public Material portalClearDepth;
+
+        public Material portalDepthOnly;
+
+        public bool depthNormalTexture;
+
+        public bool Equals(PortalRendererSettings other) =>
+             depthNormalTexture == other.depthNormalTexture && portalStereo == other.portalStereo && portalIncrease == other.portalIncrease &&
+            portalDecrease == other.portalDecrease && portalClearDepth == other.portalClearDepth && portalDepthOnly == other.portalDepthOnly;
+    }
+
     public interface IPortalRenderer
     {
-        int layer { get; }
+        int Layer { get; }
 
-        IPortal portal { get; }
+        IPortal Portal { get; }
+
+        PortalRendererSettings Overrides { get; }
 
         bool TryGetWindow(PortalRenderNode renderNode, Vector3 cameraPosition, Matrix4x4 view, Matrix4x4 proj, out ViewWindow innerWindow);
 
@@ -68,13 +91,13 @@ namespace VRPortalToolkit.Rendering
 
             foreach (IPortalRenderer renderer in GetAllPortalRenderers())
             {
-                if (renderer.portal != connected)
+                if (renderer.Portal != connected)
                     yield return renderer;
             }
         }
 
         public static IEnumerable<IPortalRenderer> GetVisiblePortalRenderers(this IPortalRenderer renderer) =>
-            GetVisiblePortalRenderers(renderer.portal);
+            GetVisiblePortalRenderers(renderer.Portal);
 
         public static void RegisterPortalRenderer(IPortalRenderer renderer)
         {
@@ -128,9 +151,9 @@ namespace VRPortalToolkit.Rendering
 
         public static bool TryGetTransition(Camera camera, out IPortal portal, out Vector3 transitionCentre, out Vector3 transitionNormal)
         {
-            if (_transitionByCamera.TryGetValue(camera, out PortalCameraTransitionRenderer renderer) && renderer.portal != null)
+            if (_transitionByCamera.TryGetValue(camera, out PortalCameraTransitionRenderer renderer) && renderer.Portal != null)
             {
-                portal = renderer.portal;
+                portal = renderer.Portal;
                 renderer.transition.GetTransitionPlane(out transitionCentre, out transitionNormal);
                 return true;
             }

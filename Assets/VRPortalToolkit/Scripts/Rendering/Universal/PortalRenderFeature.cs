@@ -1,11 +1,10 @@
 using Misc.EditorHelpers;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditorInternal.VersionControl;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.UIElements;
-using UnityEngine.XR.Interaction.Toolkit;
 using VRPortalToolkit.Data;
 using VRPortalToolkit.Utilities;
 
@@ -205,6 +204,7 @@ namespace VRPortalToolkit.Rendering.Universal
 
         protected BeginUndoStencilPortalPass beginUndoStencilPass;
         protected CompleteUndoStencilPortalPass completeUndoStencilPass;
+        protected PortalDepthNormalsPass portalDepthNormalsPass;
 
         protected class PortalStencilPasses : PortalShadowPasses
         {
@@ -275,6 +275,7 @@ namespace VRPortalToolkit.Rendering.Universal
             completePass = new CompletePortalPass();
             beginUndoStencilPass = new BeginUndoStencilPortalPass();
             completeUndoStencilPass = new CompleteUndoStencilPortalPass();
+            portalDepthNormalsPass = new PortalDepthNormalsPass();
 
             if (shaderByIds == null) shaderByIds = new ShaderTagId[]
             {
@@ -384,12 +385,13 @@ namespace VRPortalToolkit.Rendering.Universal
             drawOpaquesPass.filteringSettings = opaqueFiltering;
             drawTransparentsPass.drawingSettings = transparentDrawing;
             drawTransparentsPass.filteringSettings = transparentFiltering;
+            portalDepthNormalsPass.drawingSettings = opaqueDrawing;
+            portalDepthNormalsPass.filteringSettings = opaqueFiltering;
 
             blankRenderPass.material = _portalStereo;
             renderBufferPass.material = _portalStereo;
             portalBlankRenderPass.material = _portalStereo;
             portalRenderBufferPass.material = _portalStereo;
-
             depthOnlyPass.depthOnlyMaterial = _portalDepthOnly;
 
             if (_renderMode == RenderMode.RenderTexture)
@@ -481,7 +483,7 @@ namespace VRPortalToolkit.Rendering.Universal
                 PortalRenderNode undoNode = null;
                 foreach (IPortalRenderer portalRenderer in PortalRendering.GetAllPortalRenderers())
                 {
-                    if (portalRenderer.portal == connected)
+                    if (portalRenderer.Portal == connected)
                     {
                         PortalRenderNode other = GetOrAddChild(portalNode, portalRenderer);
                         if (other != null) undoNode = other;
@@ -505,7 +507,7 @@ namespace VRPortalToolkit.Rendering.Universal
         {
             if (parent.isStereo)
             {
-                if (((1 << renderer.layer) & parent.cullingMask) == 0) return null;
+                if (((1 << renderer.Layer) & parent.cullingMask) == 0) return null;
 
                 Matrix4x4 leftView = parent.GetStereoViewMatrix(0), leftProj = parent.root.GetStereoProjectionMatrix(0),
                     rightView = parent.GetStereoViewMatrix(1), rightProj = parent.root.GetStereoProjectionMatrix(1);
@@ -520,7 +522,7 @@ namespace VRPortalToolkit.Rendering.Universal
             }
             else
             {
-                if (((1 << renderer.layer) & parent.cullingMask) == 0) return null;
+                if (((1 << renderer.Layer) & parent.cullingMask) == 0) return null;
 
                 if (renderer.TryGetWindow(parent, parent.localToWorldMatrix.GetColumn(3), parent.worldToCameraMatrix, parent.root.projectionMatrix, out ViewWindow window) && window.IsVisibleThrough(parent.cullingWindow))
                     return parent.GetOrAddChild(renderer, window);
@@ -594,6 +596,9 @@ namespace VRPortalToolkit.Rendering.Universal
                     };
 
                     PortalStencilPasses passPair = portalStencilPasses[index];
+
+                    if (child.overrides.depthNormalTexture)
+                        renderer.EnqueuePass(portalDepthNormalsPass);
 
                     if (child != undoNode)
                     {
@@ -704,6 +709,9 @@ namespace VRPortalToolkit.Rendering.Universal
 
                     passPair.beginRenderPass.Resolution = resolution;
                     renderer.EnqueuePass(passPair.beginRenderPass);
+
+                    if (child.overrides.depthNormalTexture)
+                        renderer.EnqueuePass(portalDepthNormalsPass);
 
                     // Main shadows
                     if (child.depth <= maxShadowDepth && renderingData.shadowData.supportsMainLightShadows)

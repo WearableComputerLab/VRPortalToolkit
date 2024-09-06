@@ -5,9 +5,8 @@ using UnityEngine.XR.Interaction.Toolkit;
 
 namespace VRPortalToolkit.XRI
 {
-
     [RequireComponent(typeof(XRPortalInteractable))]
-    public class XRPortalVisibleExpand : MonoBehaviour, IPortalRectRequester
+    public class XRAdapativePortalVisualBounds : MonoBehaviour, IAdaptivePortalProcessor
     {
         [SerializeField] private Transform _target;
         public Transform target
@@ -36,12 +35,13 @@ namespace VRPortalToolkit.XRI
             get => _requiresActive;
             set => _requiresActive = value;
         }
+        int IAdaptivePortalProcessor.Order => 0;
 
         private XRPortalInteractable _interactable;
         private IXRSelectInteractor _interactor;
         private PortalRelativePosition _interactorPositioning;
 
-        protected void OnDrawGizmos()
+        protected void OnDrawGizmosSelected()
         {
             if (_target)
             {
@@ -102,13 +102,10 @@ namespace VRPortalToolkit.XRI
             new Vector3 (-1, 1, -1), new Vector3 (1, -1, -1), new Vector3 (1, 1, -1), new Vector3 (1, -1, 1),
         };
 
-        public bool TryGetRect(out Rect rect)
+        void IAdaptivePortalProcessor.Process(ref AdaptivePortalTransform apTransform)
         {
             if (!isActiveAndEnabled || !_interactable || !_interactable.connected || _interactor == null || !_interactorPositioning || !_target || (_requiresActive && !_target.gameObject.activeInHierarchy))
-            {
-                rect = default;
-                return false;
-            }
+                return;
 
             Vector2 min = new Vector2(float.MaxValue, float.MaxValue), max = new Vector2(float.MinValue, float.MinValue);
             Plane plane = new Plane(_interactable.connected.transform.forward, _interactable.connected.transform.position);
@@ -138,9 +135,8 @@ namespace VRPortalToolkit.XRI
                 }
             }
 
-            rect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
-            rect.x = -rect.xMax; // so its not on the connected side
-            return min.x <= max.x && min.y <= max.y;
+            if (min.x <= max.x && min.y <= max.y)
+                apTransform.AddMinMax(min, max);
         }
     }
 }

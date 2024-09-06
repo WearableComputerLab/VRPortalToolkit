@@ -6,7 +6,7 @@ using VRPortalToolkit.Physics;
 namespace VRPortalToolkit.XRI
 {
     [RequireComponent(typeof(XRPortalInteractable))]
-    public class XRPortalExpand : MonoBehaviour, IPortalRectRequester
+    public class XRAdaptivePortalBounds : MonoBehaviour, IAdaptivePortalProcessor
     {
         [SerializeField] private Vector2 _padding = new Vector2(0.05f, 0.05f);
         public Vector2 padding
@@ -14,6 +14,7 @@ namespace VRPortalToolkit.XRI
             get => _padding;
             set => _padding = value;
         }
+        int IAdaptivePortalProcessor.Order => 0;
 
         private XRPortalInteractable _interactable;
         private Portal _portal;
@@ -73,54 +74,48 @@ namespace VRPortalToolkit.XRI
                 _positionings.Add(positioning);
         }
 
-        public bool TryGetRect(out Rect rect)
+        void IAdaptivePortalProcessor.Process(ref AdaptivePortalTransform apTransform)
         {
-            if (isActiveAndEnabled && _portal)
+            if (!isActiveAndEnabled || !_portal) return;
+
+            Vector2 min = new Vector2(float.MaxValue, float.MaxValue),
+                max = new Vector2(float.MinValue, float.MinValue);
+
+            Plane plane = new Plane(transform.forward, transform.position);
+
+            foreach (PortalRelativePosition positioning in _positionings)
             {
-                Vector2 min = new Vector2(float.MaxValue, float.MaxValue),
-                    max = new Vector2(float.MinValue, float.MinValue);
+                if (!positioning || !positioning.origin) continue;
 
-                foreach (PortalRelativePosition positioning in _positionings)
+                if (IsInteractor(positioning)) continue;
+
+                if (TryGetPortalIndex(positioning, out int index))
                 {
-                    if (!positioning || !positioning.origin) continue;
+                    Vector3 startPos = positioning.origin.position, endPos = positioning.transform.position;
 
-                    if (IsInteractor(positioning)) continue;
+                    // Get start and end positions in the same space
+                    for (int i = 0; i < index; i++)
+                        positioning.GetPortalFromOrigin(i)?.ModifyPoint(ref startPos);
 
-                    if (TryGetPortalIndex(positioning, out int index))
+                    for (int i = 0; i < positioning.portalCount - index; i++)
+                        positioning.GetPortalToOrigin(i)?.ModifyPoint(ref endPos);
+
+                    Ray ray = new Ray(startPos, endPos - startPos);
+
+                    //Debug.DrawLine(startPos, endPos, Color.black);
+
+                    if (plane.Raycast(ray, out float enter) && enter < Vector3.Distance(startPos, endPos))
                     {
-                        Vector3 startPos = positioning.origin.position, endPos = positioning.transform.position;
+                        Vector2 pos = transform.InverseTransformPoint(ray.GetPoint(enter));
 
-                        for (int i = 0; i < index; i++)
-                            positioning.GetPortalFromOrigin(i)?.ModifyPoint(ref startPos);
-
-                        for (int i = 0; i < positioning.portalCount - index; i++)
-                            positioning.GetPortalToOrigin(i)?.ModifyPoint(ref endPos);
-
-                        Plane plane = new Plane(transform.forward, transform.position);
-
-                        Ray ray = new Ray(startPos, endPos - startPos);
-
-                        Debug.DrawLine(startPos, endPos, Color.black);
-
-                        if (plane.Raycast(ray, out float enter) && enter < Vector3.Distance(startPos, endPos))
-                        {
-                            Vector2 pos = transform.InverseTransformPoint(ray.GetPoint(enter));
-
-                            min = Vector2.Min(min, pos - _padding);
-                            max = Vector2.Max(max, pos + _padding);
-                        }
+                        min = Vector2.Min(min, pos - _padding);
+                        max = Vector2.Max(max, pos + _padding);
                     }
-                }
-
-                if (min.x <= max.x && min.y <= max.y)
-                {
-                    rect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
-                    return true;
                 }
             }
 
-            rect = default;
-            return false;
+            if (min.x <= max.x && min.y <= max.y)
+                apTransform.AddMinMax(min, max);
         }
 
         private bool IsInteractor(PortalRelativePosition positioning)

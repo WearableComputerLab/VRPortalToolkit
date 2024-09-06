@@ -5,7 +5,7 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit
 {
-    public class PortalExpand : MonoBehaviour, IPortalRectRequester
+    public class AdaptivePortalBounds : MonoBehaviour, IAdaptivePortalProcessor
     {
         [SerializeField] private Portal _portal;
         public Portal portal
@@ -33,6 +33,8 @@ namespace VRPortalToolkit
             get => _padding;
             set => _padding = value;
         }
+
+        int IAdaptivePortalProcessor.Order => 0;
 
         private readonly List<PortalRelativePosition> _positionings = new List<PortalRelativePosition>();
 
@@ -83,6 +85,45 @@ namespace VRPortalToolkit
                 _positionings.Add(positioning);
         }
 
+        void IAdaptivePortalProcessor.Process(ref AdaptivePortalTransform apTransform)
+        {
+            if (!isActiveAndEnabled) return;
+
+            Vector2 min = new Vector2(float.MaxValue, float.MaxValue),
+                    max = new Vector2(float.MinValue, float.MinValue);
+
+            foreach (PortalRelativePosition positioning in _positionings)
+            {
+                if (positioning && positioning.origin && TryGetPortalIndex(positioning, out int index))
+                {
+                    Vector3 startPos = positioning.origin.position, endPos = positioning.transform.position;
+
+                    for (int i = 0; i < index; i++)
+                        positioning.GetPortalFromOrigin(i)?.ModifyPoint(ref startPos);
+
+                    for (int i = 0; i < positioning.portalCount - index; i++)
+                        positioning.GetPortalToOrigin(i)?.ModifyPoint(ref endPos);
+
+                    Plane plane = new Plane(transform.forward, transform.position);
+
+                    Ray ray = new Ray(startPos, endPos - startPos);
+
+                    Debug.DrawLine(startPos, endPos, Color.black);
+
+                    if (plane.Raycast(ray, out float enter) && enter < Vector3.Distance(startPos, endPos))
+                    {
+                        Vector2 pos = transform.InverseTransformPoint(ray.GetPoint(enter));
+
+                        min = Vector2.Min(min, pos - _padding);
+                        max = Vector2.Max(max, pos + _padding);
+                    }
+                }
+            }
+
+            if (min.x <= max.x && min.y <= max.y)
+                apTransform.AddMinMax(min, max);
+        }
+/*
         public bool TryGetRect(out Rect rect)
         {
             if (portal)
@@ -127,7 +168,7 @@ namespace VRPortalToolkit
 
             rect = default;
             return false;
-        }
+        }*/
 
         private bool TryGetPortalIndex(PortalRelativePosition positioning, out int index)
         {

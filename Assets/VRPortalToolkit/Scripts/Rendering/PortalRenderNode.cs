@@ -22,6 +22,7 @@ namespace VRPortalToolkit.Rendering
             node.camera = camera;
 
             node._portal = null;
+            node._portal = null;
             node._renderers.Clear();
             node._parent = null;
             node._depth = 0;
@@ -30,6 +31,11 @@ namespace VRPortalToolkit.Rendering
             node._isValid = false;
             node._root._isDirty = true;
             node._isValid = false;
+
+            node.overrides = default;
+            node.hasClippingPlane = false;
+            node.clippingPlaneCentre = default;
+            node.clippingPlaneNormal = default;
 
             return node;
         }
@@ -53,6 +59,11 @@ namespace VRPortalToolkit.Rendering
             node._windows[0] = node.window;
             node._windows[1] = node.window;
 
+            node.overrides = default;
+            node.hasClippingPlane = false;
+            node.clippingPlaneCentre = default;
+            node.clippingPlaneNormal = default;
+
             return node;
         }
 
@@ -60,7 +71,7 @@ namespace VRPortalToolkit.Rendering
         {
             if (_isStereo)
             {
-                if (((1 << renderer.layer) & cullingMask) == 0) return null;
+                if (((1 << renderer.Layer) & cullingMask) == 0) return null;
 
                 bool leftValid = renderer.TryGetWindow(this, localToWorldMatrix.GetColumn(3), GetStereoViewMatrix(0), root.GetStereoProjectionMatrix(0), out ViewWindow leftWindow),
                     rightValid = renderer.TryGetWindow(this, localToWorldMatrix.GetColumn(3), GetStereoViewMatrix(1), root.GetStereoProjectionMatrix(1), out ViewWindow rightWindow);
@@ -72,7 +83,7 @@ namespace VRPortalToolkit.Rendering
             }
             else
             {
-                if (((1 << renderer.layer) & cullingMask) == 0) return null;
+                if (((1 << renderer.Layer) & cullingMask) == 0) return null;
 
                 if (renderer.TryGetWindow(this, localToWorldMatrix.GetColumn(3), worldToCameraMatrix, root.projectionMatrix, out ViewWindow window) && window.IsVisibleThrough(cullingWindow))
                     return GetOrAddChild(renderer, window);
@@ -83,9 +94,11 @@ namespace VRPortalToolkit.Rendering
 
         public PortalRenderNode GetOrAddChild(IPortalRenderer renderer, ViewWindow window)
         {
-            if (renderer == null || renderer.portal == null) return null;
+            if (renderer == null || renderer.Portal == null) return null;
 
-            if (TryGetChild(renderer.portal, out PortalRenderNode child))
+            bool hasClippingPlane = renderer.TryGetClippingPlane(this, out Vector3 clippingPlaneCentre, out Vector3 clippingPlaneNormal);
+
+            if (TryGetChild(renderer, hasClippingPlane, clippingPlaneCentre, clippingPlaneNormal, out PortalRenderNode child))
             {
                 // Already exists
                 child._renderers.Add(renderer);
@@ -99,7 +112,7 @@ namespace VRPortalToolkit.Rendering
 
                 child.cullingWindow = child.window = window;
                 child._renderers.Add(renderer);
-                child._portal = renderer?.portal;
+                child._portal = renderer?.Portal;
                 child.camera = camera;
 
                 child._parent = this;
@@ -107,6 +120,12 @@ namespace VRPortalToolkit.Rendering
 
                 child._depth = depth + 1;
                 child._root = _root;
+
+                child.hasClippingPlane = hasClippingPlane;
+                child.clippingPlaneCentre = clippingPlaneCentre;
+                child.clippingPlaneNormal = clippingPlaneNormal;
+
+                child.overrides = renderer.Overrides;
             }
 
             child._isValid = false;
@@ -118,7 +137,7 @@ namespace VRPortalToolkit.Rendering
 
         public PortalRenderNode GetOrAddChild(IPortalRenderer renderer, ViewWindow leftWindow, ViewWindow rightWindow)
         {
-            if (renderer == null || renderer.portal == null) return null;
+            if (renderer == null || renderer.Portal == null) return null;
 
             ViewWindow window = ViewWindow.Combine(leftWindow, rightWindow);
 
@@ -126,18 +145,27 @@ namespace VRPortalToolkit.Rendering
 
             if (child.isStereo)
             {
-                child._windows[0] = leftWindow;
-                child._windows[1] = rightWindow;
+                if (child._renderers.Count > 1)
+                {
+                    child._windows[0] = ViewWindow.Combine(child._windows[0], leftWindow);
+                    child._windows[1] = ViewWindow.Combine(child._windows[1], rightWindow);
+                }
+                else
+                {
+                    child._windows[0] = leftWindow;
+                    child._windows[1] = rightWindow;
+                }
             }
 
             return child;
         }
 
-        private bool TryGetChild(IPortal portal, out PortalRenderNode child)
+        private bool TryGetChild(IPortalRenderer portalRenderer, bool hasClippingPlane, Vector3 clippingPlaneCentre, Vector3 clippingPlaneNormal, out PortalRenderNode child)
         {
             foreach (PortalRenderNode other in _children)
             {
-                if (other.portal == portal)
+                if (other.portal == portalRenderer.Portal && other.hasClippingPlane == hasClippingPlane && other.overrides.Equals(portalRenderer.Overrides) &&
+                    other.clippingPlaneCentre == clippingPlaneCentre && other.clippingPlaneNormal == clippingPlaneNormal)
                 {
                     child = other;
                     return true;
@@ -317,6 +345,14 @@ namespace VRPortalToolkit.Rendering
         public ViewWindow cullingWindow;
 
         public ViewWindow window;
+
+        public PortalRendererSettings overrides;
+
+        public bool hasClippingPlane;
+
+        public Vector3 clippingPlaneCentre;
+
+        public Vector3 clippingPlaneNormal;
 
         private readonly ViewWindow[] _windows;
 
@@ -549,16 +585,16 @@ namespace VRPortalToolkit.Rendering
                 }
 
                 // Clip the projection matrix by the plane
-                foreach (IPortalRenderer renderer in _renderers)
+                if (hasClippingPlane)
                 {
-                    if (renderer.TryGetClippingPlane(_parent, out Vector3 clippingCentre, out Vector3 clippingNormal))
+                    foreach (IPortalRenderer renderer in _renderers)
                     {
-                        projectionMatrix = CameraUtility.CalculateObliqueMatrix(_parent.worldToCameraMatrix, projectionMatrix, clippingCentre, clippingNormal);
+                        projectionMatrix = CameraUtility.CalculateObliqueMatrix(_parent.worldToCameraMatrix, projectionMatrix, clippingPlaneCentre, clippingPlaneNormal);
 
                         if (_isStereo)
                         {
-                            _projectionMatrices[0] = CameraUtility.CalculateObliqueMatrix(_parent._viewMatrices[0], _projectionMatrices[0], clippingCentre, clippingNormal);
-                            _projectionMatrices[1] = CameraUtility.CalculateObliqueMatrix(_parent._viewMatrices[1], _projectionMatrices[1], clippingCentre, clippingNormal);
+                            _projectionMatrices[0] = CameraUtility.CalculateObliqueMatrix(_parent._viewMatrices[0], _projectionMatrices[0], clippingPlaneCentre, clippingPlaneNormal);
+                            _projectionMatrices[1] = CameraUtility.CalculateObliqueMatrix(_parent._viewMatrices[1], _projectionMatrices[1], clippingPlaneCentre, clippingPlaneNormal);
                         }
 
                         break;

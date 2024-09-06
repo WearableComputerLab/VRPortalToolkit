@@ -71,8 +71,8 @@ MonoBehaviour:
   _portalResolution: 1
   _bufferResolution: 1
   _editorMinDepth: 3
-  _editorMaxDepth: 2000
-  _editorMaxRenders: 16
+  _editorMaxDepth: 8
+  _editorMaxRenders: 8
   _editorMaxShadowDepth: 0
   _editorPortalResolution: 1
   _editorBufferResolution: 0

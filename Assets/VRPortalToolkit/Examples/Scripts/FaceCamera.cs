@@ -7,7 +7,7 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
 using VRPortalToolkit.Rendering;
 
-namespace VRPortalToolkit
+namespace VRPortalToolkit.Examples
 {
     public class FaceCamera : MonoBehaviour
     {

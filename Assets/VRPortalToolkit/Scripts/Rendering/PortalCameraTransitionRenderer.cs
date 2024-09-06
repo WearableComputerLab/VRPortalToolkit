@@ -28,9 +28,11 @@ namespace VRPortalToolkit.Rendering
 
         public IPortalCameraTransition transition { get; set; }
 
-        public int layer => transition.layer;
+        public int Layer => transition.layer;
 
-        public IPortal portal => transition.portal;
+        public IPortal Portal => transition.portal;
+
+        public PortalRendererSettings Overrides => default;
 
         public void PreCull(PortalRenderNode renderNode) { }
 
@@ -64,7 +66,7 @@ namespace VRPortalToolkit.Rendering
         public bool TryGetWindow(PortalRenderNode renderNode, Vector3 cameraPosition, Matrix4x4 view, Matrix4x4 proj, out ViewWindow innerWindow)
         {
             // We only draw the transition on top of the original render
-            if (portal == null || camera != renderNode.camera || renderNode.depth > 0)
+            if (Portal == null || camera != renderNode.camera || renderNode.depth > 0)
             {
                 innerWindow = default;
                 return false;

@@ -21,12 +21,6 @@ namespace VRPortalToolkit.Rendering.Universal
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            if (!material)
-            {
-                Debug.LogError(nameof(DrawBlankPortalsPass) + " requires a material!");
-                return;
-            }
-
             CommandBuffer cmd = CommandBufferPool.Get();
 
             //using (new ProfilingScope(cmd, profilingSampler))
@@ -46,6 +40,8 @@ namespace VRPortalToolkit.Rendering.Universal
                     {
                         if (hasFrameBuffer && TryFindAncestorNode(renderNode, FrameBuffer.current.rootNode, out PortalRenderNode originalNode))
                         {
+                            Material material = renderNode.overrides.portalStereo ? renderNode.overrides.portalStereo : this.material;
+
                             if (renderNode.isStereo)
                             {
                                 UpdateScaleAndTranslation(GetWindow(parentNode.GetStereoViewMatrix(0), parentNode.GetStereoProjectionMatrix(0), renderNode),

@@ -109,7 +109,7 @@ namespace VRPortalToolkit.Examples
                     if (!entry) return;
                     _portalsToRoot[entry] = portalPair;
 
-                    PortalSize entrySize = entry.GetComponent<PortalSize>();
+                    AdaptivePortal entrySize = entry.GetComponent<AdaptivePortal>();
 
                     if (entrySize)
                     {
@@ -117,7 +117,7 @@ namespace VRPortalToolkit.Examples
                         UpdateOffset(entrySize.connected);
 
                         entry.transform.SetPositionAndRotation(offset.TransformPoint(
-                            new Vector3(entrySize.maintainRect.center.x, -entrySize.maintainRect.yMin)), offset.rotation);
+                            new Vector3(entrySize.maintainBounds.center.x, -entrySize.maintainBounds.yMin)), offset.rotation);
                     }
                     else
                         entry.transform.SetPositionAndRotation(offset.position, offset.rotation);
@@ -158,12 +158,12 @@ namespace VRPortalToolkit.Examples
             }
         }
 
-        private void UpdateOffset(PortalSize portalSize)
+        private void UpdateOffset(AdaptivePortal portalSize)
         {
             if (portalSize && portalSize.offset)
             {
-                portalSize.offset.localScale = new Vector3(portalSize.maintainRect.width * 0.1f, portalSize.maintainRect.height * 0.1f, portalSize.offset.localScale.z);
-                portalSize.offset.localPosition = new Vector3(portalSize.maintainRect.center.x, portalSize.maintainRect.yMin - portalSize.offset.transform.localScale.y, 0f);
+                portalSize.offset.localScale = new Vector3(portalSize.maintainBounds.width * 0.1f, portalSize.maintainBounds.height * 0.1f, portalSize.offset.localScale.z);
+                portalSize.offset.localPosition = new Vector3(portalSize.maintainBounds.center.x, portalSize.maintainBounds.yMin - portalSize.offset.transform.localScale.y, 0f);
             }
         }
 

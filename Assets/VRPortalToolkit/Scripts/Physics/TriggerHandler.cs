@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -18,8 +19,11 @@ namespace VRPortalToolkit
 
         public IEnumerable<TValue> Values => _valueCount.Keys;
 
+        public int Count => _nullCount > 0 ? (_valueCount.Count + 1) : _valueCount.Count;
+
         readonly Dictionary<Collider, TValue> _valueByCollider = new Dictionary<Collider, TValue>();
         readonly Dictionary<TValue, int> _valueCount = new Dictionary<TValue, int>();
+        int _nullCount = 0;
 
         static readonly List<Collider> _exited = new List<Collider>();
 
@@ -38,7 +42,14 @@ namespace VRPortalToolkit
         {
             _valueByCollider[collider] = value;
 
-            if (_valueCount.TryGetValue(value, out int count))
+            if (value == null)
+            {
+                _nullCount++;
+
+                if (_nullCount == 1)
+                    valueAdded?.Invoke(value);
+            }
+            else if (_valueCount.TryGetValue(value, out int count))
                 _valueCount[value] = count + 1;
             else
             {
@@ -51,7 +62,14 @@ namespace VRPortalToolkit
         {
             if (_valueByCollider.TryGetValue(collider, out TValue value))
             {
-                if (_valueCount.TryGetValue(value, out int count))
+                if (value == null)
+                {
+                    _nullCount--;
+
+                    if (_nullCount == 0)
+                        valueRemoved?.Invoke(value);
+                }
+                else if (_valueCount.TryGetValue(value, out int count))
                 {
                     count--;
 
@@ -88,7 +106,13 @@ namespace VRPortalToolkit
 
         public bool HasCollider(Collider key) => _valueByCollider.ContainsKey(key);
 
-        public bool HasValue(TValue value) => _valueCount.ContainsKey(value);
+        public bool HasValue(TValue value)
+        {
+            if (value == null)
+                return _nullCount > 0;
+
+            return _valueCount.ContainsKey(value);
+        }
 
         public IEnumerator<KeyValuePair<Collider, TValue>> GetEnumerator() => _valueByCollider.GetEnumerator();
 
@@ -104,9 +128,11 @@ namespace VRPortalToolkit
         public IEnumerable<TKey> Keys => _valueByKey.Keys;
 
         public IEnumerable<TValue> Values => _valueCount.Keys;
+        public int Count => _nullCount > 0 ? (_valueCount.Count + 1) : _valueCount.Count;
 
         readonly Dictionary<TKey, TValue> _valueByKey = new Dictionary<TKey, TValue>();
         readonly Dictionary<TValue, int> _valueCount = new Dictionary<TValue, int>();
+        int _nullCount = 0;
 
         static readonly List<TKey> _exited = new List<TKey>();
 
@@ -125,7 +151,14 @@ namespace VRPortalToolkit
         {
             _valueByKey[key] = value;
 
-            if (_valueCount.TryGetValue(value, out int count))
+            if (value == null)
+            {
+                _nullCount++;
+
+                if (_nullCount == 1)
+                    valueAdded?.Invoke(value);
+            }
+            else if (_valueCount.TryGetValue(value, out int count))
                 _valueCount[value] = count + 1;
             else
             {
@@ -138,7 +171,14 @@ namespace VRPortalToolkit
         {
             if (_valueByKey.TryGetValue(key, out TValue value))
             {
-                if (_valueCount.TryGetValue(value, out int count))
+                if (value == null)
+                {
+                    _nullCount--;
+
+                    if (_nullCount == 0)
+                        valueRemoved?.Invoke(value);
+                }
+                else if (_valueCount.TryGetValue(value, out int count))
                 {
                     count--;
 
@@ -173,7 +213,13 @@ namespace VRPortalToolkit
 
         public bool HasKey(TKey key) => _valueByKey.ContainsKey(key);
 
-        public bool HasValue(TValue value) => _valueCount.ContainsKey(value);
+        public bool HasValue(TValue value)
+        {
+            if (value == null)
+                return _nullCount > 0;
+
+            return _valueCount.ContainsKey(value);
+        }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _valueByKey.GetEnumerator();
 
