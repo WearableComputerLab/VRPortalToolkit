@@ -68,11 +68,12 @@ namespace VRPortalToolkit
             set => _offset = value;
         }
 
+        [Flags]
         public enum MaintainMode
         {
             None = 0,
-            MinSize = 1 << 0,
-            Bounds = 2 << 0,
+            MinSize = 1 << 1,
+            Bounds = 1 << 2,
         }
 
         [SerializeField] private MaintainMode _maintainMode = MaintainMode.Bounds;

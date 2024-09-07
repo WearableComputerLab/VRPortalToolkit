@@ -123,5 +123,62 @@ namespace VRPortalToolkit.XRI
                 _raycastHitsCountField.SetValue(interactor, count);
         }
         #endregion
+
+        private static MethodInfo _getSmoothedVelocityValueMethod;
+        private static void UpdateGetSmoothedVelocityValueMethod()
+        {
+            if (_getSmoothedVelocityValueMethod == null)
+            {
+                _getSmoothedVelocityValueMethod = typeof(XRGrabInteractable).GetMethod("GetSmoothedVelocityValue", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (_getSmoothedVelocityValueMethod == null)
+                    Debug.LogError("\"GetSmoothedVelocityValue\" method could not be found!");
+            }
+        }
+
+
+        private static FieldInfo _throwSmoothingVelocityFramesField;
+        public static Vector3 GetThrowingVelocity(XRGrabInteractable interactable)
+        {
+            if (_throwSmoothingVelocityFramesField == null)
+            {
+                _throwSmoothingVelocityFramesField = typeof(XRGrabInteractable).GetField("m_ThrowSmoothingVelocityFrames", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (_throwSmoothingVelocityFramesField == null)
+                    Debug.LogError("\"m_ThrowSmoothingVelocityFrames\" field could not be found!");
+            }
+
+            UpdateGetSmoothedVelocityValueMethod();
+
+            if (_throwSmoothingVelocityFramesField != null && _getSmoothedVelocityValueMethod != null)
+            {
+                _args1[0] = _throwSmoothingVelocityFramesField.GetValue(interactable);
+                return (Vector3)_getSmoothedVelocityValueMethod.Invoke(interactable, _args1);
+            }
+
+            return Vector3.zero;
+        }
+
+        private static FieldInfo _throwSmoothingAngularVelocityFramesField;
+        public static Vector3 GetThrowingAngularVelocity(XRGrabInteractable interactable)
+        {
+            if (_throwSmoothingAngularVelocityFramesField == null)
+            {
+                _throwSmoothingAngularVelocityFramesField = typeof(XRGrabInteractable).GetField("m_ThrowSmoothingAngularVelocityFrames", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (_throwSmoothingAngularVelocityFramesField == null)
+                    Debug.LogError("\"m_ThrowSmoothingAngularVelocityFrames\" field could not be found!");
+            }
+
+            UpdateGetSmoothedVelocityValueMethod();
+
+            if (_throwSmoothingAngularVelocityFramesField != null && _getSmoothedVelocityValueMethod != null)
+            {
+                _args1[0] = _throwSmoothingAngularVelocityFramesField.GetValue(interactable);
+                return (Vector3)_getSmoothedVelocityValueMethod.Invoke(interactable, _args1);
+            }
+
+            return Vector3.zero;
+        }
     }
 }

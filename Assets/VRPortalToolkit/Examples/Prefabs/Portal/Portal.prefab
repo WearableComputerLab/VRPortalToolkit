@@ -829,7 +829,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _connected: {fileID: 0}
   _offset: {fileID: 4992671511316701545}
-  _maintainMode: 2
+  _maintainMode: 4
   _maintainBounds:
     serializedVersion: 2
     x: -0.15
@@ -1050,9 +1050,9 @@ MonoBehaviour:
   _transition: 1
   _transitionTime: 0.5
   _requireSelected: 1
-  _triggers: 2
-  _translateThreshold: 0.1
-  _rotateThreshold: 30
+  _triggers: 12
+  _velocityThreshold: 0.5
+  _angularVelocityThreshold: 10
   _manualTrigger: 0
   _overlayTime: 3
   _raycastClipping:
@@ -1084,7 +1084,7 @@ MonoBehaviour:
   _connected: {fileID: 0}
   _doorwaySize: {x: 0.5, y: 2}
   _transitionTime: 0.5
-  _dropVelocityThreshold: 2
+  _dropVelocityThreshold: 1
   _isDoorway: 0
 --- !u!1 &5780148214734452794
 GameObject:
@@ -1379,8 +1379,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _connected: {fileID: 0}
-  _offset: {fileID: 4454440608651258900}
-  _plane: {fileID: 4992671511316701545}
   _portalInteractable: {fileID: 588268501954387670}
   _restrictWhileSelected: 0
   _distance: 0.01

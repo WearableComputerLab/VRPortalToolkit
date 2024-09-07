@@ -63,10 +63,10 @@ namespace VRPortalToolkit.XRI
         public enum Trigger
         {
             None = 0,
-            IsActivated = 1 << 0,
-            DirectionInUse = 2 << 0,
-            Movement = 3 << 0,
-            ManualTrigger = 4 << 0,
+            IsActivated = 1 << 1,
+            DirectionInUse = 1 << 2,
+            VelocityThreshold = 1 << 3,
+            ManualTrigger = 1 << 4,
         }
 
         [SerializeField] private Trigger _triggers = Trigger.DirectionInUse;
@@ -77,25 +77,25 @@ namespace VRPortalToolkit.XRI
         }
 
 #if UNITY_EDITOR
-        private bool showMovement => _triggers.HasFlag(Trigger.Movement);
+        private bool showVelocity => _triggers.HasFlag(Trigger.VelocityThreshold);
 
-        [ShowIf(nameof(showMovement))]
+        [ShowIf(nameof(showVelocity))]
 #endif
-        [SerializeField] private float _translateThreshold = 0.1f;
-        public float translateThreshold
+        [SerializeField] private float _velocityThreshold = 0.1f;
+        public float velocityThreshold
         {
-            get => _translateThreshold;
-            set => _translateThreshold = value;
+            get => _velocityThreshold;
+            set => _velocityThreshold = value;
         }
 
 #if UNITY_EDITOR
-        [ShowIf(nameof(showMovement))]
+        [ShowIf(nameof(showVelocity))]
 #endif
-        [SerializeField] private float _rotateThreshold = 30f;
-        public float rotateThreshold
+        [SerializeField] private float _angularVelocityThreshold = 30f;
+        public float angularVelocityThreshold
         {
-            get => _rotateThreshold;
-            set => _rotateThreshold = value;
+            get => _angularVelocityThreshold;
+            set => _angularVelocityThreshold = value;
         }
 
 #if UNITY_EDITOR
@@ -250,9 +250,17 @@ namespace VRPortalToolkit.XRI
                     return true;
             }
 
-            if (_triggers.HasFlag(Trigger.Movement))
+            if (_triggers.HasFlag(Trigger.VelocityThreshold))
             {
+                // Note is easier to check if the entry portal has moved than it is to check if the exit has, but really its the exits velocity that matters so...
+                if (_interactable.connected && _interactable.connected.linkedMovement != XRPortalInteractable.LinkedMovement.None)
+                {
+                    if (XRUtils.GetThrowingVelocity(_interactable).magnitude > _velocityThreshold)
+                        return true;
 
+                    if (XRUtils.GetThrowingAngularVelocity(_interactable).magnitude > _angularVelocityThreshold)
+                        return true;
+                }
             }
 
             return false;

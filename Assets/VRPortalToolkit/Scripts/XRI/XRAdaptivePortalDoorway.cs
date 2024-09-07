@@ -1,10 +1,8 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.XR.Interaction.Toolkit;
-using VRPortalToolkit.Data;
-using VRPortalToolkit.XRI;
 
-namespace VRPortalToolkit
+namespace VRPortalToolkit.XRI
 {
     [RequireComponent(typeof(AdaptivePortal))]
     public class XRAdaptivePortalDoorway : MonoBehaviour, IAdaptivePortalProcessor
@@ -82,10 +80,6 @@ namespace VRPortalToolkit
                 }
             }
         }
-
-        private Vector3[] _velocityFrames = new Vector3[5];
-        private int _velocityIndex = 0;
-        private Vector3 _lastPosition; // TODO: Should update this if there is a teleportation
 
         private bool _lastState;
         private int _upright = 0;
@@ -184,12 +178,7 @@ namespace VRPortalToolkit
                 transform.rotation = Quaternion.Lerp(_fromPose.rotation, _groundLevel.rotation * Quaternion.AngleAxis(90f * _upright, Vector3.forward), _scale);
             }
             else
-            {
-                _velocityFrames[_velocityIndex] = (transform.position - _lastPosition) / Time.deltaTime;
-                _velocityIndex = (_velocityIndex + 1) % _velocityFrames.Length;
-                _lastPosition = transform.position;
                 _scale = Mathf.Max(0f, _scale - step);
-            }
         }
 
         protected virtual void OnEnable()
@@ -206,9 +195,6 @@ namespace VRPortalToolkit
 
         private void OnSelectEntered(SelectEnterEventArgs _)
         {
-            for (int i = 0; i < _velocityFrames.Length; i++)
-                _velocityFrames[i] = Vector3.zero;
-
             isDoorway = false;
         }
 
@@ -220,17 +206,11 @@ namespace VRPortalToolkit
                     isDoorway = true;
                 else
                 {
-                    // Check if its been thrown at the floor
-                    Vector3 averageVelocity = Vector3.zero;
-
-                    for (int i = 0; i < _velocityFrames.Length; i++)
-                        averageVelocity += _velocityFrames[i];
-
-                    averageVelocity /= _velocityFrames.Length;
+                    Vector3 velocity = XRUtils.GetThrowingVelocity(_interactable);
 
                     Vector3 down = _interactable.groundLevel ? -_interactable.groundLevel.up : Vector3.down;
 
-                    float distance = Vector3.Dot(averageVelocity, down);
+                    float distance = Vector3.Dot(velocity, down);
 
                     if (distance > _dropVelocityThreshold)
                         isDoorway = true;
