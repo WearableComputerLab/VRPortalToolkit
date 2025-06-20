@@ -8,17 +8,28 @@ using VRPortalToolkit.Data;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Render pass that draws blank or placeholder portals when a portal is invalid or render limit is reached.
+    /// </summary>
     public class DrawBlankPortalsPass : PortalRenderPass
     {
         private static MaterialPropertyBlock propertyBlock;
 
+        /// <summary>
+        /// The material to use for rendering blank portals.
+        /// </summary>
         public Material material { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the DrawBlankPortalsPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public DrawBlankPortalsPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
             if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
         }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             CommandBuffer cmd = CommandBufferPool.Get();
@@ -80,7 +91,12 @@ namespace VRPortalToolkit.Rendering.Universal
             CommandBufferPool.Release(cmd);
         }
 
-        // for bellow, parent window should instead be window, and window should be a new calculated window
+        /// <summary>
+        /// Updates scale and translation properties in the property block for portal rendering.
+        /// </summary>
+        /// <param name="window">The current portal window.</param>
+        /// <param name="parentWindow">The parent portal window.</param>
+        /// <param name="scaleTranslateID">The shader property ID for the scale and translation vector.</param>
         private static void UpdateScaleAndTranslation(ViewWindow window, ViewWindow parentWindow, int scaleTranslateID)
         {
             if (parentWindow.xMin < 0f) parentWindow.xMin = 0f;
@@ -100,6 +116,13 @@ namespace VRPortalToolkit.Rendering.Universal
             ));
         }
 
+        /// <summary>
+        /// Tries to find an ancestor node in the portal render tree.
+        /// </summary>
+        /// <param name="target">The target render node to find an ancestor for.</param>
+        /// <param name="root">The root node to start searching from.</param>
+        /// <param name="nextNode">The output ancestor node if found.</param>
+        /// <returns>True if an ancestor node was found, false otherwise.</returns>
         protected virtual bool TryFindAncestorNode(PortalRenderNode target, PortalRenderNode root, out PortalRenderNode nextNode)
         {
             PortalRenderNode current = root;

@@ -4,10 +4,18 @@ using UnityEngine.Rendering.Universal;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Render pass that completes the rendering process for a texture-based portal.
+    /// </summary>
     public class CompleteTexturePortalPass : PortalRenderPass
     {
+        /// <summary>
+        /// Initializes a new instance of the CompleteTexturePortalPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public CompleteTexturePortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             CommandBuffer cmd = CommandBufferPool.Get();

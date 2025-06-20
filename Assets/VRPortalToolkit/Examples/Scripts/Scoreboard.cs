@@ -6,11 +6,18 @@ using UnityEngine.Events;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Manages and displays scores and completion times for timed challenges.
+    /// </summary>
+    /// <remarks>
     public class Scoreboard : MonoBehaviour
     {
         private static readonly string DecimalFormat = "0.##";
 
         [SerializeField] private TMP_Text _text;
+        /// <summary>
+        /// Text component where the scoreboard will be displayed.
+        /// </summary>
         public TMP_Text text
         {
             get => _text;
@@ -18,6 +25,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private int _count = 4;
+        /// <summary>
+        /// Maximum number of previous scores to display on the scoreboard.
+        /// </summary>
         public int count
         {
             get => _count;
@@ -25,6 +35,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private string _unitLong = "Press";
+        /// <summary>
+        /// Long form of the unit name (e.g., "Press", "Button", "Task").
+        /// </summary>
         public string unitLong
         {
             get => _unitLong;
@@ -32,6 +45,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private string _unitShort = "p";
+        /// <summary>
+        /// Short form of the unit name for throughput display (e.g., "p", "b", "t").
+        /// </summary>
         public string unitShort
         {
             get => _unitShort;
@@ -39,6 +55,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private AudioClip _audioClipForBegan;
+        /// <summary>
+        /// Sound played when a task begins.
+        /// </summary>
         public AudioClip audioClipForBegan
         {
             get => _audioClipForBegan;
@@ -46,6 +65,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private AudioClip _audioClipForCompleted;
+        /// <summary>
+        /// Sound played when a task is completed successfully.
+        /// </summary>
         public AudioClip audioClipForCompleted
         {
             get => _audioClipForCompleted;
@@ -53,6 +75,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private AudioClip _audioClipForCancelled;
+        /// <summary>
+        /// Sound played when a task is cancelled.
+        /// </summary>
         public AudioClip audioClipForCancelled
         {
             get => _audioClipForCancelled;
@@ -66,20 +91,44 @@ namespace VRPortalToolkit.Examples
         private Score _best;
 
         private int _index = 0;
+        /// <summary>
+        /// Current task index (increments with each completed task).
+        /// </summary>
         public int index => _index;
         
         private float _startTime;
 
         private bool _isRunning = false;
+        /// <summary>
+        /// Whether a task is currently in progress.
+        /// </summary>
         public bool isRunning => _isRunning;
 
         private readonly StringBuilder _stringBuilder = new StringBuilder();
 
+        /// <summary>
+        /// Represents a completed task score with timing information.
+        /// </summary>
         public readonly struct Score
         {
+            /// <summary>
+            /// Reference to the scoreboard that recorded this score.
+            /// </summary>
             public readonly Scoreboard scoreboard;
+            
+            /// <summary>
+            /// Index of this task in the sequence.
+            /// </summary>
             public readonly int index;
+            
+            /// <summary>
+            /// Time taken to complete the task in seconds.
+            /// </summary>
             public readonly float time;
+            
+            /// <summary>
+            /// Throughput rate (completions per minute).
+            /// </summary>
             public readonly float throughput;
 
             internal Score(Scoreboard scoreboard, int index, float time)
@@ -95,6 +144,9 @@ namespace VRPortalToolkit.Examples
             }
         }
 
+        /// <summary>
+        /// Event triggered when a task is completed. Provides the score details.
+        /// </summary>
         public UnityAction<Score> onCompleted;
 
         protected void Reset()
@@ -107,6 +159,9 @@ namespace VRPortalToolkit.Examples
             UpdateScoreboard();
         }
 
+        /// <summary>
+        /// Clears all scores and resets the scoreboard.
+        /// </summary>
         public void Clear()
         {
             _isRunning = false;
@@ -115,6 +170,9 @@ namespace VRPortalToolkit.Examples
             UpdateScoreboard();
         }
 
+        /// <summary>
+        /// Begins timing a new task.
+        /// </summary>
         public void Begin()
         {
             if (!_isRunning)
@@ -125,6 +183,9 @@ namespace VRPortalToolkit.Examples
             }
         }
 
+        /// <summary>
+        /// Cancels the current task without recording a score.
+        /// </summary>
         public void Cancel()
         {
             if (_isRunning)
@@ -134,6 +195,9 @@ namespace VRPortalToolkit.Examples
             }
         }
 
+        /// <summary>
+        /// Completes the current task and records the score.
+        /// </summary>
         public void Complete()
         {
             if (_isRunning)

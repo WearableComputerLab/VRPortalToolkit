@@ -6,19 +6,30 @@ using UnityEngine.Rendering.Universal;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Render pass that stores the current frame into a buffer for future portal rendering to create the "infinite" portal effect.
+    /// </summary>
     public class StoreFramePass : PortalRenderPass
     {
         private static Material _stereoBlit;
 
+        /// <summary>
+        /// The resolution scale factor for the stored frame texture.
+        /// </summary>
         public float resolution { get; set; } = 1f;
 
         //public PortalRenderNode rootRenderNode { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the StoreFramePass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public StoreFramePass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
             if (!_stereoBlit) _stereoBlit = CoreUtils.CreateEngineMaterial("Hidden/Universal Render Pipeline/Blit");
         }
 
+        /// <inheritdoc/>
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             if (resolution > 0)
@@ -36,6 +47,7 @@ namespace VRPortalToolkit.Rendering.Universal
             }
         }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (FrameBuffer.current == null)

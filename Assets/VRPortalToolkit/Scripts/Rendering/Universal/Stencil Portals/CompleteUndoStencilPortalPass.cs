@@ -7,14 +7,23 @@ using UnityEngine.Rendering;
 namespace VRPortalToolkit.Rendering.Universal
 {
     /// <summary>
-    /// The only difference between this and CompleteStencilPortalPass is that we decrease a second time instead of apply depth
+    /// This render pass is specifically designed for the case where one eye of a stereo camera has passed through a portal.
+    /// Handles the special stencil portal rendering required for this transition case.
     /// </summary>
     public class CompleteUndoStencilPortalPass : PortalRenderPass
     {
+        /// <summary>
+        /// The material used to decrease the stencil value for portal rendering.
+        /// </summary>
         public Material decreaseMaterial { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the CompleteUndoStencilPortalPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public CompleteUndoStencilPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             CommandBuffer cmd = CommandBufferPool.Get();

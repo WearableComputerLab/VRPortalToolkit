@@ -5,17 +5,33 @@ using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Render pass that completes the rendering process for a stencil-based portal.
+    /// </summary>
     public class CompleteStencilPortalPass : PortalRenderPass
     {
-        // TODO: This should not be necessary
+        /// <summary>
+        /// The material used to clear the depth buffer for portal rendering.
+        /// </summary>
         public Material clearDepthMaterial { get; set; }
 
+        /// <summary>
+        /// The material used to decrease the stencil value for portal rendering.
+        /// </summary>
         public Material decreaseMaterial { get; set; }
 
+        /// <summary>
+        /// The material used for depth-only rendering for portal rendering.
+        /// </summary>
         public Material depthMaterial { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the CompleteStencilPortalPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public CompleteStencilPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             CommandBuffer cmd = CommandBufferPool.Get();

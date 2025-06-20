@@ -7,13 +7,22 @@ using VRPortalToolkit.Examples;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Controls a door that opens when a task is completed within a required time.
+    /// </summary>
     [RequireComponent(typeof(Door))]
     public class ScoreDoor : MonoBehaviour
     {
         private Door _door;
+        /// <summary>
+        /// The Door component that will be controlled by this ScoreDoor.
+        /// </summary>
         public Door door => _door;
 
         [SerializeField] private Scoreboard _scoreboard;
+        /// <summary>
+        /// The Scoreboard that tracks task completion times.
+        /// </summary>
         public Scoreboard scoreboard
         {
             get => _scoreboard;
@@ -21,6 +30,10 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private float _requiredTime = 0.1f;
+        /// <summary>
+        /// The maximum time (in seconds) allowed to complete the task and open the door.
+        /// If the task is completed faster than this time, the door will open.
+        /// </summary>
         public float requiredTime
         {
             get => _requiredTime;

@@ -8,15 +8,24 @@ using Misc;
 
 namespace VRPortalToolkit
 {
-    // TODO: Can still accidently make one more clone than it needs when teleported
-    // This happens because you enter a transition, before you leave another one
-
+    /// <summary>
+    /// Creates and manages render clones for objects that are visible through portals.
+    /// These clones are created when the object triggers a PortalTransition.
+    /// </summary>
     [DefaultExecutionOrder(1030)]
     public class PortalRenderClone : MonoBehaviour
     {
         private static readonly WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
 
+        /// <summary>
+        /// The original GameObject to be cloned and rendered through portals.
+        /// </summary>
+        [Tooltip("The original GameObject to be cloned and rendered through portals")]
         [SerializeField] private GameObject _original;
+        
+        /// <summary>
+        /// Gets or sets the original GameObject to be cloned.
+        /// </summary>
         public GameObject original
         {
             get => _original;
@@ -34,10 +43,18 @@ namespace VRPortalToolkit
             }
         }
 
+        [Tooltip("The template GameObject used for cloning. If not set, a new GameObject will be created with only the necessary components")]
         [SerializeField] private GameObject _template;
+        /// <summary>
+        /// The template GameObject used for cloning. If not set, a new GameObject will be created with only the necessary components.
+        /// </summary>
         public GameObject template { get => _template; set => _template = value; }
 
+        [Tooltip("The maximum number of clones allowed. Set to -1 for unlimited")]
         [SerializeField] private int _maxCloneCount = -1;
+        /// <summary>
+        /// The maximum number of clones allowed. Set to -1 for unlimited.
+        /// </summary>
         public int maxCloneCount
         {
             get => _maxCloneCount;
@@ -61,6 +78,9 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Stores information about a clone and its associated components.
+        /// </summary>
         protected class CloneHandler
         {
             public GameObject original;
@@ -168,6 +188,9 @@ namespace VRPortalToolkit
             clonePool.Clear();
         }
 
+        /// <summary>
+        /// Updates all clones to match their original objects.
+        /// </summary>
         public virtual void Apply()
         {
             GenerateClones();
@@ -176,10 +199,21 @@ namespace VRPortalToolkit
                 UpdateCloneHandler(pair.Key, pair.Value);
         }
 
+        /// <summary>
+        /// Called when a portal transition is entered.
+        /// </summary>
+        /// <param name="transition">The portal transition that was entered.</param>
         protected virtual void OnTriggerEnterTransition(PortalTransition transition) { }
 
+        /// <summary>
+        /// Called when a portal transition is exited.
+        /// </summary>
+        /// <param name="transition">The portal transition that was exited.</param>
         protected virtual void OnTriggerExitTransition(PortalTransition transition) { }
 
+        /// <summary>
+        /// Generates clones based on active portal transitions.
+        /// </summary>
         protected virtual void GenerateClones()
         {
             if (teleportOverride) return;
@@ -214,15 +248,30 @@ namespace VRPortalToolkit
         private int SortTransitions(PortalTransition i, PortalTransition j)
             => GetScore(j).CompareTo(GetScore(i));
 
+        /// <summary>
+        /// Calculates a score for a portal transition based on distance to the original object.
+        /// Used for sorting transitions by priority.
+        /// </summary>
+        /// <param name="transition">The transition to score.</param>
+        /// <returns>The score value (lower scores have higher priority).</returns>
         protected virtual float GetScore(PortalTransition transition)
             => transition && original ? Vector3.Distance(transition.transform.position, original.transform.position) : float.MaxValue;
 
+        /// <summary>
+        /// Clears all active clones.
+        /// </summary>
         protected virtual void ClearClones()
         {
             foreach (PortalTransition transition in triggerHandler.Values)
                 RemoveClone(transition);
         }
 
+        /// <summary>
+        /// Replaces a clone associated with one transition with a clone for another transition.
+        /// </summary>
+        /// <param name="original">The original transition whose clone should be replaced.</param>
+        /// <param name="replacement">The replacement transition to associate with the clone.</param>
+        /// <returns>True if the replacement was successful, false otherwise.</returns>
         protected virtual bool ReplaceClone(PortalTransition original, PortalTransition replacement)
         {
             if (!original || !replacement) return false;
@@ -238,6 +287,11 @@ namespace VRPortalToolkit
             return false;
         }
 
+        /// <summary>
+        /// Adds a clone for a specific portal transition.
+        /// </summary>
+        /// <param name="transition">The portal transition to create a clone for.</param>
+        /// <returns>True if the clone was added, false otherwise.</returns>
         protected virtual bool AddClone(PortalTransition transition)
         {
             if (!currentClones.ContainsKey(transition))
@@ -252,6 +306,11 @@ namespace VRPortalToolkit
             return false;
         }
 
+        /// <summary>
+        /// Removes a clone associated with a specific portal transition.
+        /// </summary>
+        /// <param name="transition">The portal transition whose clone should be removed.</param>
+        /// <returns>True if the clone was removed, false otherwise.</returns>
         protected virtual bool RemoveClone(PortalTransition transition)
         {
             if (transition != null && currentClones.TryGetValue(transition, out CloneHandler handler))
@@ -264,6 +323,11 @@ namespace VRPortalToolkit
             return false;
         }
 
+        /// <summary>
+        /// Initializes a clone handler for a specific portal transition.
+        /// </summary>
+        /// <param name="transition">The portal transition to create a clone for.</param>
+        /// <param name="handler">The clone handler to initialize.</param>
         protected virtual void BeginCloneHandler(PortalTransition transition, CloneHandler handler)
         {
             handler.original = original;
@@ -287,8 +351,6 @@ namespace VRPortalToolkit
                         handler.clone = new GameObject();
                         PortalCloning.CreateClones(handler.original, handler.clone, portalAsArray, handler.renderers);
                         PortalCloning.CreateClones(handler.original, handler.clone, portalAsArray, handler.filters);
-
-                        //Dictionary<Transform, Transform> clonesByOriginal = null;
 
                         // Handle unique skinned renderer issue
                         foreach (PortalCloneInfo<Renderer> cloneInfo in handler.renderers)
@@ -334,6 +396,11 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Updates a clone handler to match the current state of the original object.
+        /// </summary>
+        /// <param name="transition">The portal transition associated with the clone.</param>
+        /// <param name="handler">The clone handler to update.</param>
         protected virtual void UpdateCloneHandler(PortalTransition transition, CloneHandler handler)
         {
             if (!handler.original || !handler.clone) return;
@@ -363,8 +430,16 @@ namespace VRPortalToolkit
             else handler.clone.SetActive(false);
         }
 
+        /// <summary>
+        /// Called before the object teleports through a portal.
+        /// </summary>
+        /// <param name="args">The teleportation data.</param>
         protected virtual void OnPreTeleport(Teleportation args) { }
 
+        /// <summary>
+        /// Called after the object teleports through a portal.
+        /// </summary>
+        /// <param name="args">The teleportation data.</param>
         protected virtual void OnPostTeleport(Teleportation args)
         {
             int i = 0;
@@ -390,6 +465,10 @@ namespace VRPortalToolkit
             StartCoroutine(DisableOverrideAfterFixedUpdate());
         }
 
+        /// <summary>
+        /// Disables the teleport override flag after the next fixed update.
+        /// </summary>
+        /// <returns>Coroutine enumerator.</returns>
         protected virtual IEnumerator DisableOverrideAfterFixedUpdate()
         {
             yield return _WaitForFixedUpdate;

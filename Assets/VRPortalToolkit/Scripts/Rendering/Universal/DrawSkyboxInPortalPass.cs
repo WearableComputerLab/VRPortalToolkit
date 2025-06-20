@@ -6,10 +6,18 @@ using UnityEngine.Rendering.Universal;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Render pass that draws the skybox for portal rendering.
+    /// </summary>
     public class DrawSkyboxInPortalPass : PortalRenderPass
     {
+        /// <summary>
+        /// Initializes a new instance of the DrawSkyboxInPortalPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public DrawSkyboxInPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (renderingData.cameraData.camera.clearFlags != CameraClearFlags.Skybox)

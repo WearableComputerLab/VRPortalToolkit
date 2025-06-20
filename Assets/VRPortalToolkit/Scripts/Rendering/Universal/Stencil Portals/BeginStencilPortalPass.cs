@@ -5,20 +5,35 @@ using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
-    // TODO: Could reuse culling results between recursive portals
-    // Might need to combine the culling matrices, which I'm not sure is possible/practical
+    /// <summary>
+    /// Render pass that begins the rendering process for a stencil-based portal.
+    /// </summary>
     public class BeginStencilPortalPass : PortalRenderPass
     {
+        /// <summary>
+        /// The material used to increase the stencil value for portal rendering.
+        /// </summary>
         public Material increaseMaterial { get; set; }
 
+        /// <summary>
+        /// The material used to clear the depth buffer for portal rendering.
+        /// </summary>
         public Material clearDepthMaterial { get; set; }
 
+        /// <summary>
+        /// The portal pass node associated with this pass.
+        /// </summary>
         public PortalPassNode passNode { get; set; }
 
         private static readonly Plane[] _planes = new Plane[6];
 
+        /// <summary>
+        /// Initializes a new instance of the BeginStencilPortalPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public BeginStencilPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (passNode == null || passNode.renderNode == null || passNode.renderNode.parent == null)

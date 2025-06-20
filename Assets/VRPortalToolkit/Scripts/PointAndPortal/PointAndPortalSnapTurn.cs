@@ -8,38 +8,61 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.PointAndPortal
 {
-    // Inspired by XRInteractioToolkit's Snap Turn Provider.
+    /// <summary>
+    /// Provides snap turning functionality during Point & Portal.
+    /// Inspired by XR Interaction Toolkit's Snap Turn Provider.
+    /// </summary>
     public class PointAndPortalSnapTurn : MonoBehaviour
     {
-        [SerializeField] private float _turnThreshold = 0.5f;
+        [SerializeField, Tooltip("Minimum input amount required to trigger a turn.")]
+        private float _turnThreshold = 0.5f;
+        /// <summary>
+        /// Minimum input amount required to trigger a turn.
+        /// </summary>
         public float turnThreshold
         {
             get => _turnThreshold;
             set => _turnThreshold = value;
         }
 
-        [SerializeField] private float _turnAmount = 30f;
+        [SerializeField, Tooltip("Number of degrees to turn when triggering a left or right turn.")]
+        private float _turnAmount = 30f;
+        /// <summary>
+        /// Number of degrees to turn when triggering a left or right turn.
+        /// </summary>
         public float turnAmount
         {
             get => _turnAmount;
             set => _turnAmount = value;
         }
 
-        [SerializeField] private float _debounceTime = 0.5f;
+        [SerializeField, Tooltip("Time in seconds to wait before allowing another turn.")]
+        private float _debounceTime = 0.5f;
+        /// <summary>
+        /// Time in seconds to wait before allowing another turn.
+        /// </summary>
         public float debounceTime
         {
             get => _debounceTime;
             set => _debounceTime = value;
         }
 
-        [SerializeField] private bool _enableTurnLeftRight = true;
+        [SerializeField, Tooltip("Whether to enable left/right snap turns.")]
+        private bool _enableTurnLeftRight = true;
+        /// <summary>
+        /// Whether to enable left/right snap turns.
+        /// </summary>
         public bool enableTurnLeftRight
         {
             get => _enableTurnLeftRight;
             set => _enableTurnLeftRight = value;
         }
 
-        [SerializeField] private bool _enableTurnAround = true;
+        [SerializeField, Tooltip("Whether to enable 180-degree snap turns.")]
+        private bool _enableTurnAround = true;
+        /// <summary>
+        /// Whether to enable 180-degree snap turns.
+        /// </summary>
         public bool enableTurnAround
         {
             get => _enableTurnAround;
@@ -49,15 +72,16 @@ namespace VRPortalToolkit.PointAndPortal
         private float _lastTurnTime;
 
         private IPointAndPortal _pointAndPortal;
+        /// <summary>
+        /// Reference to the Point & Portal component.
+        /// </summary>
         private IPointAndPortal pointAndPortal => _pointAndPortal;
 
         protected virtual void Awake()
         {
             _pointAndPortal = GetComponent<IPointAndPortal>();
 
-            _pointAndPortal = GetComponent<IPointAndPortal>();
             if (_pointAndPortal == null) Debug.LogError("IPointAndPortal not found!");
-
         }
 
         protected virtual void Update()
@@ -86,6 +110,7 @@ namespace VRPortalToolkit.PointAndPortal
                 }, this);
             }
         }
+
         private float GetTurnAmount(Vector2 input)
         {
             if (input == Vector2.zero || input.magnitude < _turnThreshold)

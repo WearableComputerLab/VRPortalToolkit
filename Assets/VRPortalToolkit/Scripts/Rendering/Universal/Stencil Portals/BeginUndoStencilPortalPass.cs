@@ -10,23 +10,38 @@ using VRPortalToolkit.Rendering;
 namespace VRPortalToolkit.Rendering.Universal
 {
     /// <summary>
-    /// This is for the very specific use case where one eye of a stereo camera has passed through a portal
+    /// This is for the very specific use case where one eye of a stereo camera has passed through a portal.
+    /// Handles the special stencil portal rendering required for this transition case.
     /// </summary>
     public class BeginUndoStencilPortalPass : PortalRenderPass
     {
+        /// <summary>
+        /// The material used to increase the stencil value for portal rendering.
+        /// </summary>
         public Material increaseMaterial { get; set; }
 
+        /// <summary>
+        /// The material used to clear the depth buffer for portal rendering.
+        /// </summary>
         public Material clearDepthMaterial { get; set; }
 
+        /// <summary>
+        /// The portal pass node associated with this pass.
+        /// </summary>
         public PortalPassNode passNode { get; set; }
 
         private static MaterialPropertyBlock propertyBlock;
 
+        /// <summary>
+        /// Initializes a new instance of the BeginUndoStencilPortalPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public BeginUndoStencilPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
             if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
         }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (passNode == null || passNode.renderNode == null || passNode.renderNode.parent == null)

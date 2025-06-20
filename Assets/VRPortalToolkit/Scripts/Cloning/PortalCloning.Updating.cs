@@ -5,10 +5,24 @@ using UnityEngine;
 
 namespace VRPortalToolkit.Cloning
 {
+    /// <summary>
+    /// Component and GameObject property updating utilities for the PortalCloning system.
+    /// Provides methods to synchronize various properties between original and cloned objects.
+    /// </summary>
     public static partial class PortalCloning
     {
+        /// <summary>
+        /// Updates the tag of a GameObject to match its original.
+        /// </summary>
+        /// <param name="original">The original GameObject.</param>
+        /// <returns>True if the tag was successfully updated, false otherwise.</returns>
         public static bool UpdateTag(GameObject original) => UpdateTag(original.transform);
 
+        /// <summary>
+        /// Updates the tag of a cloned Component's GameObject to match its original.
+        /// </summary>
+        /// <param name="clone">The cloned Component.</param>
+        /// <returns>True if the tag was successfully updated, false otherwise.</returns>
         public static bool UpdateTag(Component clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Component> cloneInfo))
@@ -20,6 +34,12 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates the tag of a cloned Component's GameObject to match its original using the provided clone info.
+        /// Applies any portal-specific tag modifications as needed.
+        /// </summary>
+        /// <typeparam name="TComponent">The type of component.</typeparam>
+        /// <param name="cloneInfo">The clone information containing the original and clone Component.</param>
         public static void UpdateTag<TComponent>(this PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
@@ -35,8 +55,18 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Updates the layer of a GameObject to match its original.
+        /// </summary>
+        /// <param name="original">The original GameObject.</param>
+        /// <returns>True if the layer was successfully updated, false otherwise.</returns>
         public static bool UpdateLayer<TComponent>(GameObject original) => UpdateLayer(original.transform);
 
+        /// <summary>
+        /// Updates the layer of a cloned Component's GameObject to match its original.
+        /// </summary>
+        /// <param name="clone">The cloned Component.</param>
+        /// <returns>True if the layer was successfully updated, false otherwise.</returns>
         public static bool UpdateLayer(Component clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Component> cloneInfo))
@@ -48,6 +78,12 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates the layer of a cloned Component's GameObject to match its original using the provided clone info.
+        /// Applies any portal-specific layer modifications as needed.
+        /// </summary>
+        /// <typeparam name="TComponent">The type of component.</typeparam>
+        /// <param name="cloneInfo">The clone information containing the original and clone Component.</param>
         public static void UpdateLayer<TComponent>(this PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
@@ -63,8 +99,18 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Updates the active state of a GameObject to match its original.
+        /// </summary>
+        /// <param name="original">The original GameObject.</param>
+        /// <returns>True if the active state was successfully updated, false otherwise.</returns>
         public static bool UpdateActive(GameObject original) => UpdateActiveAndEnabled(original.transform);
 
+        /// <summary>
+        /// Updates the active and enabled states of a cloned Component to match its original.
+        /// </summary>
+        /// <param name="clone">The cloned Component.</param>
+        /// <returns>True if the states were successfully updated, false otherwise.</returns>
         public static bool UpdateActiveAndEnabled(Component clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Component> cloneInfo))
@@ -76,6 +122,12 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates the active and enabled states of a cloned Component to match its original using the provided clone info.
+        /// Handles different types of components appropriately (Transform, Behaviour, Renderer).
+        /// </summary>
+        /// <typeparam name="TComponent">The type of component.</typeparam>
+        /// <param name="cloneInfo">The clone information containing the original and clone Component.</param>
         public static void UpdateActiveAndEnabled<TComponent>(this PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
@@ -96,6 +148,11 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Updates the enabled state of a cloned Component to match its original.
+        /// </summary>
+        /// <param name="clone">The cloned Component.</param>
+        /// <returns>True if the enabled state was successfully updated, false otherwise.</returns>
         public static bool UpdateEnabled(Component clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Component> cloneInfo))
@@ -107,6 +164,12 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates the enabled state of a cloned Component to match its original using the provided clone info.
+        /// Handles different types of components appropriately (Behaviour, Renderer).
+        /// </summary>
+        /// <typeparam name="TComponent">The type of component.</typeparam>
+        /// <param name="cloneInfo">The clone information containing the original and clone Component.</param>
         public static void UpdateEnabled<TComponent>(this PortalCloneInfo<TComponent> cloneInfo) where TComponent : Component
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
@@ -121,6 +184,11 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Updates the world transform of a cloned Transform to match its original, with portal transformations applied.
+        /// </summary>
+        /// <param name="clone">The cloned Transform.</param>
+        /// <returns>True if the transform was successfully updated, false otherwise.</returns>
         public static bool UpdateTransformWorld(Transform clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Transform> cloneInfo))
@@ -132,6 +200,11 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates the world transform of a cloned Transform to match its original using the provided clone info.
+        /// Applies portal transformations to properly position the clone relative to portals.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone Transform.</param>
         public static void UpdateTransformWorld(this PortalCloneInfo<Transform> cloneInfo)
         {
             Transform original = cloneInfo.original, clone = cloneInfo.clone;
@@ -149,6 +222,11 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Updates the local transform of a cloned Transform to match its original.
+        /// </summary>
+        /// <param name="clone">The cloned Transform.</param>
+        /// <returns>True if the transform was successfully updated, false otherwise.</returns>
         public static bool UpdateTransformLocal(Transform clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Transform> cloneInfo))
@@ -160,6 +238,10 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates the local transform of a cloned Transform to match its original using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone Transform.</param>
         public static void UpdateTransformLocal(this PortalCloneInfo<Transform> cloneInfo)
         {
             Transform original = cloneInfo.original, clone = cloneInfo.clone;
@@ -172,58 +254,11 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
-        /*public static bool UpdateParent(Transform clone)
-        {
-            if (TryGetOriginal(clone, out Transform original))
-            {
-                if (TryGetClone(original.parent, out Transform cloneParent))
-                {
-                    if (clone.parent != cloneParent)
-                        clone.SetParent(cloneParent, false);
-                }
-                else if (clone.parent != original.parent)
-                {
-                    //if (transform.IsChildOf(original.transform))
-                    //clone.SetParent(transform, false);
-                    //else
-                    clone.SetParent(original.parent, false);
-                }
-
-                return true;
-            }
-
-            return false;
-        }*/
-
-        /*public bool UpdateChildren(Transform clone)
-        {
-            if (TryGetOriginal(clone, out Transform original))
-            {
-                Transform originalChild, cloneChild;
-
-                for (int i = 0; i < original.childCount; i++)
-                {
-                    originalChild = original.GetChild(i);
-
-                    if (TryGetClone(originalChild, out cloneChild))
-                    {
-                        if (cloneChild.parent != clone)
-                            cloneChild.SetParent(clone, false);
-                    }
-                }
-
-                return true;
-            }
-
-            return false;
-        }*/
-
-        // TODO: Would be cool to have an UpdateSerialized
-        // And an UpdateSerializedRelative
-
-        // TODO Also these dont also update fields of the derrived class
-        // Also updating the fields wont trigger the properties (for my Validate stuff)
-
+        /// <summary>
+        /// Updates the fields of a cloned Component to match its original.
+        /// </summary>
+        /// <param name="clone">The cloned Component.</param>
+        /// <returns>True if the fields were successfully updated, false otherwise.</returns>
         public static bool UpdateFields(Component clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Component> cloneInfo))
@@ -235,6 +270,11 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates the fields of a cloned Component to match its original using the provided clone info.
+        /// Uses reflection to copy all public instance fields.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone Component.</param>
         public static void UpdateFields(this PortalCloneInfo<Component> cloneInfo)
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
@@ -251,32 +291,11 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
-        /*public virtual bool UpdateFieldsRelative(Component clone)
-        {
-            if (TryGetOriginal(clone, out Component original))
-            {
-                object asObject;
-                System.Type type = original.GetType();
-
-                if (type == clone.GetType())
-                {
-                    foreach (var property in type.GetFields())
-                    {
-                        asObject = property.GetValue(original);
-
-                        if (asObject is Component asComponent && TryGetClone(asComponent, out Component cloneComponent))
-                            property.SetValue(clone, cloneComponent);
-                        else
-                            property.SetValue(clone, asObject);
-                    }
-
-                    return true;
-                }
-            }
-
-            return true;
-        }*/
-
+        /// <summary>
+        /// Updates the properties of a cloned Component to match its original.
+        /// </summary>
+        /// <param name="clone">The cloned Component.</param>
+        /// <returns>True if the properties were successfully updated, false otherwise.</returns>
         public static bool UpdateProperties(Component clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Component> cloneInfo))
@@ -288,6 +307,11 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates the properties of a cloned Component to match its original using the provided clone info.
+        /// Uses reflection to copy all readable and writable properties, with special handling for material-related properties.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone Component.</param>
         public static void UpdateProperties(this PortalCloneInfo<Component> cloneInfo)
         {
             Component original = cloneInfo.original, clone = cloneInfo.clone;
@@ -319,87 +343,5 @@ namespace VRPortalToolkit.Cloning
                 }
             }
         }
-
-        /*public virtual bool UpdatePropertiesRelative(Component original)
-        {
-            if (_cloneByOriginal == null || _cloneByOriginal.Count == 0)
-                UpdateCache();
-
-            System.Type type;
-            object asObject;
-            Component asComponent;
-            bool ignoreMaterial;
-
-            if (TryGetClone(original, out Component clone))
-            {
-                type = original.GetType();
-
-                if (type == clone.GetType())
-                {
-                    ignoreMaterial = (original is Renderer) || (original is Collider);
-
-                    do
-                    {
-                        foreach (var property in type.GetProperties())
-                        {
-                            if (!property.CanWrite || !property.CanRead) continue;
-
-                            if (ignoreMaterial && (property.Name == "material" || property.Name == "materials"))
-                                continue;
-
-                            asObject = property.GetValue(original);
-                            asComponent = asObject as Component;
-
-                            if (asComponent && TryGetClone(asComponent, out Component cloneComponent))
-                                property.SetValue(clone, cloneComponent);
-                            else
-                                property.SetValue(clone, asObject);
-                        }
-
-                        type = type.BaseType;
-
-                    } while (type != null);
-
-                    return true;
-                }
-            }
-
-            return false;
-        }*/
-
-        /*private void UpdateRenderer(Renderer original, Renderer clone)
-        {
-            // Use this to prevent the use of instancing materials unneccessarily
-            clone.motionVectorGenerationMode = original.motionVectorGenerationMode;
-            clone.renderingLayerMask = original.renderingLayerMask;
-            clone.rendererPriority = original.rendererPriority;
-            clone.rayTracingMode = original.rayTracingMode;
-            clone.sortingLayerID = original.sortingLayerID;
-            clone.sortingOrder = original.sortingOrder;
-            clone.allowOcclusionWhenDynamic = original.allowOcclusionWhenDynamic;
-            clone.lightProbeProxyVolumeOverride = original.lightProbeProxyVolumeOverride;
-            clone.probeAnchor = original.probeAnchor;
-            clone.lightmapIndex = original.lightmapIndex;
-            clone.realtimeLightmapIndex = original.realtimeLightmapIndex;
-            clone.lightmapScaleOffset = original.lightmapScaleOffset;
-            clone.realtimeLightmapScaleOffset = original.realtimeLightmapScaleOffset;
-            clone.reflectionProbeUsage = original.reflectionProbeUsage;
-            clone.lightProbeUsage = original.lightProbeUsage;
-            clone.sharedMaterials = original.sharedMaterials;
-            clone.staticShadowCaster = original.staticShadowCaster;
-            clone.enabled = original.enabled;
-            clone.shadowCastingMode = original.shadowCastingMode;
-            clone.receiveShadows = original.receiveShadows;
-            clone.forceRenderingOff = original.forceRenderingOff;
-        }
-
-        private void UpdateCollider(Collider original, Collider clone)
-        {
-            // Use this to prevent the use of instancing materials unneccessarily
-            clone.isTrigger = original.isTrigger;
-            clone.contactOffset = original.contactOffset;
-            clone.sharedMaterial = original.sharedMaterial;
-            clone.enabled = original.enabled;
-        }*/
     }
 }

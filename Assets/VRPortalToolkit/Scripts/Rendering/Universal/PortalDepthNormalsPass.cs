@@ -9,16 +9,28 @@ using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering
 {
+    /// <summary>
+    /// Render pass that generates a depth and normals texture for portals.
+    /// </summary>
     public class PortalDepthNormalsPass : PortalRenderPass
     {
+        /// <summary>
+        /// The shader property ID for the portal depth normals texture.
+        /// </summary>
         public static readonly int PortalDepthNormalsTexture = Shader.PropertyToID("_PortalDepthNormalsTexture");
 
         private static Material depthNormalsMaterial;
 
         private DrawingSettings _drawingSettings;
+        /// <summary>
+        /// The drawing settings to use for rendering objects.
+        /// </summary>
         public DrawingSettings drawingSettings { get => _drawingSettings; set => _drawingSettings = value; }
 
         private FilteringSettings _filteringSettings;
+        /// <summary>
+        /// The filtering settings to use for determining which objects to render.
+        /// </summary>
         public FilteringSettings filteringSettings { get => _filteringSettings; set => _filteringSettings = value; }
 
         //public PortalRenderer portalRenderer { get; set; }
@@ -27,12 +39,17 @@ namespace VRPortalToolkit.Rendering
 
         private RenderTexture _depthNormalsTexture;
 
+        /// <summary>
+        /// Initializes a new instance of the PortalDepthNormalsPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public PortalDepthNormalsPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
             if (!depthNormalsMaterial)
                 depthNormalsMaterial = CoreUtils.CreateEngineMaterial("Hidden/Internal-DepthNormalsTexture");
         }
 
+        /// <inheritdoc/>
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             //RenderTextureDescriptor descriptor = new RenderTextureDescriptor(cameraTextureDescriptor.width, cameraTextureDescriptor.height, RenderTextureFormat.ARGB32, 32);
@@ -48,6 +65,7 @@ namespace VRPortalToolkit.Rendering
             ConfigureClear(ClearFlag.All, Color.black);
         }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             CommandBuffer cmd = CommandBufferPool.Get();
@@ -95,7 +113,7 @@ namespace VRPortalToolkit.Rendering
             CommandBufferPool.Release(cmd);
         }
 
-        /// Cleanup any allocated resources that were created during the execution of this render pass.
+        /// <inheritdoc/>
         public override void FrameCleanup(CommandBuffer cmd)
         {
             if (_depthNormalsTexture)

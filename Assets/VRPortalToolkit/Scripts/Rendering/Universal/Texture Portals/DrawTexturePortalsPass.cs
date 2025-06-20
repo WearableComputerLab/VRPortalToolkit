@@ -7,17 +7,28 @@ using VRPortalToolkit.Data;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Render pass that draws texture-based portals into the scene.
+    /// </summary>
     public class DrawTexturePortalsPass : PortalRenderPass
     {
         private static MaterialPropertyBlock propertyBlock;
 
+        /// <summary>
+        /// The material to use for rendering the portals.
+        /// </summary>
         public Material material { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the DrawTexturePortalsPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public DrawTexturePortalsPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
             if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
         }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             CommandBuffer cmd = CommandBufferPool.Get();

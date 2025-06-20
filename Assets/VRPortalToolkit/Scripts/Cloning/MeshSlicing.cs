@@ -1,12 +1,33 @@
 using EzySlice;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace VRPortalToolkit.Cloning
 {
+    /// <summary>
+    /// Provides functionality for slicing meshes using one or more cutting planes.
+    /// Used in portal systems for creating properly clipped visual representations of objects.
+    /// </summary>
     public static class MeshSlicing
     {
+        /// <summary>
+        /// Slices a mesh using one or more cutting planes.
+        /// </summary>
+        /// <param name="vertices">The vertices of the mesh to slice.</param>
+        /// <param name="uv">The UV coordinates of the mesh (can be null if UV mapping is not needed).</param>
+        /// <param name="normals">The normals of the mesh (can be null if normals are not needed).</param>
+        /// <param name="tangents">The tangents of the mesh (can be null if tangents are not needed).</param>
+        /// <param name="triangles">The triangles of the mesh, organized by submesh.</param>
+        /// <param name="vertsCount">The number of vertices in the mesh.</param>
+        /// <param name="submeshCount">The number of submeshes in the mesh.</param>
+        /// <param name="triangleCount">The number of triangles in each submesh (can be null to use the full length of each triangle array).</param>
+        /// <param name="cuttingPlanes">The planes to cut the mesh with.</param>
+        /// <param name="cuttingPlanesCount">The number of cutting planes to use.</param>
+        /// <param name="crossIndex">The submesh index where cross-section faces should be added.</param>
+        /// <param name="uvRect">The UV rectangle to use for cross-section faces.</param>
+        /// <param name="newMesh">Output parameter for the resulting sliced mesh.</param>
+        /// <param name="hasInside">Output parameter indicating whether any part of the mesh remains after slicing.</param>
+        /// <returns>True if the mesh was sliced, false otherwise.</returns>
         public static bool Slice(Vector3[] vertices, Vector3[] uv, Vector3[] normals, Vector4[] tangents, int[][] triangles, int vertsCount, int submeshCount, int[] triangleCount, UnityEngine.Plane[] cuttingPlanes, int cuttingPlanesCount, int crossIndex, Rect uvRect, out Mesh newMesh, out bool hasInside)
         {
             if (vertices == null || vertsCount > vertices.Length || vertsCount <= 0
@@ -216,9 +237,18 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
-        /**
-         * Generate a single Mesh HULL of either the UPPER or LOWER hulls. 
-         */
+        /// <summary>
+        /// Creates a mesh from the triangle lists generated during slicing.
+        /// </summary>
+        /// <param name="meshes">Arrays of triangles for each submesh.</param>
+        /// <param name="meshesTriangleCount">Total number of triangles in all submeshes.</param>
+        /// <param name="hasUV">Whether to include UV coordinates.</param>
+        /// <param name="hasNormal">Whether to include normals.</param>
+        /// <param name="hasTangent">Whether to include tangents.</param>
+        /// <param name="crossSections">Arrays of triangles for each cross-section.</param>
+        /// <param name="crossSectionsTriangleCount">Total number of triangles in cross-sections.</param>
+        /// <param name="crossIndex">Submesh index for cross-section faces.</param>
+        /// <returns>A new mesh containing the sliced geometry.</returns>
         private static Mesh CreateHull(List<Triangle>[] meshes, int meshesTriangleCount, bool hasUV, bool hasNormal, bool hasTangent, List<Triangle>[] crossSections, int crossSectionsTriangleCount, int crossIndex)
         {
             if (meshesTriangleCount <= 0)
@@ -404,18 +434,6 @@ namespace VRPortalToolkit.Cloning
                 newMesh.SetTriangles(triangles[i], i, false);
 
             return newMesh;
-        }
-
-        /**
-         * Generate Two Meshes (an upper and lower) cross section from a set of intersection
-         * points and a plane normal. Intersection Points do not have to be in order.
-         */
-        private static List<Triangle> CreateFrom(List<Vector3> intPoints, Vector3 planeNormal, TextureRegion region)
-        {
-            if (Triangulator.MonotoneChain(intPoints, planeNormal, out List<Triangle> tris, region))
-                return tris;
-
-            return null;
         }
     }
 }

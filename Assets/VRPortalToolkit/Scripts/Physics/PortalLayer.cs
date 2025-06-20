@@ -12,6 +12,8 @@ namespace VRPortalToolkit
 {
     /// <summary>
     /// Represents a portal layer for managing layer transitions and conversions in portal physics.
+    /// There should be a trigger volume for the PortalLayer and then inside a smaller trigger volume for the PortalTransition.
+    /// This allows for physics through portals to be fully implemented.
     /// </summary>
     public class PortalLayer : MonoBehaviour
     {

@@ -4,12 +4,17 @@ using UnityEngine;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Monitors a container to check if a set of orbs are all inside it.
+    /// </summary>
     public class OrbContainer : MonoBehaviour
     {
         private static readonly WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
-        //public static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
         [SerializeField] private Transform[] _orbs;
+        /// <summary>
+        /// Array of orb transforms that need to be inside this container for it to be valid.
+        /// </summary>
         public Transform[] orbs
         {
             get => _orbs;
@@ -17,6 +22,9 @@ namespace VRPortalToolkit.Examples
         }
 
         private bool _isValid = false;
+        /// <summary>
+        /// Whether all required orbs are currently inside the container.
+        /// </summary>
         public bool isValid => _isValid;
 
         protected readonly TriggerHandler<Transform> _triggerHandler = new TriggerHandler<Transform>();

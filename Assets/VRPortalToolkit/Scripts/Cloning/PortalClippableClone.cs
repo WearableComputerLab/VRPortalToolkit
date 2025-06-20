@@ -6,17 +6,31 @@ using VRPortalToolkit.Rendering;
 
 namespace VRPortalToolkit
 {
-    // TODO: Need an offset to hide things
-    // TODO: One time this failed to unclip... (Happened when teleportation occured)
-
+    /// <summary>
+    /// Extends PortalRenderClone to add clipping functionality to the clones.
+    /// This allows clones to be properly clipped on the portal's plane.
+    /// </summary>
     [DefaultExecutionOrder(1030)]
     public class PortalClippableClone : PortalRenderClone
     {
+        [Tooltip("The offset distance for the clipping plane to prevent z-fighting")]
         [SerializeField] private float _clippingOffset = -0.001f;
+        /// <summary>
+        /// The offset distance for the clipping plane to prevent z-fighting.
+        /// Negative values move the clipping plane slightly away from the portal.
+        /// </summary>
         public float clippingOffset { get => _clippingOffset; set => _clippingOffset = value; }
 
+        /// <summary>
+        /// The material property block used to set clipping parameters on renderers.
+        /// </summary>
         protected MaterialPropertyBlock _propertyBlock;
 
+        /// <summary>
+        /// Updates the clone handler by applying clipping planes to all renderers.
+        /// </summary>
+        /// <param name="transition">The portal transition associated with this clone.</param>
+        /// <param name="handler">The clone handler containing information about the clone.</param>
         protected override void UpdateCloneHandler(PortalTransition transition, CloneHandler handler)
         {
             Vector3 teleportCentre, teleportNormal;
@@ -39,6 +53,13 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Tries to get the clipping plane information from a portal transition.
+        /// </summary>
+        /// <param name="transition">The portal transition to get information from.</param>
+        /// <param name="centre">Output parameter for the center of the clipping plane.</param>
+        /// <param name="normal">Output parameter for the normal of the clipping plane.</param>
+        /// <returns>True if clipping information was found, false otherwise.</returns>
         protected virtual bool TryGetSlice(PortalTransition transition, out Vector3 centre, out Vector3 normal)
         {
             if (transition && transition.transitionPlane)
@@ -56,13 +77,5 @@ namespace VRPortalToolkit
             normal = Vector3.zero;
             return false;
         }
-
-        /*protected virtual Vector3 ClosestPoint(Vector3 position, Collider collider)
-        {
-            if (collider is BoxCollider || collider is SphereCollider || collider is CapsuleCollider || (collider is MeshCollider meshCollider && meshCollider.convex))
-                return collider.ClosestPoint(position);
-
-            return collider.ClosestPointOnBounds(position);
-        }*/
     }
 }

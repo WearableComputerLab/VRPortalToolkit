@@ -7,9 +7,24 @@ using VRPortalToolkit.XRI;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Controls different reach extension modes through portals for demonstration purposes.
+    /// Allows cycling through various reach configurations via a button press.
+    /// </summary>
+    /// <remarks>
+    /// This component demonstrates different portal reach extension techniques:
+    /// - Natural Reach: No reach extensions
+    /// - Adaptive Portal Reach (Exit): Extension at portal exit
+    /// - Adaptive Portal Reach (Entry): Extension at portal entry
+    /// - Adaptive Portal Reach (Composite): Balanced extension at both entry and exit
+    /// - Portal Hand Reach: Alternative reach extension technique
+    /// </remarks>
     public class ReachController : MonoBehaviour
     {
         [SerializeField] private XRBaseInteractable _button;
+        /// <summary>
+        /// The button interactable that cycles through reach modes when pressed.
+        /// </summary>
         public XRBaseInteractable button
         {
             get => _button;
@@ -17,6 +32,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private PortalManager _portalManager;
+        /// <summary>
+        /// Reference to the PortalManager that manages the portals whose reach behavior will be modified.
+        /// </summary>
         public PortalManager portalManager
         {
             get => _portalManager;
@@ -24,6 +42,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private TextMeshPro _text;
+        /// <summary>
+        /// Text component that displays the current reach mode.
+        /// </summary>
         public TextMeshPro text
         {
             get => _text;

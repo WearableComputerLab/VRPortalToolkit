@@ -8,8 +8,14 @@ using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Render pass that handles additional light shadows for objects within portals.
+    /// </summary>
     public class AdditionalLightsShadowCasterInPortalPass : AdditionalLightsShadowCasterPass
     {
+        /// <summary>
+        /// Whether this pass is enabled and should execute.
+        /// </summary>
         public bool enabled { get; set; } = true;
 
         protected Texture prevShadowTexture;
@@ -20,11 +26,16 @@ namespace VRPortalToolkit.Rendering.Universal
         protected Vector4[] prevShadowOffset = new Vector4[4];
         protected Vector4 prevShadowmapSize;
 
+        /// <summary>
+        /// Initializes a new instance of the AdditionalLightsShadowCasterInPortalPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public AdditionalLightsShadowCasterInPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
             profilingSampler = new ProfilingSampler(nameof(AdditionalLightsShadowCasterInPortalPass));
         }
 
+        /// <inheritdoc/>
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             if (enabled)
@@ -43,6 +54,7 @@ namespace VRPortalToolkit.Rendering.Universal
             }
         }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (enabled)
@@ -66,9 +78,14 @@ namespace VRPortalToolkit.Rendering.Universal
             }
         }
 
+        /// <inheritdoc/>
         // Deliberately clear
         public override void OnCameraCleanup(CommandBuffer cmd) { }
 
+        /// <summary>
+        /// Cleans up and restores shadow state when portal rendering is complete.
+        /// </summary>
+        /// <param name="cmd">Command buffer to enqueue cleanup commands.</param>
         public virtual void OnPortalCleanup(CommandBuffer cmd)
         {
             if (enabled)

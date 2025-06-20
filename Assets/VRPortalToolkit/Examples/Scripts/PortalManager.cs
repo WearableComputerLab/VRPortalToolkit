@@ -10,9 +10,15 @@ using VRPortalToolkit.XRI;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Allows players to spawn and despawn portal pairs using VR controllers and handles portal positioning and orientation.
+    /// </summary>
     public class PortalManager : MonoBehaviour
     {
         [SerializeField] private List<Transform> _portalPairs = new List<Transform>();
+        /// <summary>
+        /// List of portal pair transforms that can be spawned. Portal pairs are recycled when depleted.
+        /// </summary>
         public List<Transform> portalPairs
         {
             get => _portalPairs;
@@ -20,6 +26,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private XRBaseInteractor _leftInteractor;
+        /// <summary>
+        /// The left hand interactor used to grab and place portals.
+        /// </summary>
         public XRBaseInteractor leftInteractor
         {
             get => _leftInteractor;
@@ -27,6 +36,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private InputActionProperty _leftSpawnAction;
+        /// <summary>
+        /// Input action that triggers portal spawning from the left controller.
+        /// </summary>
         public InputActionProperty leftSpawnAction
         {
             get => _leftSpawnAction;
@@ -34,6 +46,10 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Transform _leftOffset;
+        /// <summary>
+        /// Transform that defines the spawn position and orientation offset for the left controller.
+        /// If null, the interactor's transform is used directly.
+        /// </summary>
         public Transform leftOffset
         {
             get => _leftOffset;
@@ -41,6 +57,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private XRBaseInteractor _rightInteractor;
+        /// <summary>
+        /// The right hand interactor used to grab and place portals.
+        /// </summary>
         public XRBaseInteractor rightInteractor
         {
             get => _rightInteractor;
@@ -48,6 +67,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private InputActionProperty _rightSpawnAction;
+        /// <summary>
+        /// Input action that triggers portal spawning from the right controller.
+        /// </summary>
         public InputActionProperty rightSpawnAction
         {
             get => _rightSpawnAction;
@@ -55,12 +77,20 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Transform _rightOffset;
+        /// <summary>
+        /// Transform that defines the spawn position and orientation offset for the right controller.
+        /// If null, the interactor's transform is used directly.
+        /// </summary>
         public Transform rightOffset
         {
             get => _rightOffset;
             set => _rightOffset = value;
         }
 
+        /// <summary>
+        /// Event triggered when a portal is successfully spawned.
+        /// Provides the Transform of the spawned portal pair.
+        /// </summary>
         public UnityAction<Transform> portalSpawned;
 
         // Portal parents are changed when interactables are being held, so this is just a quick fix to that
@@ -90,10 +120,27 @@ namespace VRPortalToolkit.Examples
                 _rightSpawnAction.action.started -= SpawnRightPortal;
         }
 
+        /// <summary>
+        /// Event handler for left controller spawn action.
+        /// Calls SpawnPortal with the left interactor and offset.
+        /// </summary>
+        /// <param name="_">Input action callback context (unused)</param>
         private void SpawnLeftPortal(InputAction.CallbackContext _) => SpawnPortal(_leftInteractor, _leftOffset);
 
+        /// <summary>
+        /// Event handler for right controller spawn action.
+        /// Calls SpawnPortal with the right interactor and offset.
+        /// </summary>
+        /// <param name="_">Input action callback context (unused)</param>
         private void SpawnRightPortal(InputAction.CallbackContext _) => SpawnPortal(_rightInteractor, _rightOffset);
 
+        /// <summary>
+        /// Handles the logic for spawning or despawning a portal.
+        /// If the interactor is not selecting anything, a portal will be spawned.
+        /// If the interactor is selecting a portal, the portal will be despawned.
+        /// </summary>
+        /// <param name="interactor">The interactor initiating the action</param>
+        /// <param name="offset">Transform defining position and orientation offset (optional)</param>
         private void SpawnPortal(XRBaseInteractor interactor, Transform offset)
         {
             if (!interactor) return;
@@ -158,6 +205,11 @@ namespace VRPortalToolkit.Examples
             }
         }
 
+        /// <summary>
+        /// Updates the offset transform of an AdaptivePortal based on its maintained bounds.
+        /// This adjusts the visual handle or grip position of the portal.
+        /// </summary>
+        /// <param name="portalSize">The AdaptivePortal component to update</param>
         private void UpdateOffset(AdaptivePortal portalSize)
         {
             if (portalSize && portalSize.offset)
@@ -167,6 +219,12 @@ namespace VRPortalToolkit.Examples
             }
         }
 
+        /// <summary>
+        /// Attempts to get an available portal pair from the pool.
+        /// First looks for inactive portal pairs, then recycles an active one if necessary.
+        /// </summary>
+        /// <param name="portalPair">The output portal pair transform if found</param>
+        /// <returns>True if a portal pair was found, false otherwise</returns>
         private bool TryGetPortalPair(out Transform portalPair)
         {
             if (_portalPairs != null)
@@ -183,7 +241,7 @@ namespace VRPortalToolkit.Examples
                     }
                 }
 
-                // Otherwise recycle first active on in the list
+                // Otherwise recycle first active one in the list
                 for (int i = 0; i < _portalPairs.Count; i++)
                 {
                     portalPair = _portalPairs[i];
@@ -201,6 +259,12 @@ namespace VRPortalToolkit.Examples
             return false;
         }
 
+        /// <summary>
+        /// Moves a portal pair from its current position in the list to the end.
+        /// This implements a basic recycling system for portal pairs, prioritizing
+        /// those at the beginning of the list for reuse.
+        /// </summary>
+        /// <param name="index">The index of the portal pair to move to the end</param>
         private void SwapBack(int index)
         {
             Transform pair = _portalPairs[index];

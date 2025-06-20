@@ -6,9 +6,26 @@ using VRPortalToolkit.Examples;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Controls a progressive tutorial that teaches users how to interact with portals.
+    /// </summary>
+    /// <remarks>
+    /// This component manages a multi-stage tutorial that guides users through:
+    /// 1. Learning teleportation mechanics
+    /// 2. Moving to a specific location
+    /// 3. Using existing portals
+    /// 4. Creating their own portals
+    /// 5. Placing portals at specific locations
+    /// 6. Using the world grab mechanics
+    /// 
+    /// Each stage must be completed before progressing to the next one.
+    /// </remarks>
     public class PortalTutorial : MonoBehaviour
     {
         [SerializeField] private Transform _head;
+        /// <summary>
+        /// The transform representing the user's head/camera position.
+        /// </summary>
         public Transform head
         {
             get => _head;
@@ -16,6 +33,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private ButtonTask _buttonTask;
+        /// <summary>
+        /// The button task that controls interactive button elements in the tutorial.
+        /// </summary>
         public ButtonTask buttonTask
         {
             get => _buttonTask;
@@ -23,6 +43,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private GameObject _portals;
+        /// <summary>
+        /// GameObject containing the pre-placed portals for the tutorial.
+        /// </summary>
         public GameObject portals
         {
             get => _portals;
@@ -30,6 +53,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private GameObject _moveHere;
+        /// <summary>
+        /// Visual indicator showing where the user should move during the movement stage.
+        /// </summary>
         public GameObject moveHere
         {
             get => _moveHere;
@@ -37,6 +63,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private float _moveHereThreshold = 0.15f;
+        /// <summary>
+        /// Distance threshold (in meters) for determining if the user is close enough to the move target.
+        /// </summary>
         public float moveHereThreshold
         {
             get => _moveHereThreshold;
@@ -44,6 +73,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private GameObject _createPortal;
+        /// <summary>
+        /// Visual indicator showing instructions for creating a portal.
+        /// </summary>
         public GameObject createPortal
         {
             get => _createPortal;
@@ -51,6 +83,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private GameObject _portalhere;
+        /// <summary>
+        /// Visual indicator showing where the user should place a portal.
+        /// </summary>
         public GameObject portalhere
         {
             get => _portalhere;
@@ -58,6 +93,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private PortalManager _portalManager;
+        /// <summary>
+        /// Reference to the PortalManager that handles portal creation and management.
+        /// </summary>
         public PortalManager portalManager
         {
             get => _portalManager;
@@ -65,6 +103,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private float _portalHereThreshold = 1f;
+        /// <summary>
+        /// Distance threshold (in meters) for determining if a portal is placed close enough to the target.
+        /// </summary>
         public float portalHereThreshold
         {
             get => _portalHereThreshold;
@@ -72,6 +113,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private ScoreDoor _door;
+        /// <summary>
+        /// The door that opens upon successful completion of the tutorial.
+        /// </summary>
         public ScoreDoor door
         {
             get => _door;
@@ -79,6 +123,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private float _waitTime = 8f;
+        /// <summary>
+        /// Time in seconds to wait during the final stage before completing the tutorial.
+        /// </summary>
         public float waitTime
         {
             get => _waitTime;
@@ -86,6 +133,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private GameObject _worldGrab;
+        /// <summary>
+        /// Visual indicator showing instructions for using the world grab feature.
+        /// </summary>
         public GameObject worldGrab
         {
             get => _worldGrab;
@@ -97,16 +147,33 @@ namespace VRPortalToolkit.Examples
         private float _placeTime = 0f;
 
         private State _state;
+        /// <summary>
+        /// Represents the different stages of the portal tutorial.
+        /// </summary>
         private enum State
         {
+            /// <summary>Initial stage teaching teleportation mechanics.</summary>
             TeleportTask,
+            
+            /// <summary>Stage where user must move to a specific location.</summary>
             MoveHere,
+            
+            /// <summary>Stage teaching how to use existing portals.</summary>
             PortalTask,
+            
+            /// <summary>Stage teaching how to create portals.</summary>
             CreatePortal,
+            
+            /// <summary>Stage teaching how to place portals at specific locations.</summary>
             PortalHere,
+            
+            /// <summary>Stage teaching world grab mechanics.</summary>
             WorldGrab,
+            
+            /// <summary>Final completion stage.</summary>
             Complete,
         }
+
         protected virtual void Start()
         {
             Restart();
@@ -223,6 +290,9 @@ namespace VRPortalToolkit.Examples
             return false;
         }
 
+        /// <summary>
+        /// Resets the tutorial to its initial state.
+        /// </summary>
         public void Restart()
         {
             _count = 0;
@@ -249,6 +319,7 @@ namespace VRPortalToolkit.Examples
         }
 
         private void OnButtonTaskCompleted(Scoreboard.Score _) => _count++;
+        
         private void OnPortalSpawned(Transform portal) => _portalSpawned = true;
     }
 }

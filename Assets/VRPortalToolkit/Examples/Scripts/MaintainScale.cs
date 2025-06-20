@@ -6,9 +6,15 @@ using UnityEngine.Rendering;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Ensures target objects maintain a consistent scale regardless of their parent's scale.
+    /// </summary>
     public class MaintainScale : MonoBehaviour
     {
         [SerializeField] private Transform[] _targets;
+        /// <summary>
+        /// Array of transforms to maintain at a consistent scale.
+        /// </summary>
         public Transform[] targets
         {
             get => _targets;
@@ -16,6 +22,10 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Vector2 _scale = Vector2.one;
+        /// <summary>
+        /// The X and Y scale values to maintain for target transforms.
+        /// Z scale is preserved from the original transform.
+        /// </summary>
         public Vector2 scale
         {
             get => _scale;

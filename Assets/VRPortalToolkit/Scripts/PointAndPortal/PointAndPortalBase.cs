@@ -5,57 +5,108 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.PointAndPortal
 {
+    /// <summary>
+    /// Interface defining the functionality for a Point & Portal system. See https://ieeexplore.ieee.org/abstract/document/10316441.
+    /// </summary>
     public interface IPointAndPortal : IPortalLineRenderable, IPortalCursorRenderable
     {
+        /// <summary>
+        /// The 2D input value for controlling pointing direction.
+        /// </summary>
         Vector2 input { get; }
 
+        /// <summary>
+        /// Whether the system is currently in pointing mode.
+        /// </summary>
         bool isPointing { get; }
 
+        /// <summary>
+        /// Whether the system is currently performing a teleportation.
+        /// </summary>
         bool isTeleporting { get; }
         
+        /// <summary>
+        /// The ground plane for the local side of the portal.
+        /// </summary>
         Plane groundPlane { get; }
 
+        /// <summary>
+        /// The transform on the connected side of the portal.
+        /// </summary>
         Transform connected { get; }
 
+        /// <summary>
+        /// The ground plane for the connected side of the portal.
+        /// </summary>
         Plane connectedGroundPlane { get; }
 
+        /// <summary>
+        /// Attempts to get the teleport pose for the connected side.
+        /// </summary>
+        /// <param name="pose">The resulting pose for teleportation.</param>
+        /// <param name="isValidTarget">Whether the target is valid for teleportation.</param>
+        /// <returns>True if a teleport pose was found, false otherwise.</returns>
         bool TryGetTeleportConnectedPose(out Pose pose, out bool isValidTarget);
     }
 
+    /// <summary>
+    /// Base implementation for Point & Portal systems. See https://ieeexplore.ieee.org/abstract/document/10316441.
+    /// Provides core functionality for aiming, raycasting through portals, and teleportation.
+    /// </summary>
     public abstract class PointAndPortalBase : MonoBehaviour, IPointAndPortal
     {
         private readonly static int MaxPortals = 10;
         private readonly static PortalRay[] castPortalRays = new PortalRay[MaxPortals];
 
-        [SerializeField] private LayerMask _portalMask = 1 << 3;
+        [SerializeField, Tooltip("The layer mask used for portal raycasting.")]
+        private LayerMask _portalMask = 1 << 3;
+        /// <summary>
+        /// The layer mask used for portal raycasting.
+        /// </summary>
         public virtual LayerMask portalMask
         {
             get => _portalMask;
             set => _portalMask = value;
         }
 
-        [SerializeField] private QueryTriggerInteraction _portalTriggerInteraction;
+        [SerializeField, Tooltip("The trigger interaction mode for portal raycasting.")]
+        private QueryTriggerInteraction _portalTriggerInteraction;
+        /// <summary>
+        /// The trigger interaction mode for portal raycasting.
+        /// </summary>
         public virtual QueryTriggerInteraction portalTriggerInteraction
         {
             get => _portalTriggerInteraction;
             set => _portalTriggerInteraction = value;
         }
 
-        [SerializeField] private LayerMask _raycastMask = ~0 & ~(1 << 2) & ~(1 << 3);
+        [SerializeField, Tooltip("The layer mask used for general raycasting.")]
+        private LayerMask _raycastMask = ~0 & ~(1 << 2) & ~(1 << 3);
+        /// <summary>
+        /// The layer mask used for general raycasting.
+        /// </summary>
         public virtual LayerMask raycastMask
         {
             get => _raycastMask;
             set => _raycastMask = value;
         }
 
-        [SerializeField] private LayerMask _validMask = ~0 & ~(1 << 2) & ~(1 << 3);
+        [SerializeField, Tooltip("The layer mask used to determine valid teleport targets.")]
+        private LayerMask _validMask = ~0 & ~(1 << 2) & ~(1 << 3);
+        /// <summary>
+        /// The layer mask used to determine valid portal pointer targets.
+        /// </summary>
         public virtual LayerMask validMask
         {
             get => _validMask;
             set => _validMask = value;
         }
 
-        [SerializeField] private QueryTriggerInteraction _raycastTriggerInteraction;
+        [SerializeField, Tooltip("The trigger interaction mode for general raycasting.")]
+        private QueryTriggerInteraction _raycastTriggerInteraction;
+        /// <summary>
+        /// The trigger interaction mode for general raycasting.
+        /// </summary>
         public virtual QueryTriggerInteraction raycastTriggerInteraction
         {
             get => _raycastTriggerInteraction;
@@ -63,22 +114,36 @@ namespace VRPortalToolkit.PointAndPortal
         }
 
         [Header("Pointer")]
-        [SerializeField] private LineType _lineType;
+        [SerializeField, Tooltip("The type of pointing line to use.")]
+        private LineType _lineType;
+        /// <summary>
+        /// The type of pointing line to use.
+        /// </summary>
         public LineType lineType
         {
             get => _lineType;
             set => _lineType = value;
         }
 
+        /// <summary>
+        /// Defines the different types of pointing lines available.
+        /// </summary>
         public enum LineType
         {
+            /// <summary>Straight line from origin to target.</summary>
             Straight = 0,
+            /// <summary>Projectile curve with physics simulation.</summary>
             ProjectileCurve = 1,
+            /// <summary>Bezier curve with control points.</summary>
             BezierCurve = 2,
         }
 
         [ShowIf(nameof(_lineType), LineType.Straight)]
-        [SerializeField] private float _maxRaycastDistance = 30f;
+        [SerializeField, Tooltip("Maximum distance for straight line raycasts.")]
+        private float _maxRaycastDistance = 30f;
+        /// <summary>
+        /// Maximum distance for straight line raycasts.
+        /// </summary>
         /// <seealso cref="LineType.StraightLine"/>
         public float maxRaycastDistance
         {
@@ -90,9 +155,13 @@ namespace VRPortalToolkit.PointAndPortal
         private bool isProjectileOrBezier => _lineType == LineType.BezierCurve || _lineType == LineType.ProjectileCurve;
         [ShowIf(nameof(isProjectileOrBezier))]
 #endif
-        [SerializeField] private Transform _referenceFrame;
+        [SerializeField, Tooltip("Reference frame for projectile and bezier curves.")]
+        private Transform _referenceFrame;
+        /// <summary>
+        /// Reference frame for projectile and bezier curves.
+        /// </summary>
         /// <seealso cref="LineType.ProjectileCurve"/>
-        /// <seealso cref="LineType.BezierCurve"/
+        /// <seealso cref="LineType.BezierCurve"/>
         public Transform referenceFrame
         {
             get => _referenceFrame;
@@ -100,7 +169,11 @@ namespace VRPortalToolkit.PointAndPortal
         }
 
         [ShowIf(nameof(_lineType), LineType.ProjectileCurve)]
-        [SerializeField] private float _velocity = 16f;
+        [SerializeField, Tooltip("Initial velocity for projectile curve.")]
+        private float _velocity = 16f;
+        /// <summary>
+        /// Initial velocity for projectile curve.
+        /// </summary>
         /// <seealso cref="LineType.ProjectileCurve"/>
         public float velocity
         {
@@ -109,7 +182,11 @@ namespace VRPortalToolkit.PointAndPortal
         }
 
         [ShowIf(nameof(_lineType), LineType.ProjectileCurve)]
-        [SerializeField] private float _acceleration = 9.8f;
+        [SerializeField, Tooltip("Acceleration (gravity) for projectile curve.")]
+        private float _acceleration = 9.8f;
+        /// <summary>
+        /// Acceleration (gravity) for projectile curve.
+        /// </summary>
         /// <seealso cref="LineType.ProjectileCurve"/>
         public float acceleration
         {
@@ -118,7 +195,8 @@ namespace VRPortalToolkit.PointAndPortal
         }
 
         [ShowIf(nameof(_lineType), LineType.ProjectileCurve)]
-        [SerializeField] private float _additionalGroundHeight = 0.1f;
+        [SerializeField, Tooltip("Additional height below ground level that the projectile will continue to.")]
+        private float _additionalGroundHeight = 0.1f;
         /// <summary>
         /// Additional height below ground level that the projectile will continue to.
         /// Increasing this value will make the end point drop lower in height.
@@ -131,7 +209,11 @@ namespace VRPortalToolkit.PointAndPortal
         }
 
         [ShowIf(nameof(_lineType), LineType.ProjectileCurve)]
-        [SerializeField] private float _additionalFlightTime = 0.5f;
+        [SerializeField, Tooltip("Additional flight time for projectile curve.")]
+        private float _additionalFlightTime = 0.5f;
+        /// <summary>
+        /// Additional flight time for projectile curve.
+        /// </summary>
         /// <seealso cref="LineType.ProjectileCurve"/>
         public float additionalFlightTime
         {
@@ -140,16 +222,24 @@ namespace VRPortalToolkit.PointAndPortal
         }
 
         [ShowIf(nameof(_lineType), LineType.BezierCurve)]
-        [SerializeField] private float _endPointDistance = 30f;
+        [SerializeField, Tooltip("Distance to the end point of the bezier curve.")]
+        private float _endPointDistance = 30f;
+        /// <summary>
+        /// Distance to the end point of the bezier curve.
+        /// </summary>
         /// <seealso cref="LineType.BezierCurve"/>
         public float endPointDistance
         {
             get => _endPointDistance;
             set => _endPointDistance = value;
         }
-        [ShowIf(nameof(_lineType), LineType.BezierCurve)]
 
-        [SerializeField] private float _endPointHeight = -10f;
+        [ShowIf(nameof(_lineType), LineType.BezierCurve)]
+        [SerializeField, Tooltip("Height offset of the end point relative to the start point.")]
+        private float _endPointHeight = -10f;
+        /// <summary>
+        /// Height offset of the end point relative to the start point.
+        /// </summary>
         /// <seealso cref="LineType.BezierCurve"/>
         public float endPointHeight
         {
@@ -158,7 +248,11 @@ namespace VRPortalToolkit.PointAndPortal
         }
 
         [ShowIf(nameof(_lineType), LineType.BezierCurve)]
-        [SerializeField] private float _controlPointDistance = 10f;
+        [SerializeField, Tooltip("Distance to the control point of the bezier curve.")]
+        private float _controlPointDistance = 10f;
+        /// <summary>
+        /// Distance to the control point of the bezier curve.
+        /// </summary>
         /// <seealso cref="LineType.BezierCurve"/>
         public float controlPointDistance
         {
@@ -167,7 +261,11 @@ namespace VRPortalToolkit.PointAndPortal
         }
 
         [ShowIf(nameof(_lineType), LineType.BezierCurve)]
-        [SerializeField] private float _controlPointHeight = 5f;
+        [SerializeField, Tooltip("Height offset of the control point relative to the start point.")]
+        private float _controlPointHeight = 5f;
+        /// <summary>
+        /// Height offset of the control point relative to the start point.
+        /// </summary>
         /// <seealso cref="LineType.BezierCurve"/>
         public float controlPointHeight
         {
@@ -176,7 +274,11 @@ namespace VRPortalToolkit.PointAndPortal
         }
 
         [ShowIf(nameof(_lineType), LineType.BezierCurve)]
-        [SerializeField] private int _sampleFrequency = 20;
+        [SerializeField, Tooltip("Number of sample points to use for curve generation.")]
+        private int _sampleFrequency = 20;
+        /// <summary>
+        /// Number of sample points to use for curve generation.
+        /// </summary>
         /// <seealso cref="LineType.ProjectileCurve"/>
         /// <seealso cref="LineType.BezierCurve"/>
         public int sampleFrequency
@@ -185,28 +287,46 @@ namespace VRPortalToolkit.PointAndPortal
             set => _sampleFrequency = Mathf.Max(value, 2);
         }
 
+        /// <summary>
+        /// Number of portal rays in the current cast.
+        /// </summary>
         public int portalRayCount => _isPointing ? _portalRaysCount : 0;
 
         /// <summary>
-        /// If pointing is active.
+        /// Whether pointer is currently active.
         /// </summary>
         public bool isPointing => _isPointing;
         private bool _isPointing;
 
         /// <summary>
-        /// If this is in the process of teleporting the connected side.
+        /// Whether the portal's teleportation is currently in progress.
         /// </summary>
         public bool isTeleporting => _isTeleporting;
         private bool _isTeleporting;
 
+        /// <summary>
+        /// The 2D input value for controlling pointing direction.
+        /// </summary>
         public abstract Vector2 input { get; }
 
+        /// <summary>
+        /// Whether direction control is allowed.
+        /// </summary>
         public abstract bool allowDirection { get; }
 
+        /// <summary>
+        /// The transform on the connected side of the portal.
+        /// </summary>
         public abstract Transform connected { get; }
 
+        /// <summary>
+        /// The ground plane for the local side of the portal.
+        /// </summary>
         public abstract Plane groundPlane { get; }
 
+        /// <summary>
+        /// The ground plane for the connected side of the portal.
+        /// </summary>
         public abstract Plane connectedGroundPlane { get; }
 
         private readonly Vector3[] m_ControlPoints = new Vector3[3];
@@ -218,28 +338,32 @@ namespace VRPortalToolkit.PointAndPortal
         private bool _isValid;
         private Quaternion _cursorRot;
 
-        // Need a way to manually set the input
-        // So that should just be a joystick? or should there be a separate on and off?
-        // Need a setting for if this is directional
-        // Need a setting to say that the pointer is up
-        // Need a setting to say that it is actively performing a teleport?
-        // I think rotate will be a different class
-        // Probably create master input class that can be incharge of managing everything to do with portal input
-        // 
-
         protected virtual void OnValidate()
         {
             _sampleFrequency = Mathf.Max(_sampleFrequency, 2);
         }
 
+        /// <summary>
+        /// Gets the position, forward, and up vectors for the connected pointer.
+        /// </summary>
+        /// <param name="position">The position of the connected pointer.</param>
+        /// <param name="forward">The forward direction of the connected pointer.</param>
+        /// <param name="up">The up direction of the connected pointer.</param>
         protected abstract void GetConnectedPointer(out Vector3 position, out Vector3 forward, out Vector3 up);
 
+        /// <summary>
+        /// Teleports the connected portal to the specified pose.
+        /// </summary>
+        /// <param name="connectedPose">The target pose for teleportation.</param>
         protected virtual void TeleportConnected(Pose connectedPose)
         {
             if (connected) PortalPhysics.ForceTeleport(connected, () =>
                 connected.SetPositionAndRotation(connectedPose.position, connectedPose.rotation), this);
         }
 
+        /// <summary>
+        /// Begins the pointing process if not already pointing or teleporting.
+        /// </summary>
         protected void BeginPointing()
         {
             if (!_isPointing && !_isTeleporting)
@@ -251,6 +375,9 @@ namespace VRPortalToolkit.PointAndPortal
             }
         }
 
+        /// <summary>
+        /// Completes the pointing process and initiates teleportation if valid.
+        /// </summary>
         protected void CompletePointing()
         {
             if (_isPointing && !isTeleporting)
@@ -266,12 +393,18 @@ namespace VRPortalToolkit.PointAndPortal
             }
         }
 
+        /// <summary>
+        /// Cancels the pointing process if currently pointing and not teleporting.
+        /// </summary>
         protected void CancelPointing()
         {
             if (_isPointing && !_isTeleporting)
                 _isPointing = false;
         }
 
+        /// <summary>
+        /// Updates the pointer ray and hit information.
+        /// </summary>
         protected void UpdatePointer()
         {
             _portalRaysCount = 0;
@@ -344,8 +477,21 @@ namespace VRPortalToolkit.PointAndPortal
             }
         }
 
+        /// <summary>
+        /// Gets a specific portal ray from the current cast.
+        /// </summary>
+        /// <param name="portalRayIndex">The index of the portal ray to retrieve.</param>
+        /// <returns>The portal ray at the specified index.</returns>
         public PortalRay GetPortalRay(int portalRayIndex) => _portalRays[portalRayIndex];
 
+        /// <summary>
+        /// Tries to get the hit information from the current cast.
+        /// </summary>
+        /// <param name="position">The hit position.</param>
+        /// <param name="normal">The hit normal.</param>
+        /// <param name="portalRayIndex">The index of the last portal ray before the hit.</param>
+        /// <param name="isValidTarget">Whether the hit is on a valid target.</param>
+        /// <returns>True if hit information is available, false otherwise.</returns>
         public bool TryGetHitInfo(out Vector3 position, out Vector3 normal, out int portalRayIndex, out bool isValidTarget)
         {
             if (_isPointing && _portalIndex >= 0)
@@ -364,6 +510,12 @@ namespace VRPortalToolkit.PointAndPortal
             return false;
         }
 
+        /// <summary>
+        /// Tries to get the cursor pose from the current cast.
+        /// </summary>
+        /// <param name="cursorPose">The cursor pose.</param>
+        /// <param name="isValidTarget">Whether the cursor is on a valid target.</param>
+        /// <returns>True if cursor information is available, false otherwise.</returns>
         public bool TryGetCursor(out Pose cursorPose, out bool isValidTarget)
         {
             if (_isPointing && _portalIndex >= 0)
@@ -379,6 +531,12 @@ namespace VRPortalToolkit.PointAndPortal
             return false;
         }
 
+        /// <summary>
+        /// Tries to get the teleport pose for the connected transform.
+        /// </summary>
+        /// <param name="pose">The teleport pose.</param>
+        /// <param name="isValidTarget">Whether the teleport target is valid.</param>
+        /// <returns>True if teleport information is available, false otherwise.</returns>
         public bool TryGetTeleportConnectedPose(out Pose pose, out bool isValidTarget)
         {
             if (TryGetCursor(out Pose cursorPose, out isValidTarget) && connected)

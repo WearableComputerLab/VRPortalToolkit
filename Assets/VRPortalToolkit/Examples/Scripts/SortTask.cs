@@ -7,9 +7,15 @@ using VRPortalToolkit.Examples;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Manages a sorting task where players must place orbs into their correct containers.
+    /// </summary>
     public class SortTask : MonoBehaviour
     {
         [SerializeField] private XRBaseInteractable _startButton;
+        /// <summary>
+        /// The button interactable that starts the sorting task when pressed.
+        /// </summary>
         public XRBaseInteractable startButton
         {
             get => _startButton;
@@ -17,6 +23,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private OrbContainer[] _orbContainers;
+        /// <summary>
+        /// Array of containers that orbs must be sorted into.
+        /// </summary>
         public OrbContainer[] orbContainers
         {
             get => _orbContainers;
@@ -24,6 +33,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Scoreboard _scoreboard;
+        /// <summary>
+        /// Scoreboard to track task completion time.
+        /// </summary>
         public Scoreboard scoreboard
         {
             get => _scoreboard;
@@ -31,6 +43,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private float _floorHeight = 0.15f;
+        /// <summary>
+        /// The Y-coordinate height below which orbs are considered "fallen" and will be reset.
+        /// </summary>
         public float floorHeight
         {
             get => _floorHeight;

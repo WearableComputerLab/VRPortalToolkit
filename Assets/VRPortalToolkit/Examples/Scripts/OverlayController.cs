@@ -8,9 +8,24 @@ using VRPortalToolkit.XRI;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Controls different portal overlay visual effects for demonstration purposes.
+    /// </summary>
+    /// <remarks>
+    /// This component allows cycling through various portal overlay rendering modes via a button press:
+    /// - None: No overlay effect
+    /// - Contours: Shows contour lines to help visualize depth
+    /// - Blended: Creates a semi-transparent overlay effect
+    /// - Absolute: Shows a solid overlay effect
+    /// 
+    /// These visual effects help users understand the spatial relationship between local space and portals.
+    /// </remarks>
     public class OverlayController : MonoBehaviour
     {
         [SerializeField] private XRBaseInteractable _button;
+        /// <summary>
+        /// The button interactable that cycles through overlay modes when pressed.
+        /// </summary>
         public XRBaseInteractable button
         {
             get => _button;
@@ -18,6 +33,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private PortalManager _portalManager;
+        /// <summary>
+        /// Reference to the PortalManager that manages the portals whose overlay appearance will be modified.
+        /// </summary>
         public PortalManager portalManager
         {
             get => _portalManager;
@@ -25,6 +43,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private TextMeshPro _text;
+        /// <summary>
+        /// Text component that displays the current overlay mode.
+        /// </summary>
         public TextMeshPro text
         {
             get => _text;
@@ -32,6 +53,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Material _opactiy;
+        /// <summary>
+        /// Material used for the blended opacity overlay effect.
+        /// </summary>
         public Material opacity
         {
             get => _opactiy;
@@ -39,6 +63,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Material _contours;
+        /// <summary>
+        /// Material used for the contour lines overlay effect.
+        /// </summary>
         public Material contours
         {
             get => _contours;
@@ -46,6 +73,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Material _contoursIncrease;
+        /// <summary>
+        /// Material used for the increasing contour lines overlay effect.
+        /// </summary>
         public Material contoursIncrease
         {
             get => _contoursIncrease;
@@ -53,6 +83,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Material _contoursDecrease;
+        /// <summary>
+        /// Material used for the decreasing contour lines overlay effect.
+        /// </summary>
         public Material contoursDecrease
         {
             get => _contoursDecrease;
@@ -60,6 +93,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Material _absolute;
+        /// <summary>
+        /// Material used for the absolute (solid) overlay effect.
+        /// </summary>
         public Material absolute
         {
             get => _absolute;

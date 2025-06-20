@@ -4,10 +4,17 @@ using UnityEngine;
 
 namespace VRPortalToolkit.Cloning
 {
+    /// <summary>
+    /// Physics-specific extensions for the PortalCloning class.
+    /// Provides utilities for updating physics components of cloned objects.
+    /// </summary>
     public static partial class PortalCloning
     {
-        // TODO: Could do wheel colliders, could do terrain mesh
-        // TODO: Could do joints
+        /// <summary>
+        /// Updates a cloned Rigidbody to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned Rigidbody to update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateRigidbody(Rigidbody clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Rigidbody> cloneInfo))
@@ -19,6 +26,11 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned Rigidbody to match its original counterpart using the provided clone info.
+        /// Properly transforms position, rotation, velocity, and angular velocity through portals.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone Rigidbody.</param>
         public static void UpdateRigidbody(this PortalCloneInfo<Rigidbody> cloneInfo)
         {
             Rigidbody original = cloneInfo.original, clone = cloneInfo.clone;
@@ -72,6 +84,11 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Updates a cloned Collider to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned Collider to update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateCollider(Collider clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Collider> cloneInfo))
@@ -83,6 +100,12 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned Collider to match its original counterpart using the provided clone info.
+        /// Handles specific collider types appropriately.
+        /// </summary>
+        /// <typeparam name="TCollider">The type of collider.</typeparam>
+        /// <param name="cloneInfo">The clone information containing the original and clone Collider.</param>
         public static void UpdateCollider<TCollider>(this PortalCloneInfo<TCollider> cloneInfo) where TCollider : Collider
         {
             Collider original = cloneInfo.original, clone = cloneInfo.clone;
@@ -104,6 +127,11 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Updates a cloned SphereCollider to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned SphereCollider to update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateCollider(SphereCollider clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<SphereCollider> cloneInfo))
@@ -115,6 +143,10 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned SphereCollider to match its original counterpart using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone SphereCollider.</param>
         public static void UpdateCollider(this PortalCloneInfo<SphereCollider> cloneInfo)
         {
             SphereCollider original = cloneInfo.original, clone = cloneInfo.clone;
@@ -122,6 +154,11 @@ namespace VRPortalToolkit.Cloning
             if (original && clone) UpdateSphereCollider(original, clone);
         }
 
+        /// <summary>
+        /// Updates a cloned BoxCollider to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned BoxCollider to update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateCollider(BoxCollider clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<BoxCollider> cloneInfo))
@@ -133,6 +170,10 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned BoxCollider to match its original counterpart using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone BoxCollider.</param>
         public static void UpdateCollider(this PortalCloneInfo<BoxCollider> cloneInfo)
         {
             BoxCollider original = cloneInfo.original, clone = cloneInfo.clone;
@@ -140,6 +181,11 @@ namespace VRPortalToolkit.Cloning
             if (original && clone) UpdateBoxCollider(original, clone);
         }
 
+        /// <summary>
+        /// Updates a cloned CapsuleCollider to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned CapsuleCollider to update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateCollider(CapsuleCollider clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<CapsuleCollider> cloneInfo))
@@ -151,6 +197,10 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned CapsuleCollider to match its original counterpart using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone CapsuleCollider.</param>
         public static void UpdateCollider(this PortalCloneInfo<CapsuleCollider> cloneInfo)
         {
             CapsuleCollider original = cloneInfo.original, clone = cloneInfo.clone;
@@ -158,6 +208,11 @@ namespace VRPortalToolkit.Cloning
             if (original && clone) UpdateCapsuleCollider(original, clone);
         }
 
+        /// <summary>
+        /// Updates a cloned MeshCollider to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned MeshCollider to update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateCollider(MeshCollider clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<MeshCollider> cloneInfo))
@@ -169,6 +224,10 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned MeshCollider to match its original counterpart using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone MeshCollider.</param>
         public static void UpdateCollider(this PortalCloneInfo<MeshCollider> cloneInfo)
         {
             MeshCollider original = cloneInfo.original, clone = cloneInfo.clone;
@@ -176,7 +235,11 @@ namespace VRPortalToolkit.Cloning
             if (original && clone) UpdateMeshCollider(original, clone);
         }
 
-
+        /// <summary>
+        /// Updates a cloned CharacterController to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned CharacterController to update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateCollider(CharacterController clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<CharacterController> cloneInfo))
@@ -188,6 +251,10 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned CharacterController to match its original counterpart using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone CharacterController.</param>
         public static void UpdateCollider(this PortalCloneInfo<CharacterController> cloneInfo)
         {
             CharacterController original = cloneInfo.original, clone = cloneInfo.clone;
@@ -227,7 +294,6 @@ namespace VRPortalToolkit.Cloning
         private static void UpdateCharacterController(CharacterController original, CharacterController clone)
         {
             UpdateCollider(original, clone);
-
         }
 
         private static void UpdateCollider(Collider original, Collider clone)

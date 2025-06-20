@@ -6,8 +6,17 @@ using static UnityEngine.UI.Image;
 
 namespace VRPortalToolkit.Cloning
 {
+    /// <summary>
+    /// Rendering-specific extensions for the PortalCloning class.
+    /// Provides utilities for updating rendering components of cloned objects.
+    /// </summary>
     public static partial class PortalCloning
     {
+        /// <summary>
+        /// Updates a cloned MeshFilter to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned MeshFilter to update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateMeshFilter(MeshFilter clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<MeshFilter> cloneInfo))
@@ -19,6 +28,10 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned MeshFilter to match its original counterpart using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone MeshFilter.</param>
         public static void UpdateMeshFilter(this PortalCloneInfo<MeshFilter> cloneInfo)
         {
             MeshFilter original = cloneInfo.original, clone = cloneInfo.clone;
@@ -27,6 +40,12 @@ namespace VRPortalToolkit.Cloning
                 clone.sharedMesh = original.sharedMesh;
         }
 
+        /// <summary>
+        /// Updates a cloned Renderer to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned Renderer to update.</param>
+        /// <param name="includePropertyBlocks">Whether to include material property blocks in the update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateRenderer(Renderer clone, bool includePropertyBlocks = true)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<Renderer> cloneInfo))
@@ -38,6 +57,13 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned Renderer to match its original counterpart using the provided clone info.
+        /// Handles specific renderer types appropriately.
+        /// </summary>
+        /// <typeparam name="TRenderer">The type of renderer.</typeparam>
+        /// <param name="cloneInfo">The clone information containing the original and clone Renderer.</param>
+        /// <param name="includePropertyBlocks">Whether to include material property blocks in the update.</param>
         public static void UpdateRenderer<TRenderer>(this PortalCloneInfo<TRenderer> cloneInfo, bool includePropertyBlocks = true) where TRenderer : Renderer
         {
             Renderer original = cloneInfo.original, clone = cloneInfo.clone;
@@ -55,6 +81,12 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Updates a cloned MeshRenderer to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned MeshRenderer to update.</param>
+        /// <param name="includePropertyBlocks">Whether to include material property blocks in the update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateRenderer(MeshRenderer clone, bool includePropertyBlocks = true)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<MeshRenderer> cloneInfo))
@@ -66,6 +98,11 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned MeshRenderer to match its original counterpart using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone MeshRenderer.</param>
+        /// <param name="includePropertyBlocks">Whether to include material property blocks in the update.</param>
         public static void UpdateRenderer(this PortalCloneInfo<MeshRenderer> cloneInfo, bool includePropertyBlocks = true)
         {
             MeshRenderer original = cloneInfo.original, clone = cloneInfo.clone;
@@ -73,6 +110,12 @@ namespace VRPortalToolkit.Cloning
             if (original && clone) UpdateMeshRenderer(original, clone, includePropertyBlocks);
         }
 
+        /// <summary>
+        /// Updates a cloned SkinnedMeshRenderer to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned SkinnedMeshRenderer to update.</param>
+        /// <param name="includePropertyBlocks">Whether to include material property blocks in the update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateRenderer(SkinnedMeshRenderer clone, bool includePropertyBlocks = true)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<SkinnedMeshRenderer> cloneInfo))
@@ -84,6 +127,11 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned SkinnedMeshRenderer to match its original counterpart using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone SkinnedMeshRenderer.</param>
+        /// <param name="includePropertyBlocks">Whether to include material property blocks in the update.</param>
         public static void UpdateRenderer(this PortalCloneInfo<SkinnedMeshRenderer> cloneInfo, bool includePropertyBlocks = true)
         {
             SkinnedMeshRenderer original = cloneInfo.original, clone = cloneInfo.clone;
@@ -91,6 +139,12 @@ namespace VRPortalToolkit.Cloning
             if (original && clone) UpdateSkinnedMeshRenderer(original, clone, includePropertyBlocks);
         }
 
+        /// <summary>
+        /// Updates a cloned LineRenderer to match its original counterpart.
+        /// </summary>
+        /// <param name="clone">The cloned LineRenderer to update.</param>
+        /// <param name="includePropertyBlocks">Whether to include material property blocks in the update.</param>
+        /// <returns>True if the clone was successfully updated, false otherwise.</returns>
         public static bool UpdateRenderer(LineRenderer clone, bool includePropertyBlocks = true)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<LineRenderer> cloneInfo))
@@ -102,6 +156,11 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Updates a cloned LineRenderer to match its original counterpart using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone LineRenderer.</param>
+        /// <param name="includePropertyBlocks">Whether to include material property blocks in the update.</param>
         public static void UpdateRenderer(this PortalCloneInfo<LineRenderer> cloneInfo, bool includePropertyBlocks = true)
         {
             LineRenderer original = cloneInfo.original, clone = cloneInfo.clone;
@@ -207,6 +266,11 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Clones the bones of a SkinnedMeshRenderer to match the original hierarchy.
+        /// </summary>
+        /// <param name="clone">The cloned SkinnedMeshRenderer to update bones for.</param>
+        /// <returns>True if bones were successfully cloned, false otherwise.</returns>
         public static bool CloneBones(SkinnedMeshRenderer clone)
         {
             if (TryGetCloneInfo(clone, out PortalCloneInfo<SkinnedMeshRenderer> cloneInfo))
@@ -218,6 +282,11 @@ namespace VRPortalToolkit.Cloning
             return false;
         }
 
+        /// <summary>
+        /// Clones the bones of a SkinnedMeshRenderer to match the original hierarchy using the provided clone info.
+        /// </summary>
+        /// <param name="cloneInfo">The clone information containing the original and clone SkinnedMeshRenderer.</param>
+        /// <returns>True if bones were successfully cloned, false otherwise.</returns>
         public static bool CloneBones(this PortalCloneInfo<SkinnedMeshRenderer> cloneInfo)
         {
             if (!cloneInfo.original || !cloneInfo.clone) return false;

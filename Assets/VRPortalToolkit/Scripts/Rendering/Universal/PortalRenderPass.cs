@@ -9,16 +9,21 @@ using VRPortalToolkit.Rendering;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
-    // TODO: I could almost allow for internal passes within the portal system...
-    // I mean I could probably just use a scriptable renderer that I hide, right?
-    // I'd probably just need to ignore its Execute etc and call my own to mess with the order of things
-    // I can also modify the renderData as I see fit before passing it out
-    // This may end up being difficult though (can't change render targets and what not
-
+    /// <summary>
+    /// Base class for all portal rendering passes in the Universal Render Pipeline.
+    /// Extends ScriptableRenderPass to provide common functionality for portal rendering.
+    /// </summary>
     public abstract class PortalRenderPass : ScriptableRenderPass
     {
+        /// <summary>
+        /// Forward lighting system used for all portal render passes.
+        /// </summary>
         protected static ForwardLights forwardLights;
 
+        /// <summary>
+        /// Initializes a new instance of the PortalRenderPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public PortalRenderPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base()
         {
             this.renderPassEvent = renderPassEvent;
@@ -27,7 +32,6 @@ namespace VRPortalToolkit.Rendering.Universal
 
             if (forwardLights == null) forwardLights = new ForwardLights();
         }
-
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             if (PortalPassStack.Current != null && PortalPassStack.Current.colorTexture)

@@ -6,16 +6,27 @@ using UnityEngine.Rendering.Universal;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
-
+    /// <summary>
+    /// Render pass that controls shadow settings during portal rendering.
+    /// </summary>
     public class ShadowSettingsInPortalPass : PortalRenderPass
     {
+        /// <summary>
+        /// Whether shadows should be supported in this pass.
+        /// </summary>
         public bool supportsShadows { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the ShadowSettingsInPortalPass class.
+        /// </summary>
+        /// <param name="supportsShadows">Whether to enable or disable shadows in this pass.</param>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public ShadowSettingsInPortalPass(bool supportsShadows, RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
         {
             this.supportsShadows = supportsShadows;
         }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             CommandBuffer cmd = CommandBufferPool.Get();

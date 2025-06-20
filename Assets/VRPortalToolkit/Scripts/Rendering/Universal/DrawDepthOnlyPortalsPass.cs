@@ -6,12 +6,23 @@ using UnityEngine.Rendering.Universal;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Render pass that draws portals with depth-only material to prepare the depth buffer.
+    /// </summary>
     public class DrawDepthOnlyPortalsPass : PortalRenderPass
     {
+        /// <summary>
+        /// The material to use for depth-only rendering of portals.
+        /// </summary>
         public Material depthOnlyMaterial { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the DrawDepthOnlyPortalsPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public DrawDepthOnlyPortalsPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (!depthOnlyMaterial)

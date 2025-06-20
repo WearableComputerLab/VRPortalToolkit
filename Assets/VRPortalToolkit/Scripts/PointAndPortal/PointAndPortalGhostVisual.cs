@@ -2,10 +2,17 @@ using UnityEngine;
 
 namespace VRPortalToolkit.PointAndPortal
 {
+    /// <summary>
+    /// Manages ghost visualizations for prediciting the portal's position during Point & Portal.
+    /// Shows different visual representations for valid and invalid teleport targets.
+    /// </summary>
     public class PointAndPortalGhostVisual : MonoBehaviour
     {
-
-        [SerializeField] private GameObject _validGhost;
+        [SerializeField, Tooltip("The GameObject to display when the teleport target is valid.")]
+        private GameObject _validGhost;
+        /// <summary>
+        /// The GameObject to display when the teleport target is valid.
+        /// </summary>
         public GameObject validGhost
         {
             get => _validGhost;
@@ -18,7 +25,11 @@ namespace VRPortalToolkit.PointAndPortal
             }
         }
 
-        [SerializeField] private GameObject _invalidGhost;
+        [SerializeField, Tooltip("The GameObject to display when the teleport target is invalid.")]
+        private GameObject _invalidGhost;
+        /// <summary>
+        /// The GameObject to display when the teleport target is invalid.
+        /// </summary>
         public GameObject invalidGhost
         {
             get => _invalidGhost;
@@ -41,6 +52,9 @@ namespace VRPortalToolkit.PointAndPortal
         }*/
 
         private IPointAndPortal _pointAndPortal;
+        /// <summary>
+        /// Reference to the point-and-portal system.
+        /// </summary>
         public IPointAndPortal pointAndPortal => _pointAndPortal;
 
         protected virtual void Awake()
@@ -79,6 +93,10 @@ namespace VRPortalToolkit.PointAndPortal
             }
         }
 
+        /// <summary>
+        /// Sets up a ghost GameObject, instantiating it if it's a prefab.
+        /// </summary>
+        /// <param name="ghost">Reference to the ghost GameObject.</param>
         private static void SetupGhost(ref GameObject ghost)
         {
             if (ghost == null) return;
@@ -90,15 +108,21 @@ namespace VRPortalToolkit.PointAndPortal
             ghost.SetActive(false);
         }
 
-        private void UpdateGhost(GameObject validGhost, GameObject invalidGhost, Pose ghostPose)
+        /// <summary>
+        /// Updates the visible ghost and its transform to match the target pose.
+        /// </summary>
+        /// <param name="visibleGhost">The ghost to make visible.</param>
+        /// <param name="hiddenGhost">The ghost to hide.</param>
+        /// <param name="ghostPose">The pose to apply to the visible ghost.</param>
+        private void UpdateGhost(GameObject visibleGhost, GameObject hiddenGhost, Pose ghostPose)
         {
-            if (validGhost)
+            if (visibleGhost)
             {
-                validGhost.transform.SetPositionAndRotation(ghostPose.position, ghostPose.rotation);
-                validGhost.SetActive(true);
+                visibleGhost.transform.SetPositionAndRotation(ghostPose.position, ghostPose.rotation);
+                visibleGhost.SetActive(true);
             }
 
-            if (invalidGhost) invalidGhost.SetActive(false);
+            if (hiddenGhost) hiddenGhost.SetActive(false);
         }
     }
 }

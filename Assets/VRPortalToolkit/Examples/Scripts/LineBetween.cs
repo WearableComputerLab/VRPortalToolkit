@@ -4,11 +4,17 @@ using UnityEngine;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Creates a line between two transform positions using a LineRenderer.
+    /// </summary>
     [DefaultExecutionOrder(300)]
     [RequireComponent(typeof(LineRenderer))]
     public class LineBetween : MonoBehaviour
     {
         [SerializeField] private Transform _from;
+        /// <summary>
+        /// The transform marking the starting point of the line.
+        /// </summary>
         public Transform from
         {
             get => _from;
@@ -16,6 +22,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private float _fromOffset = 0f;
+        /// <summary>
+        /// Distance offset from the starting transform position, moving toward the end transform.
+        /// </summary>
         public float fromOffset
         {
             get => _fromOffset;
@@ -23,6 +32,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Transform _to;
+        /// <summary>
+        /// The transform marking the ending point of the line.
+        /// </summary>
         public Transform to
         {
             get => _to;
@@ -30,6 +42,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private float _toOffset = 0f;
+        /// <summary>
+        /// Distance offset from the ending transform position, moving toward the start transform.
+        /// </summary>
         public float toOffset
         {
             get => _toOffset;

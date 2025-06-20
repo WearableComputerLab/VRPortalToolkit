@@ -33,18 +33,43 @@ using Misc.EditorHelpers;
 // Also, not on this behaviour, but do need 
 namespace VRPortalToolkit.Cloning
 {
+    /// <summary>
+    /// Creates and manages static collider clones for objects that overal with portals.
+    /// Specifically this creates static clones that are sliced along the portals plane,
+    /// allowing physics objects to only interact with the physics elements on the right side of the portal.
+    /// </summary>
     public class PortalStaticCloneCollider : MonoBehaviour
     {
         private readonly static WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
 
+        /// <summary>
+        /// The portal layer that determines how cloned colliders interact with the portal system.
+        /// </summary>
+        [Tooltip("The portal layer that determines how cloned colliders interact with the portal system")]
         [SerializeField] private PortalLayer _portalLayer;
+        
+        /// <summary>
+        /// Gets or sets the portal layer associated with this clone collider.
+        /// </summary>
         public PortalLayer portalLayer {
             get => _portalLayer;
             set => _portalLayer = value;
         }
+        
+        /// <summary>
+        /// Clears the current portal layer association.
+        /// </summary>
         public void ClearPortalSpace() => portalLayer = null;
 
+        /// <summary>
+        /// When enabled, only static colliders will be cloned. Otherwise, all colliders will be cloned.
+        /// </summary>
+        [Tooltip("When enabled, only static colliders will be cloned. Otherwise, all colliders will be cloned")]
         [SerializeField] private bool _staticCollidersOnly = true;
+        
+        /// <summary>
+        /// Gets or sets whether only static colliders should be cloned.
+        /// </summary>
         public bool staticCollidersOnly {
             get => _staticCollidersOnly;
             set {
@@ -69,22 +94,36 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Determines how and when collider clones are updated.
+        /// </summary>
+        [Tooltip("Determines how and when collider clones are updated")]
         [SerializeField] private UpdateMode _updateMode = UpdateMode.UpdateEachFixedUpdate;
+        
+        /// <summary>
+        /// Gets or sets the update mode for collider clones.
+        /// </summary>
         public UpdateMode updateMode {
             get => _updateMode;
             set => _updateMode = value;
         }
 
+        /// <summary>
+        /// Defines how collider clones are updated.
+        /// </summary>
         public enum UpdateMode
         {
+            /// <summary>No automatic updates.</summary>
             None = 0,
+            /// <summary>Update positions and transforms each fixed update.</summary>
             UpdateEachFixedUpdate = 1,
+            /// <summary>Completely recreate colliders each fixed update.</summary>
             RecalculateEachFixedUpdate = 2,
         }
 
-        //[SerializeField] protected List<Transform> _sliceNormals;
-        //public HeapAllocationFreeReadOnlyList<Transform> ReadOnlySliceNormals => _sliceNormals;
-
+        /// <summary>
+        /// Stores information about cloned colliders.
+        /// </summary>
         protected class ColliderClones
         {
             public Portal portal;
@@ -103,8 +142,11 @@ namespace VRPortalToolkit.Cloning
 
         protected static HashSet<Collider> _ignoredColliders = new HashSet<Collider>();
         private static Transform _actualRoot;
+        
+        /// <summary>
+        /// The root transform under which all cloned colliders are organized.
+        /// </summary>
         protected Transform _root => _actualRoot ? _actualRoot : _actualRoot = new GameObject("Portal Static Colliders").transform;
-
 
         protected readonly TriggerHandler<Collider> triggerHandler = new TriggerHandler<Collider>();
         protected readonly HashSet<Collider> _stayedColliders = new HashSet<Collider>();
@@ -144,6 +186,9 @@ namespace VRPortalToolkit.Cloning
             PortalPhysics.lateFixedUpdate -= LateFixedUpdate;
         }
 
+        /// <summary>
+        /// Called during late fixed update to update or recalculate collider clones based on the update mode.
+        /// </summary>
         protected virtual void LateFixedUpdate()
         {
             if (updateMode == UpdateMode.UpdateEachFixedUpdate)
@@ -152,40 +197,19 @@ namespace VRPortalToolkit.Cloning
                 RecalculateColliderClones();
         }
 
+        /// <summary>
+        /// Updates the transforms and layers of all collider clones.
+        /// </summary>
         private void UpdateColliderClones()
         {
             foreach (ColliderClones colliders in _colliderClones.Values)
                 UpdateColliderClones(colliders);
         }
 
-        /*public void DoAddSlicingNormal(Transform normal) => AddSlicingNormal(normal);
-
-        public virtual bool AddSlicingNormal(Transform normal)
-        {
-            if (_sliceNormals == null) _sliceNormals = new List<Transform>();
-
-            _sliceNormals.Add(normal);
-
-            return true;
-        }
-
-        public bool DoRemoveSlicingNormal(Transform normal) => RemoveSlicingNormal(normal);
-
-        public virtual bool RemoveSlicingNormal(Transform normal)
-        {
-            if (_sliceNormals == null) return false;
-
-            return _sliceNormals.Remove(normal);
-        }
-
-        public virtual void ClearSlicingNormals()
-        {
-            if (_sliceNormals == null) return;
-
-            while (_sliceNormals.Count > 0)
-                _sliceNormals.Remove(_sliceNormals[_sliceNormals.Count - 1]);
-        }*/
-
+        /// <summary>
+        /// Updates a specific collider clone's transform and layers.
+        /// </summary>
+        /// <param name="clones">The collider clone to update.</param>
         protected void UpdateColliderClones(ColliderClones clones)
         {
             // Make Sure the clones exist
@@ -224,6 +248,9 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Completely recreates all collider clones.
+        /// </summary>
         public void RecalculateColliderClones()
         {
             foreach (ColliderClones clones in _colliderClones.Values)
@@ -233,6 +260,10 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Creates clones for a specific collider, handling different collider types appropriately.
+        /// </summary>
+        /// <param name="clones">The collider clone info to populate.</param>
         protected void CreateColliderClones(ColliderClones clones)
         {
             if (!clones.localCloneObject) clones.localCloneObject = new GameObject($"{clones.original.name} (Local Clone)");
@@ -430,6 +461,12 @@ namespace VRPortalToolkit.Cloning
             }
         }
 
+        /// <summary>
+        /// Attempts to slice a mesh for a collider clone.
+        /// </summary>
+        /// <param name="colliderClones">The collider clone info.</param>
+        /// <param name="mesh">The mesh to slice.</param>
+        /// <returns>True if slicing was successful, false otherwise.</returns>
         protected bool TrySliceMesh(ColliderClones colliderClones, Mesh mesh)
         {
             if (TryGetCuttingPlanes(colliderClones.localCloneObject.transform, out Plane[] cuttingPlanes, out int planeCount))
@@ -470,6 +507,14 @@ namespace VRPortalToolkit.Cloning
         }
 
         protected Plane[] _planes;
+        
+        /// <summary>
+        /// Gets the cutting planes for slicing a mesh.
+        /// </summary>
+        /// <param name="space">The transform space for the planes.</param>
+        /// <param name="cuttingPlanes">Output parameter for the cutting planes.</param>
+        /// <param name="planeCount">Output parameter for the number of planes.</param>
+        /// <returns>True if planes were obtained, false otherwise.</returns>
         protected bool TryGetCuttingPlanes(Transform space, out Plane[] cuttingPlanes, out int planeCount)
         {
             if (_planes == null || _planes.Length < 1)//_sliceNormals.Count)
@@ -513,6 +558,13 @@ namespace VRPortalToolkit.Cloning
         }
 
         protected int[][] _indices;
+        
+        /// <summary>
+        /// Gets the submeshes from a mesh.
+        /// </summary>
+        /// <param name="sharedMesh">The mesh to get submeshes from.</param>
+        /// <param name="subMeshes">Output parameter for the submeshes.</param>
+        /// <param name="subMeshCount">Output parameter for the number of submeshes.</param>
         protected void GetSubMeshes(Mesh sharedMesh, out int[][] subMeshes, out int subMeshCount)
         {
             if (_indices == null || _planes.Length < sharedMesh.subMeshCount)
@@ -526,6 +578,13 @@ namespace VRPortalToolkit.Cloning
             subMeshCount = sharedMesh.subMeshCount;
         }
 
+        /// <summary>
+        /// Gets or creates a collider of the specified type on a GameObject.
+        /// </summary>
+        /// <typeparam name="TCollider">The type of collider to get or create.</typeparam>
+        /// <param name="cloneObject">The GameObject to add the collider to.</param>
+        /// <param name="clone">Reference to the current collider (if any).</param>
+        /// <param name="cloneAsT">Output parameter for the typed collider.</param>
         protected void GetCollider<TCollider>(GameObject cloneObject, ref Collider clone, out TCollider cloneAsT) where TCollider : Collider
         {
             if (clone)

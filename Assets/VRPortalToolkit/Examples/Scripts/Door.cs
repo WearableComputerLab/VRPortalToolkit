@@ -4,15 +4,24 @@ using UnityEngine;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Controls a door that can smoothly open and close with animation.
+    /// </summary>
     public class Door : MonoBehaviour
     {
         [SerializeField] private bool _isOpen;
+        /// <summary>
+        /// Whether the door is currently open.
+        /// </summary>
         public bool isOpen
         {
             get => _isOpen;
             set => _isOpen = value;
         }
 
+        /// <summary>
+        /// Whether the door is currently closed (inverse of isOpen).
+        /// </summary>
         public bool isClosed
         {
             get => !_isOpen;
@@ -20,6 +29,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Transform _hingeTransform;
+        /// <summary>
+        /// The transform that will be animated when the door opens and closes.
+        /// </summary>
         public Transform hingeTransform
         {
             get => _hingeTransform;
@@ -27,6 +39,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private float _translateSpeed = 0.5f;
+        /// <summary>
+        /// The speed at which the door translates between positions, in units per second.
+        /// </summary>
         public float translateSpeed
         {
             get => _translateSpeed;
@@ -34,6 +49,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private float _rotateSpeed = 30f;
+        /// <summary>
+        /// The speed at which the door rotates between orientations, in degrees per second.
+        /// </summary>
         public float rotateSpeed
         {
             get => _rotateSpeed;
@@ -42,6 +60,9 @@ namespace VRPortalToolkit.Examples
 
         [Header("Open Pose")]
         [SerializeField] private Vector3 _openPosition;
+        /// <summary>
+        /// The local position of the door when fully open.
+        /// </summary>
         public Vector3 openPosition
         {
             get => _openPosition;
@@ -49,6 +70,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Quaternion _openRotation;
+        /// <summary>
+        /// The local rotation of the door when fully open.
+        /// </summary>
         public Quaternion openRotation
         {
             get => _openRotation;
@@ -57,6 +81,9 @@ namespace VRPortalToolkit.Examples
 
         [Header("Closed Pose")]
         [SerializeField] private Vector3 _closedPosition;
+        /// <summary>
+        /// The local position of the door when fully closed.
+        /// </summary>
         public Vector3 closedPosition
         {
             get => _closedPosition;
@@ -64,6 +91,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Quaternion _closedRotation;
+        /// <summary>
+        /// The local rotation of the door when fully closed.
+        /// </summary>
         public Quaternion closedRotation
         {
             get => _closedRotation;

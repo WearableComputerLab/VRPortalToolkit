@@ -7,16 +7,30 @@ using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Render pass that begins the rendering process for a texture-based portal.
+    /// </summary>
     public class BeginTexturePortalPass : PortalRenderPass
     {
+        /// <summary>
+        /// The portal pass node associated with this pass.
+        /// </summary>
         public PortalPassNode portalPassNode { get; set; }
 
+        /// <summary>
+        /// The resolution scale factor for the portal texture.
+        /// </summary>
         public float Resolution { get; set; } = 1f;
 
         private static readonly Plane[] _planes = new Plane[6];
 
+        /// <summary>
+        /// Initializes a new instance of the BeginTexturePortalPass class.
+        /// </summary>
+        /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
         public BeginTexturePortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
 
+        /// <inheritdoc/>
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             RenderPortalsBuffer buffer = RenderPortalsBuffer.GetBuffer(portalPassNode.renderNode);
@@ -34,6 +48,7 @@ namespace VRPortalToolkit.Rendering.Universal
             ConfigureTarget(portalPassNode.colorTarget);
         }
 
+        /// <inheritdoc/>
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (portalPassNode == null || portalPassNode.renderNode == null || portalPassNode.renderNode.parent == null)

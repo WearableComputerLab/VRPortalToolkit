@@ -366,7 +366,7 @@ GameObject:
   - component: {fileID: 4075669109895852615}
   - component: {fileID: 746019353906042064}
   m_Layer: 0
-  m_Name: Portal
+  m_Name: XRPortal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

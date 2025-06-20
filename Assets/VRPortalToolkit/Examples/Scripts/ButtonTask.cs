@@ -7,9 +7,16 @@ using VRPortalToolkit.Examples;
 
 namespace VRPortalToolkit.Examples
 {
+    /// <summary>
+    /// Manages a sequence of button press tasks for tutorials or challenges.
+    /// Tracks progress through a series of buttons and updates a scoreboard.
+    /// </summary>
     public class ButtonTask : MonoBehaviour
     {
         [SerializeField] private XRBaseInteractable[] _buttons;
+        /// <summary>
+        /// Array of interactable buttons to be pressed in sequence.
+        /// </summary>
         public XRBaseInteractable[] buttons
         {
             get => _buttons;
@@ -17,6 +24,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Transform _marker;
+        /// <summary>
+        /// Visual indicator that shows which button is the current target.
+        /// </summary>
         public Transform marker
         {
             get => _marker;
@@ -24,6 +34,9 @@ namespace VRPortalToolkit.Examples
         }
 
         [SerializeField] private Scoreboard _scoreboard;
+        /// <summary>
+        /// Optional scoreboard to track task completion time.
+        /// </summary>
         public Scoreboard scoreboard
         {
             get => _scoreboard;
@@ -45,6 +58,9 @@ namespace VRPortalToolkit.Examples
             CancelButton();
         }
 
+        /// <summary>
+        /// Restarts the button task from the beginning.
+        /// </summary>
         public void Restart()
         {
             CancelButton();

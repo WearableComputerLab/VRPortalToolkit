@@ -18,19 +18,21 @@ namespace VRPortalToolkit.Portables
     /// </summary>
     public class Portable : MonoBehaviour, IPortable
     {
+        [SerializeField, Tooltip("The origin used for tracking when a portable passes through a portal.")]
+        private Transform _origin;
         /// <summary>
         /// The origin used for tracking when a portable passes through a portal.
         /// </summary>
-        [SerializeField] private Transform _origin;
         public Transform origin {
             get => _origin;
             set => _origin = value;
         }
 
+        [SerializeField, Tooltip("The layer mask used to determine which portals this object can interact with.")]
+        private LayerMask _portalLayerMask = 1 << 3;
         /// <summary>
         /// The layer mask used to determine which portals this object can interact with.
         /// </summary>
-        [SerializeField] private LayerMask _portalLayerMask = 1 << 3;
         public LayerMask portalLayerMask {
             get => _portalLayerMask;
             set => _portalLayerMask = value;
@@ -42,8 +44,8 @@ namespace VRPortalToolkit.Portables
         /// </summary>
         public new Rigidbody rigidbody => _rigidbody ? _rigidbody : _rigidbody = transform.GetComponent<Rigidbody>();
 
-        /// <summary>Should children's layer and tags also be updated during teleportation.<summary/>
-        [SerializeField] private bool _applyToChildren;
+        [SerializeField, Tooltip("Should children's layer and tags also be updated during teleportation.")]
+        private bool _applyToChildren;
         /// <summary>
         /// Should children's layer and tags also be updated during teleportation.
         /// </summary>
@@ -52,14 +54,21 @@ namespace VRPortalToolkit.Portables
             set => _applyToChildren = value;
         }
 
+        /// <summary>
+        /// Flags defining different modes for portal interactions.
+        /// </summary>
         public enum Mode
         {
+            /// <summary>Modify the portal's layer when teleporting.</summary>
             ModifyPortalLayer = 1 << 1,
+            /// <summary>Apply layer changes to all children.</summary>
             ApplyLayerToChildren = 1 << 2,
+            /// <summary>Apply tag changes to all children.</summary>
             ApplyTagToChildren = 1 << 3,
         }
 
-        [SerializeField] private OverrideMode _overridePortalsMode;
+        [SerializeField, Tooltip("Determines how the override portals list is used.")]
+        private OverrideMode _overridePortalsMode;
         /// <summary>
         /// The override mode for which portals this object can use.
         /// </summary>
@@ -68,7 +77,8 @@ namespace VRPortalToolkit.Portables
             set => _overridePortalsMode = value;
         }
 
-        [SerializeField] private List<Portal> _overridePortals;
+        [SerializeField, Tooltip("The list of portals to override the default portal set.")]
+        private List<Portal> _overridePortals;
         /// <summary>
         /// The list of portals to override the default portal set.
         /// </summary>
@@ -140,6 +150,10 @@ namespace VRPortalToolkit.Portables
             RemoveTeleportListeners(transform);
         }
 
+        /// <summary>
+        /// Adds teleport event listeners to the specified transform.
+        /// </summary>
+        /// <param name="source">The transform to add listeners to.</param>
         protected virtual void AddTeleportListeners(Transform source)
         {
             if (source)
@@ -149,6 +163,10 @@ namespace VRPortalToolkit.Portables
             }
         }
 
+        /// <summary>
+        /// Removes teleport event listeners from the specified transform.
+        /// </summary>
+        /// <param name="source">The transform to remove listeners from.</param>
         protected virtual void RemoveTeleportListeners(Transform source)
         {
             if (source)
@@ -158,11 +176,19 @@ namespace VRPortalToolkit.Portables
             }
         }
 
+        /// <summary>
+        /// Called before teleportation occurs.
+        /// </summary>
+        /// <param name="args">Information about the teleportation event.</param>
         protected virtual void PreTeleport(Teleportation args)
         {
             if (preTeleport != null) preTeleport.Invoke(args.fromPortal);
         }
 
+        /// <summary>
+        /// Called after teleportation occurs.
+        /// </summary>
+        /// <param name="args">Information about the teleportation event.</param>
         protected virtual void PostTeleport(Teleportation args)
         {
             if (postTeleport != null) postTeleport.Invoke(args.fromPortal);
@@ -175,6 +201,10 @@ namespace VRPortalToolkit.Portables
                 PortalPhysics.ForceTeleport(transform, () => TeleportLogic(portal), this, portal);
         }
 
+        /// <summary>
+        /// Implements the teleportation logic for this portable object.
+        /// </summary>
+        /// <param name="portal">The portal to teleport through.</param>
         protected virtual void TeleportLogic(Portal portal)
         {
             if (portal.usesTeleport)
