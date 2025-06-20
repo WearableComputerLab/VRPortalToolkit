@@ -6,12 +6,19 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit
 {
+    /// <summary>
+    /// Handles the assignment and management of portal layers for physics objects.
+    /// </summary>
     [DefaultExecutionOrder(1000)]
     public class PhysicsPortalLayer : MonoBehaviour
     {
         private static readonly WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
 
+        [Tooltip("How this object and its children are assigned to portal layers.")]
         [SerializeField] private PortalLayerMode _layerMode = PortalLayerMode.CollidersOnly;
+        /// <summary>
+        /// Gets or sets the portal layer mode.
+        /// </summary>
         public virtual PortalLayerMode layerMode
         {
             get => _layerMode;
@@ -34,13 +41,28 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// The trigger handler for portal transitions.
+        /// </summary>
         protected readonly TriggerHandler<PortalTransition> transitionHandler = new TriggerHandler<PortalTransition>();
+        /// <summary>
+        /// The trigger handler for portal layers.
+        /// </summary>
         protected readonly TriggerHandler<PortalLayer> layerHandler = new TriggerHandler<PortalLayer>();
+        /// <summary>
+        /// The set of colliders that stayed in the trigger during the last update.
+        /// </summary>
         protected readonly HashSet<Collider> _stayedColliders = new HashSet<Collider>();
         private IEnumerator _waitFixedUpdateLoop;
 
+        /// <summary>
+        /// Gets the current portal layer.
+        /// </summary>
         public PortalLayer portalLayer => _portalLayer;
 
+        /// <summary>
+        /// Gets the current portal layer state.
+        /// </summary>
         public PortalLayer.State portalLayerState => _state;
 
         private PortalLayer _portalLayer;
@@ -49,6 +71,10 @@ namespace VRPortalToolkit
 
         private Collider[] _colliders;
 
+        /// <summary>
+        /// Sets the state of the portal layer.
+        /// </summary>
+        /// <param name="state">The new state to set.</param>
         private void SetState(PortalLayer.State state)
         {
             if (_state != state)
@@ -132,12 +158,20 @@ namespace VRPortalToolkit
             _stayedColliders.Add(other);
         }
 
+        /// <summary>
+        /// Adds a portal transition to the trigger handler.
+        /// </summary>
+        /// <param name="other">The collider to add.</param>
         private void AddTransition(Collider other)
         {
             PortalTransition transition = other.attachedRigidbody ? other.attachedRigidbody.GetComponent<PortalTransition>() : other.GetComponent<PortalTransition>();
             if (transition) transitionHandler.Add(other, transition);
         }
 
+        /// <summary>
+        /// Adds a portal layer to the trigger handler.
+        /// </summary>
+        /// <param name="other">The collider to add.</param>
         private void AddLayer(Collider other)
         {
             PortalLayer layer = other.attachedRigidbody ? other.attachedRigidbody.GetComponent<PortalLayer>() : other.GetComponent<PortalLayer>();
@@ -164,18 +198,37 @@ namespace VRPortalToolkit
 
         #region Trigger Events
 
+        /// <summary>
+        /// Called when a portal layer is entered.
+        /// </summary>
+        /// <param name="layer">The portal layer that was entered.</param>
         protected virtual void OnTriggerEnterLayer(PortalLayer layer)
             => RefreshPortalLayer();
 
+        /// <summary>
+        /// Called when a portal layer is exited.
+        /// </summary>
+        /// <param name="layer">The portal layer that was exited.</param>
         protected virtual void OnTriggerExitLayer(PortalLayer layer)
             => RefreshPortalLayer();
 
+        /// <summary>
+        /// Called when a portal transition is entered.
+        /// </summary>
+        /// <param name="transition">The portal transition that was entered.</param>
         protected virtual void OnTriggerEnterTransition(PortalTransition transition)
             => RefreshPortalLayer();
 
+        /// <summary>
+        /// Called when a portal transition is exited.
+        /// </summary>
+        /// <param name="transition">The portal transition that was exited.</param>
         protected virtual void OnTriggerExitTransition(PortalTransition transition)
             => RefreshPortalLayer();
 
+        /// <summary>
+        /// Refreshes the current portal layer.
+        /// </summary>
         private void RefreshPortalLayer()
         {
             // Layer may no longer be available
@@ -230,6 +283,10 @@ namespace VRPortalToolkit
         #endregion
 
         private PortalLayer.State preTeleportState;
+        /// <summary>
+        /// Called before teleportation occurs.
+        /// </summary>
+        /// <param name="args">The teleportation arguments.</param>
         protected virtual void OnPreTeleport(Teleportation args)
         {
             if (_portalLayer && _portalLayer.portal && _portalLayer.portal == args.fromPortal)
@@ -239,6 +296,10 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Called after teleportation occurs.
+        /// </summary>
+        /// <param name="args">The teleportation arguments.</param>
         protected virtual void OnPostTeleport(Teleportation args)
         {
             if (_portalLayer && _portalLayer.portal && _portalLayer.portal == args.fromPortal)

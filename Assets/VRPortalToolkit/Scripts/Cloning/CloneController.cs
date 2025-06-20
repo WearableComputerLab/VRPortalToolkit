@@ -4,13 +4,16 @@ using UnityEngine;
 
 namespace VRPortalToolkit
 {
-    // TODO: This should handle objects being destroyed
-    // Also what is the hierachy changes
-    // If the clone is destroyed, but their a still existing former children, what do we do there?
-
+    /// <summary>
+    /// Manages the creation, updating, and mapping of clones for a given GameObject and its components.
+    /// </summary>
     public class CloneController
     {
         private GameObject _original;
+
+        /// <summary>
+        /// The original GameObject to be cloned.
+        /// </summary>
         public GameObject original {
             get => _original;
             set {
@@ -23,6 +26,10 @@ namespace VRPortalToolkit
         }
 
         private GameObject _clone;
+
+        /// <summary>
+        /// The clone GameObject created from the original.
+        /// </summary>
         public GameObject clone {
             get => _clone;
             set {
@@ -36,6 +43,9 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Specifies how component types are overridden during cloning.
+        /// </summary>
         public enum ComponentOverrideMode : sbyte
         {
             IgnoreExact = 0,
@@ -45,12 +55,20 @@ namespace VRPortalToolkit
         }
 
         private ComponentOverrideMode _componentsOverrideMode;
+
+        /// <summary>
+        /// The override mode for component types.
+        /// </summary>
         public ComponentOverrideMode componentsOverrideMode {
             get => _componentsOverrideMode;
             set => _componentsOverrideMode = value;
         }
 
         private System.Type[] _componentsOverride;
+
+        /// <summary>
+        /// The list of component types to override during cloning.
+        /// </summary>
         public System.Type[] componentsOverride {
             get => _componentsOverride;
             set => _componentsOverride = value;
@@ -58,8 +76,16 @@ namespace VRPortalToolkit
 
         protected Dictionary<Component, Component> _cloneByOriginal;
 
+        /// <summary>
+        /// The number of component mappings in the clone cache.
+        /// </summary>
         public int componentCount => _cloneByOriginal.Count;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloneController"/> class.
+        /// </summary>
+        /// <param name="original">The original GameObject.</param>
+        /// <param name="clone">The clone GameObject.</param>
         public CloneController(GameObject original = null, GameObject clone = null)
         {
             this.original = original;

@@ -6,18 +6,30 @@ using VRPortalToolkit.Data;
 
 namespace VRPortalToolkit.Rendering
 {
+    /// <summary>
+    /// Provides algorithms for building portal rendering trees using different traversal methods.
+    /// </summary>
     public class PortalAlgorithms
     {
+        /// <summary>
+        /// Node used in the predictive portal traversal algorithm.
+        /// </summary>
         public struct PredictiveNode : IComparable<PredictiveNode>
         {
             private readonly float significance;
-
             private readonly bool hasPattern;
-
             private readonly bool focused;
 
+            /// <summary>
+            /// The render node associated with this predictive node.
+            /// </summary>
             public readonly PortalRenderNode renderNode;
 
+            /// <summary>
+            /// Creates a new predictive node with the specified render node.
+            /// </summary>
+            /// <param name="renderNode">The render node to associate with this predictive node.</param>
+            /// <param name="focused">Whether this node is in the camera's focus area.</param>
             public PredictiveNode(PortalRenderNode renderNode, bool focused = false)
             {
                 this.renderNode = renderNode;
@@ -50,6 +62,11 @@ namespace VRPortalToolkit.Rendering
                 }
             }
 
+            /// <summary>
+            /// Compares this node with another for sorting purposes.
+            /// </summary>
+            /// <param name="other">The other node to compare with.</param>
+            /// <returns>A value indicating the relative ordering.</returns>
             public int CompareTo(PredictiveNode other)
             {
                 if (hasPattern != other.hasPattern)
@@ -66,15 +83,31 @@ namespace VRPortalToolkit.Rendering
             }
         }
 
+        /// <summary>
+        /// Node used in the breadth-first portal traversal algorithm.
+        /// </summary>
         public struct BreadthFirstNode : IComparable<BreadthFirstNode>
         {
+            /// <summary>
+            /// The render node associated with this breadth-first node.
+            /// </summary>
             public readonly PortalRenderNode renderNode;
 
+            /// <summary>
+            /// Creates a new breadth-first node with the specified render node.
+            /// </summary>
+            /// <param name="renderNode">The render node to associate with this breadth-first node.</param>
+            /// <param name="focused">Whether this node is in the camera's focus area (unused).</param>
             public BreadthFirstNode(PortalRenderNode renderNode, bool focused = false)
             {
                 this.renderNode = renderNode;
             }
 
+            /// <summary>
+            /// Compares this node with another for sorting purposes.
+            /// </summary>
+            /// <param name="other">The other node to compare with.</param>
+            /// <returns>A value indicating the relative ordering.</returns>
             public int CompareTo(BreadthFirstNode other)
             {
                 return other.renderNode.depth.CompareTo(renderNode.depth);
@@ -85,10 +118,31 @@ namespace VRPortalToolkit.Rendering
         private static List<PredictiveNode> _predictiveNodes = new List<PredictiveNode>();
         private static List<BreadthFirstNode> _breadthFirstNodes = new List<BreadthFirstNode>();
 
+        /// <summary>
+        /// Gets a portal rendering tree using the default breadth-first algorithm.
+        /// </summary>
+        /// <param name="camera">The camera to render from.</param>
+        /// <param name="minDepth">The minimum recursion depth to render.</param>
+        /// <param name="maxDepth">The maximum recursion depth to render.</param>
+        /// <param name="maxRenders">The maximum number of portals to render.</param>
+        /// <param name="portals">The available portals to traverse.</param>
+        /// <returns>The root node of the portal rendering tree.</returns>
         public static PortalRenderNode GetTree(Camera camera, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> portals)
             => GetTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, minDepth, maxDepth, maxRenders, portals);
 
-
+        /// <summary>
+        /// Gets a portal rendering tree using the breadth-first algorithm with custom matrices.
+        /// </summary>
+        /// <param name="camera">The camera to render from.</param>
+        /// <param name="localToWorld">The local to world matrix.</param>
+        /// <param name="view">The view matrix.</param>
+        /// <param name="proj">The projection matrix.</param>
+        /// <param name="layerMask">The layer mask for culling.</param>
+        /// <param name="minDepth">The minimum recursion depth to render.</param>
+        /// <param name="maxDepth">The maximum recursion depth to render.</param>
+        /// <param name="maxRenders">The maximum number of portals to render.</param>
+        /// <param name="visiblePortals">The available portals to traverse.</param>
+        /// <returns>The root node of the portal rendering tree.</returns>
         public static PortalRenderNode GetTree(Camera camera, Matrix4x4 localToWorld, Matrix4x4 view, Matrix4x4 proj, int layerMask, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> visiblePortals)
         {
             PortalRenderNode root = GetRoot(camera, localToWorld, view, proj, layerMask);
@@ -98,10 +152,36 @@ namespace VRPortalToolkit.Rendering
             return root;
         }
 
+        /// <summary>
+        /// Gets a portal rendering tree for stereo rendering using the breadth-first algorithm.
+        /// </summary>
+        /// <param name="camera">The camera to render from.</param>
+        /// <param name="minDepth">The minimum recursion depth to render.</param>
+        /// <param name="maxDepth">The maximum recursion depth to render.</param>
+        /// <param name="maxRenders">The maximum number of portals to render.</param>
+        /// <param name="portals">The available portals to traverse.</param>
+        /// <returns>The root node of the portal rendering tree.</returns>
         public static PortalRenderNode GetStereoTree(Camera camera, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> portals)
             => GetStereoTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
                 camera.GetStereoViewMatrix(Camera.StereoscopicEye.Right), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right), minDepth, maxDepth, maxRenders, portals);
 
+        /// <summary>
+        /// Gets a portal rendering tree for stereo rendering using the breadth-first algorithm with custom matrices.
+        /// </summary>
+        /// <param name="camera">The camera to render from.</param>
+        /// <param name="localToWorld">The local to world matrix.</param>
+        /// <param name="cullView">The view matrix for culling.</param>
+        /// <param name="cullProj">The projection matrix for culling.</param>
+        /// <param name="layerMask">The layer mask for culling.</param>
+        /// <param name="leftView">The view matrix for the left eye.</param>
+        /// <param name="leftProj">The projection matrix for the left eye.</param>
+        /// <param name="rightView">The view matrix for the right eye.</param>
+        /// <param name="rightProj">The projection matrix for the right eye.</param>
+        /// <param name="minDepth">The minimum recursion depth to render.</param>
+        /// <param name="maxDepth">The maximum recursion depth to render.</param>
+        /// <param name="maxRenders">The maximum number of portals to render.</param>
+        /// <param name="visiblePortals">The available portals to traverse.</param>
+        /// <returns>The root node of the portal rendering tree.</returns>
         public static PortalRenderNode GetStereoTree(Camera camera, Matrix4x4 localToWorld, Matrix4x4 cullView, Matrix4x4 cullProj, int layerMask, Matrix4x4 leftView, Matrix4x4 leftProj, Matrix4x4 rightView, Matrix4x4 rightProj, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> visiblePortals)
         {
             PortalRenderNode root = GetStereoRoot(camera, localToWorld, cullView, cullProj, layerMask, leftView, leftProj, rightView, rightProj);
@@ -162,9 +242,32 @@ namespace VRPortalToolkit.Rendering
             }
         }
 
+        /// <summary>
+        /// Gets a portal rendering tree using the predictive algorithm.
+        /// </summary>
+        /// <param name="camera">The camera to render from.</param>
+        /// <param name="maxDepth">The maximum recursion depth to render.</param>
+        /// <param name="maxRenders">The maximum number of portals to render.</param>
+        /// <param name="portals">The available portals to traverse.</param>
+        /// <param name="focus">Optional focus point in viewport space to prioritize.</param>
+        /// <returns>The root node of the portal rendering tree.</returns>
         public static PortalRenderNode GetSmartTree(Camera camera, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> portals, Vector2? focus = null)
             => GetPredictiveTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, 0, maxDepth, maxRenders, portals, focus);
 
+        /// <summary>
+        /// Gets a portal rendering tree using the predictive algorithm with custom matrices.
+        /// </summary>
+        /// <param name="camera">The camera to render from.</param>
+        /// <param name="localToWorld">The local to world matrix.</param>
+        /// <param name="view">The view matrix.</param>
+        /// <param name="proj">The projection matrix.</param>
+        /// <param name="layerMask">The layer mask for culling.</param>
+        /// <param name="minDepth">The minimum recursion depth to render.</param>
+        /// <param name="maxDepth">The maximum recursion depth to render.</param>
+        /// <param name="maxRenders">The maximum number of portals to render.</param>
+        /// <param name="visiblePortals">The available portals to traverse.</param>
+        /// <param name="focus">Optional focus point in viewport space to prioritize.</param>
+        /// <returns>The root node of the portal rendering tree.</returns>
         public static PortalRenderNode GetPredictiveTree(Camera camera, Matrix4x4 localToWorld, Matrix4x4 view, Matrix4x4 proj, int layerMask, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> visiblePortals, Vector2? focus = null)
         {
             PortalRenderNode root = GetRoot(camera, localToWorld, view, proj, layerMask);
@@ -174,10 +277,37 @@ namespace VRPortalToolkit.Rendering
             return root;
         }
 
+        /// <summary>
+        /// Gets a portal rendering tree for stereo rendering using the predictive algorithm.
+        /// </summary>
+        /// <param name="camera">The camera to render from.</param>
+        /// <param name="maxDepth">The maximum recursion depth to render.</param>
+        /// <param name="maxRenders">The maximum number of portals to render.</param>
+        /// <param name="portals">The available portals to traverse.</param>
+        /// <param name="focus">Optional focus point in viewport space to prioritize.</param>
+        /// <returns>The root node of the portal rendering tree.</returns>
         public static PortalRenderNode GetSmartStereoTree(Camera camera, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> portals, Vector2? focus = null)
             => GetPredictiveStereoTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
                 camera.GetStereoViewMatrix(Camera.StereoscopicEye.Right), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right), 0, maxDepth, maxRenders, portals, focus);
 
+        /// <summary>
+        /// Gets a portal rendering tree for stereo rendering using the predictive algorithm with custom matrices.
+        /// </summary>
+        /// <param name="camera">The camera to render from.</param>
+        /// <param name="localToWorld">The local to world matrix.</param>
+        /// <param name="cullView">The view matrix for culling.</param>
+        /// <param name="cullProj">The projection matrix for culling.</param>
+        /// <param name="layerMask">The layer mask for culling.</param>
+        /// <param name="leftView">The view matrix for the left eye.</param>
+        /// <param name="leftProj">The projection matrix for the left eye.</param>
+        /// <param name="rightView">The view matrix for the right eye.</param>
+        /// <param name="rightProj">The projection matrix for the right eye.</param>
+        /// <param name="minDepth">The minimum recursion depth to render.</param>
+        /// <param name="maxDepth">The maximum recursion depth to render.</param>
+        /// <param name="maxRenders">The maximum number of portals to render.</param>
+        /// <param name="visiblePortals">The available portals to traverse.</param>
+        /// <param name="focus">Optional focus point in viewport space to prioritize.</param>
+        /// <returns>The root node of the portal rendering tree.</returns>
         public static PortalRenderNode GetPredictiveStereoTree(Camera camera, Matrix4x4 localToWorld, Matrix4x4 cullView, Matrix4x4 cullProj, int layerMask, Matrix4x4 leftView, Matrix4x4 leftProj, Matrix4x4 rightView, Matrix4x4 rightProj, int minDepth, int maxDepth, int maxRenders, IEnumerable<IPortalRenderer> visiblePortals, Vector2? focus = null)
         {
             PortalRenderNode root = GetStereoRoot(camera, localToWorld, cullView, cullProj, layerMask, leftView, leftProj, rightView, rightProj);

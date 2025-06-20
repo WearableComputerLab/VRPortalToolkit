@@ -6,26 +6,40 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Portal-aware ray interactor that supports raycast interactions through portals.
+    /// </summary>
     public class XRPortableRayInteractor : XRRayInteractor, IXRPortableInteractor, IPortalLineRenderable, IPortalCursorRenderable
     {
         private readonly static int MaxPortals = 10;
         private readonly static List<IXRInteractable> _results = new List<IXRInteractable>(1);
         private readonly static PortalRay[] castPortalRays = new PortalRay[MaxPortals];
 
+        [Tooltip("The layer mask used for portal raycasting.")]
         [SerializeField] private LayerMask _portalMask = 1 << 3;
+        /// <summary>
+        /// The layer mask used for portal raycasting.
+        /// </summary>
         public virtual LayerMask portalMask
         {
             get => _portalMask;
             set => _portalMask = value;
         }
 
+        [Tooltip("The trigger interaction mode for portal raycasting.")]
         [SerializeField] private QueryTriggerInteraction _portalTriggerInteraction;
+        /// <summary>
+        /// The trigger interaction mode for portal raycasting.
+        /// </summary>
         public virtual QueryTriggerInteraction portalTriggerInteraction
         {
             get => _portalTriggerInteraction;
             set => _portalTriggerInteraction = value;
         }
 
+        /// <summary>
+        /// Gets the number of portal rays in the current raycast.
+        /// </summary>
         public int portalRayCount => _portalRaysCount;
 
         private IXRInteractable _actualValidTarget;
@@ -35,6 +49,11 @@ namespace VRPortalToolkit.XRI
         private int _portalIndex;
         private RaycastHit _hitInfo;
 
+        /// <summary>
+        /// Gets the portals needed to travel to the specified interactable.
+        /// </summary>
+        /// <param name="interactable">The XR interactable.</param>
+        /// <returns>An enumerable of portals.</returns>
         public IEnumerable<Portal> GetPortalsToInteractable(IXRInteractable interactable)
         {
             IEnumerable<Portal> from = GetPortalsToRaycastHit(), to = null;
@@ -54,7 +73,8 @@ namespace VRPortalToolkit.XRI
                 yield return _portalRays[i].fromPortal;
 
         }
-        /// <inheritdoc />
+
+        /// <inheritdoc/>
         protected override void OnSelectEntering(SelectEnterEventArgs args)
         {
             base.OnSelectEntering(args);
@@ -70,6 +90,7 @@ namespace VRPortalToolkit.XRI
             }
         }
 
+        /// <inheritdoc/>
         public override void PreprocessInteractor(XRInteractionUpdateOrder.UpdatePhase updatePhase)
         {
             // Perform base without actually raycasting
@@ -165,6 +186,7 @@ namespace VRPortalToolkit.XRI
             }
         }
 
+        /// <inheritdoc/>
         public override void GetValidTargets(List<IXRInteractable> targets)
         {
             targets.Clear();
@@ -181,6 +203,14 @@ namespace VRPortalToolkit.XRI
             }
         }
 
+        /// <summary>
+        /// Tries to get hit information for the current raycast.
+        /// </summary>
+        /// <param name="position">The hit position.</param>
+        /// <param name="normal">The hit normal.</param>
+        /// <param name="portalRayIndex">The index of the portal ray that produced the hit.</param>
+        /// <param name="isValidTarget">Whether the hit target is valid for interaction.</param>
+        /// <returns>True if hit information is available.</returns>
         public new bool TryGetHitInfo(out Vector3 position, out Vector3 normal, out int portalRayIndex, out bool isValidTarget)
         {
             position = _hitInfo.point;
@@ -191,8 +221,19 @@ namespace VRPortalToolkit.XRI
             return _portalIndex >= 0;
         }
 
+        /// <summary>
+        /// Gets the portal ray at the specified index.
+        /// </summary>
+        /// <param name="portalRayIndex">The index of the portal ray to retrieve.</param>
+        /// <returns>The portal ray at the specified index.</returns>
         public PortalRay GetPortalRay(int portalRayIndex) => _portalRays[portalRayIndex];
 
+        /// <summary>
+        /// Tries to get the cursor pose for reticle rendering.
+        /// </summary>
+        /// <param name="cursorPose">The cursor pose.</param>
+        /// <param name="isValidTarget">Whether the cursor is over a valid target.</param>
+        /// <returns>True if cursor information is available.</returns>
         public bool TryGetCursor(out Pose cursorPose, out bool isValidTarget)
         {
             if (TryGetHitInfo(out Vector3 position, out Vector3 normal, out _, out isValidTarget))

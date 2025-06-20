@@ -8,20 +8,34 @@ using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// Static utility class for managing the current stack of portal pass nodes.
+    /// </summary>
     public static class PortalPassStack
     {
         private static List<PortalPassNode> portalPassNodes = new List<PortalPassNode>();
 
+        /// <summary>
+        /// Clears all nodes from the stack.
+        /// </summary>
         public static void Clear()
         {
             portalPassNodes.Clear();
         }
 
+        /// <summary>
+        /// Pushes a node onto the stack.
+        /// </summary>
+        /// <param name="node">The node to push.</param>
         public static void Push(PortalPassNode node)
         {
             if (node != null) portalPassNodes.Add(node);
         }
 
+        /// <summary>
+        /// Pops the top node from the stack.
+        /// </summary>
+        /// <returns>The removed node, or null if the stack is empty or contains only one node.</returns>
         public static PortalPassNode Pop()
         {
             if (portalPassNodes.Count > 1)
@@ -34,6 +48,9 @@ namespace VRPortalToolkit.Rendering.Universal
             return null;
         }
 
+        /// <summary>
+        /// Gets the parent node of the current node.
+        /// </summary>
         public static PortalPassNode Parent
         {
             get
@@ -45,6 +62,9 @@ namespace VRPortalToolkit.Rendering.Universal
             }
         }
 
+        /// <summary>
+        /// Gets the current (top) node on the stack.
+        /// </summary>
         public static PortalPassNode Current
         {
             get
@@ -57,20 +77,43 @@ namespace VRPortalToolkit.Rendering.Universal
         }
     }
 
+    /// <summary>
+    /// Represents a node in the portal rendering pass hierarchy.
+    /// Contains information about render state, viewport, and shadow caster passes.
+    /// </summary>
     public class PortalPassNode
     {
+        /// <summary>
+        /// The portal render node associated with this pass node.
+        /// </summary>
         public PortalRenderNode renderNode;
 
+        /// <summary>
+        /// The render state block to use for this pass.
+        /// </summary>
         public RenderStateBlock stateBlock;
 
         //public PortalPassGroup parent;
 
+        /// <summary>
+        /// The viewport rect for this pass.
+        /// </summary>
         public Rect viewport = new Rect(0, 0, 1, 1);
 
+        /// <summary>
+        /// The main light shadow caster pass for this portal.
+        /// </summary>
         public MainLightShadowCasterInPortalPass mainLightShadowCasterPass;
+        
+        /// <summary>
+        /// The additional lights shadow caster pass for this portal.
+        /// </summary>
         public AdditionalLightsShadowCasterInPortalPass additionalLightsShadowCasterPass;
 
         private RenderTexture _colorTexture;
+        /// <summary>
+        /// The color texture used for this portal rendering pass.
+        /// </summary>
         public RenderTexture colorTexture
         {
             get => _colorTexture;
@@ -85,6 +128,9 @@ namespace VRPortalToolkit.Rendering.Universal
         }
 
         private RenderTargetIdentifier _colorTarget;
+        /// <summary>
+        /// The render target identifier for the color texture.
+        /// </summary>
         public RenderTargetIdentifier colorTarget => _colorTarget;
 
         private RenderingData _renderingData;
@@ -106,6 +152,11 @@ namespace VRPortalToolkit.Rendering.Universal
 
         private static List<Vector4> tempList = new List<Vector4>();
 
+        /// <summary>
+        /// Sets the view and projection matrices in the command buffer based on the render node.
+        /// </summary>
+        /// <param name="cmd">The command buffer to modify.</param>
+        /// <param name="setViewport">Whether to also set the viewport.</param>
         public void SetViewAndProjectionMatrices(CommandBuffer cmd, bool setViewport = true)
         {
             cmd.SetViewProjectionMatrices(renderNode.worldToCameraMatrix, renderNode.projectionMatrix);
@@ -120,6 +171,10 @@ namespace VRPortalToolkit.Rendering.Universal
             }
         }
 
+        /// <summary>
+        /// Stores the current rendering state for later restoration.
+        /// </summary>
+        /// <param name="renderingData">The rendering data to store.</param>
         public void StoreState(ref RenderingData renderingData)
         {
             _renderingData = renderingData;
@@ -157,6 +212,11 @@ namespace VRPortalToolkit.Rendering.Universal
             tempList.Clear();
         }
 
+        /// <summary>
+        /// Restores the previously stored rendering state.
+        /// </summary>
+        /// <param name="cmd">The command buffer to modify.</param>
+        /// <param name="renderingData">Output parameter that will be set to the stored rendering data.</param>
         public void RestoreState(CommandBuffer cmd, ref RenderingData renderingData)
         {
             renderingData = _renderingData;
@@ -182,13 +242,19 @@ namespace VRPortalToolkit.Rendering.Universal
         }
     }
 
+    /// <summary>
+    /// Pool for managing PortalPassNode instances to reduce garbage collection.
+    /// </summary>
     internal static class PortalPassGroupPool
     {
         private static List<PortalPassNode> _groups = new List<PortalPassNode>();
 
+        /// <summary>
+        /// Gets a PortalPassNode from the pool or creates a new one if the pool is empty.
+        /// </summary>
+        /// <returns>A PortalPassNode instance.</returns>
         internal static PortalPassNode Get()
         {
-
             if (_groups.Count > 0)
             {
                 PortalPassNode group = _groups[_groups.Count - 1];
@@ -203,6 +269,10 @@ namespace VRPortalToolkit.Rendering.Universal
             return new PortalPassNode();
         }
 
+        /// <summary>
+        /// Releases a PortalPassNode back to the pool.
+        /// </summary>
+        /// <param name="node">The node to release.</param>
         internal static void Release(PortalPassNode node)
         {
             if (node != null)

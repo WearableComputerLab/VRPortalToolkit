@@ -6,25 +6,39 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.Rendering
 {
+    /// <summary>
+    /// Manages camera transitions through portals, detecting when a camera is passing through a portal.
+    /// </summary>
     public class PortalCameraTransition : MonoBehaviour, IPortalCameraTransition
     {
         private readonly static WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
 
         private Camera _camera;
+        /// <summary>
+        /// The camera associated with this transition.
+        /// </summary>
         public new Camera camera { get => _camera; }
 
-        int IPortalCameraTransition.layer => transition != null && transition.portal != null ? transition.portal.gameObject.layer : 0; // ?
+        /// <summary>
+        /// Gets the layer of the portal associated with the current transition.
+        /// </summary>
+        int IPortalCameraTransition.layer => transition != null && transition.portal != null ? transition.portal.gameObject.layer : 0;
 
+        /// <summary>
+        /// Gets the portal associated with the current transition.
+        /// </summary>
         IPortal IPortalCameraTransition.portal => transition != null ? transition.portal : null;
 
         private PortalTransition _overrideTransition;
+        /// <summary>
+        /// The current active transition, either the override or the first available.
+        /// </summary>
         public PortalTransition transition => _overrideTransition != null ? _overrideTransition : (_transitions.Count > 0 ? _transitions[0] : null);
 
         private readonly List<PortalTransition> _transitions = new List<PortalTransition>();
         private readonly TriggerHandler<PortalTransition> triggerHandler = new TriggerHandler<PortalTransition>();
         private readonly HashSet<Collider> _stayedColliders = new HashSet<Collider>();
         private IEnumerator _waitFixedUpdateLoop;
-
 
         protected virtual void Awake()
         {
@@ -94,6 +108,10 @@ namespace VRPortalToolkit.Rendering
             }
         }
 
+        /// <summary>
+        /// Called when the camera enters a transition volume.
+        /// </summary>
+        /// <param name="other">The portal transition entered.</param>
         protected virtual void OnTriggerEnterTransition(PortalTransition other)
         {
             _transitions.Add(other);
@@ -104,6 +122,10 @@ namespace VRPortalToolkit.Rendering
             }
         }
 
+        /// <summary>
+        /// Called when the camera exits a transition volume.
+        /// </summary>
+        /// <param name="other">The portal transition exited.</param>
         protected virtual void OnTriggerExitTransition(PortalTransition other)
         {
             _transitions.Remove(other);
@@ -114,6 +136,11 @@ namespace VRPortalToolkit.Rendering
             }
         }
 
+        /// <summary>
+        /// Gets the transition plane information.
+        /// </summary>
+        /// <param name="planeCentre">The center of the transition plane.</param>
+        /// <param name="planeNormal">The normal of the transition plane.</param>
         void IPortalCameraTransition.GetTransitionPlane(out Vector3 planeCentre, out Vector3 planeNormal)
         {
             PortalTransition current = transition;
@@ -138,6 +165,10 @@ namespace VRPortalToolkit.Rendering
             }
         }
 
+        /// <summary>
+        /// Called after the camera teleports through a portal.
+        /// </summary>
+        /// <param name="teleportation">The teleportation data.</param>
         private void OnPostTeleport(Teleportation teleportation)
         {
             if (_overrideTransition == null)

@@ -10,27 +10,49 @@ using static UnityEngine.GraphicsBuffer;
 
 namespace VRPortalToolkit
 {
-    // TODO: Why is the trigger logic and stuff on the transition, not the transition handler?
-
+    /// <summary>
+    /// Handles the transition of portables through a portal, including trigger logic and teleportation.
+    /// </summary>
     public class PortalTransition : MonoBehaviour, IPortableHandler
     {
         private readonly static WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
 
+        /// <summary>
+        /// The portal associated with this transition.
+        /// </summary>
+        [Tooltip("The portal associated with this transition.")]
         [SerializeField] private Portal _portal;
+        /// <summary>
+        /// Gets or sets the portal associated with this transition.
+        /// </summary>
         public Portal portal
         {
             get => _portal;
             set => _portal = value;
         }
 
+        /// <summary>
+        /// The connected transition on the other side of the portal.
+        /// </summary>
+        [Tooltip("The connected transition on the other side of the portal.")]
         [SerializeField] private PortalTransition _connectedTransition;
+        /// <summary>
+        /// Gets or sets the connected transition on the other side of the portal.
+        /// </summary>
         public PortalTransition connectedTransition
         {
             get => _connectedTransition;
             set => _connectedTransition = value;
         }
 
+        /// <summary>
+        /// The transform representing the transition plane.
+        /// </summary>
+        [Tooltip("The transform representing the transition plane.")]
         [SerializeField] private Transform _transitionPlane;
+        /// <summary>
+        /// Gets or sets the transform representing the transition plane.
+        /// </summary>
         public Transform transitionPlane
         {
             get => _transitionPlane;
@@ -40,7 +62,13 @@ namespace VRPortalToolkit
         // Used by the connected to tell this what else its also tracking
         private Dictionary<Transform, bool> _overrideTracked = new Dictionary<Transform, bool>();
 
+        /// <summary>
+        /// Trigger handler for managing tracked transforms.
+        /// </summary>
         protected readonly TriggerHandler<Transform> triggerHandler = new TriggerHandler<Transform>();
+        /// <summary>
+        /// Set of colliders that stayed during the last frame.
+        /// </summary>
         protected readonly HashSet<Collider> _stayedColliders = new HashSet<Collider>();
         private IEnumerator _waitFixedUpdateLoop;
 
@@ -127,28 +155,35 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Called when a transform enters the trigger container.
+        /// </summary>
+        /// <param name="other">The transform that entered the container.</param>
         protected virtual void OnTriggerEnterContainer(Transform other)
         {
             if (!_overrideTracked.ContainsKey(other))
                 PortalPhysics.RegisterPortableHandler(this, other);
         }
 
+        /// <summary>
+        /// Called when a transform exits the trigger container.
+        /// </summary>
+        /// <param name="other">The transform that exited the container.</param>
         protected virtual void OnTriggerExitContainer(Transform other)
         {
             if (!_overrideTracked.ContainsKey(other))
                 PortalPhysics.UnregisterPortableHandler(this, other);
         }
 
+        /// <inheritdoc/>
         public bool TryTeleportPortable(Transform target, IPortable portable)
         {
             if (!_transitionPlane) return false;
 
             bool passedThrough = _transitionPlane.InverseTransformPoint(portable.GetOrigin()).z < 0f;
 
-            if (passedThrough)// && _tracked.Contains(target))
+            if (passedThrough)
             {
-                //StartCoroutine(TempPass(target));
-
                 // Remove it from mine
                 if (!_overrideTracked.ContainsKey(target))
                 {
@@ -172,55 +207,7 @@ namespace VRPortalToolkit
                 return true;
             }
 
-            /*if (passedThrough && _tracked.Contains(target))
-            {
-                StartCoroutine(TempPass(target));
-                portable.Teleport(portal);
-
-                return true;
-            }
-
-            if (passedThrough)
-                _tracked.Remove(target);
-            else
-                _tracked.Add(target);*/
-
             return false;
         }
-
-        /*private IEnumerator TempPass(Transform target)
-        {
-            PortalTransition connected;
-
-            if (!connected || connected._tracked.Contains(target))
-                yield break;
-
-            triggerHandler.RemoveCollider
-            Debug.Log("XQ");
-            _tracked.Remove(transform);
-            PortalPhysics.UnregisterPortableHandler(this, target);
-
-            if (_connectedTransition)
-            {
-                _connectedTransition._tracked.Add(target);
-                PortalPhysics.RegisterPortableHandler(_connectedTransition, target);
-            }
-
-            yield return _WaitForFixedUpdate;
-
-            if (triggerHandler.HasValue(target))
-            {
-                Debug.Log("AQ");
-                PortalPhysics.RegisterPortableHandler(this, target);
-            }
-
-            // If it never got added to the connected transition, remove it
-            if (_connectedTransition && !_connectedTransition.triggerHandler.HasValue(target))
-            {
-                Debug.Log("BQ");
-                _connectedTransition._tracked.Remove(target);
-                PortalPhysics.UnregisterPortableHandler(_connectedTransition, target);
-            }
-        }*/
     }
 }

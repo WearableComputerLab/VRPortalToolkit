@@ -2,18 +2,30 @@ using UnityEngine;
 
 namespace VRPortalToolkit
 {
+    /// <summary>
+    /// Interface for components that can render a cursor at a portal ray's hit point.
+    /// </summary>
     public interface IPortalCursorRenderable
     {
-        /*int cursorPortalsCount { get; }
-
-        IPortal GetCursorPortal(int portalRayIndex);*/
-
+        /// <summary>
+        /// Tries to get the current cursor position and orientation.
+        /// </summary>
+        /// <param name="cursorPose">Output parameter for the cursor pose (position and rotation).</param>
+        /// <param name="isValidTarget">Output parameter indicating whether the cursor is over a valid target.</param>
+        /// <returns>True if a cursor pose was found, false otherwise.</returns>
         bool TryGetCursor(out Pose cursorPose, out bool isValidTarget);
     }
 
+    /// <summary>
+    /// Manages cursor visuals for portal pointers, showing different cursors for valid and invalid targets.
+    /// </summary>
     public class PortalCursorVisual : MonoBehaviour
     {
+        [Tooltip("The cursor to show when pointing at a valid target.")]
         [SerializeField] private GameObject _validCursor;
+        /// <summary>
+        /// The cursor to show when pointing at a valid target.
+        /// </summary>
         public GameObject validCursor
         {
             get => _validCursor;
@@ -26,7 +38,11 @@ namespace VRPortalToolkit
             }
         }
 
+        [Tooltip("The cursor to show when pointing at an invalid target.")]
         [SerializeField] private GameObject _invalidCursor;
+        /// <summary>
+        /// The cursor to show when pointing at an invalid target.
+        /// </summary>
         public GameObject invalidCursor
         {
             get => _invalidCursor;
@@ -39,16 +55,10 @@ namespace VRPortalToolkit
             }
         }
 
-        /*[SerializeField] private ScaleMode _scaleMode;
-
-        public enum ScaleMode
-        {
-            Ignore = 0,
-            Reset = 1,
-            Apply = 2,
-        }*/
-
         private IPortalCursorRenderable _cursorRenderable;
+        /// <summary>
+        /// The IPortalCursorRenderable component that provides cursor data.
+        /// </summary>
         public IPortalCursorRenderable cursorRenderable => _cursorRenderable;
 
         protected virtual void Awake()
@@ -87,6 +97,7 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <param name="cursor">Reference to the cursor GameObject to set up.</param>
         private static void SetupCursor(ref GameObject cursor)
         {
             if (cursor == null) return;
@@ -101,21 +112,13 @@ namespace VRPortalToolkit
         private void UpdateCursor(GameObject validCursor, GameObject invalidCursor, Pose cursorPose)
         {
             if (validCursor)
-            {
-                validCursor.transform.SetPositionAndRotation(cursorPose.position, cursorPose.rotation);
+          {
+                  validCursor.transform.SetPositionAndRotation(cursorPose.position, cursorPose.rotation);
                 validCursor.SetActive(true);
             }
 
             if (invalidCursor) invalidCursor.SetActive(false);
         }
 
-        /*private IEnumerable<IPortal> GetCursorPortals()
-        {
-            if (_cursorRenderable != null)
-            {
-                for (int i = 0; i < _cursorRenderable.cursorPortalsCount; i++)
-                    yield return _cursorRenderable.GetCursorPortal(i);
-            }
-        }*/
     }
 }

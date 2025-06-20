@@ -4,11 +4,25 @@ using UnityEngine.Rendering;
 
 namespace VRPortalToolkit.Utilities
 {
+    /// <summary>
+    /// Provides utility methods for physics-related operations.
+    /// </summary>
     public static class PhysicsUtilities
     {
+        /// <summary>
+        /// Gets all colliders attached to a GameObject.
+        /// </summary>
+        /// <param name="gameObject">The GameObject to get colliders from.</param>
+        /// <param name="results">The list to store the found colliders.</param>
         public static void GetColliders(this GameObject gameObject, List<Collider> results)
             => GetColliders(gameObject, false, results);
 
+        /// <summary>
+        /// Gets all colliders attached to a GameObject with an option to include inactive colliders.
+        /// </summary>
+        /// <param name="gameObject">The GameObject to get colliders from.</param>
+        /// <param name="includeInactive">Whether to include inactive colliders.</param>
+        /// <param name="results">The list to store the found colliders.</param>
         public static void GetColliders(this GameObject gameObject, bool includeInactive, List<Collider> results)
         {
             if (results == null) return;
@@ -24,9 +38,20 @@ namespace VRPortalToolkit.Utilities
             }
         }
 
+        /// <summary>
+        /// Gets all colliders attached to a Rigidbody.
+        /// </summary>
+        /// <param name="rigidbody">The Rigidbody to get colliders from.</param>
+        /// <param name="results">The list to store the found colliders.</param>
         public static void GetColliders(this Rigidbody rigidbody, List<Collider> results)
             => GetColliders(rigidbody, false, results);
 
+        /// <summary>
+        /// Gets all colliders attached to a Rigidbody with an option to include inactive colliders.
+        /// </summary>
+        /// <param name="rigidbody">The Rigidbody to get colliders from.</param>
+        /// <param name="includeInactive">Whether to include inactive colliders.</param>
+        /// <param name="results">The list to store the found colliders.</param>
         public static void GetColliders(this Rigidbody rigidbody, bool includeInactive, List<Collider> results)
         {
             if (results == null) return;
@@ -47,6 +72,13 @@ namespace VRPortalToolkit.Utilities
             }
         }
 
+        /// <summary>
+        /// Maintains a list of colliders for a GameObject, updating the reference to a Rigidbody if needed.
+        /// </summary>
+        /// <param name="gameObject">The GameObject to maintain colliders for.</param>
+        /// <param name="includeInactive">Whether to include inactive colliders.</param>
+        /// <param name="rigidbody">Reference to the Rigidbody that will be updated if needed.</param>
+        /// <param name="colliders">The list to store and maintain the colliders.</param>
         public static void MaintainColliders(GameObject gameObject, bool includeInactive, ref Rigidbody rigidbody, List<Collider> colliders)
         {
             if (!rigidbody || rigidbody.gameObject != gameObject)

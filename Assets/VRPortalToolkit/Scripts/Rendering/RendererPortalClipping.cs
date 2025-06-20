@@ -6,12 +6,18 @@ using VRPortalToolkit.Rendering;
 
 namespace VRPortalToolkit
 {
+    /// <summary>
+    /// Clips renderers in hierarchy when this passes through portals using material property blocks.
+    /// </summary>
     [DefaultExecutionOrder(1020)]
     public class RendererPortalClipping : MonoBehaviour
     {
         private static readonly WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
 
         [SerializeField] private float _clippingOffset = -0.001f;
+        /// <summary>
+        /// The offset distance for the clipping plane to prevent z-fighting.
+        /// </summary>
         public float clippingOffset { get => _clippingOffset; set => _clippingOffset = value; }
 
         protected readonly TriggerHandler<PortalTransition> triggerHandler = new TriggerHandler<PortalTransition>();
@@ -21,6 +27,9 @@ namespace VRPortalToolkit
         private PortalTransition _currentTransition;
 
         [SerializeField] private List<Renderer> _renderers;
+        /// <summary>
+        /// The list of renderers to apply clipping to.
+        /// </summary>
         public List<Renderer> renderers => _renderers;
 
         private MaterialPropertyBlock _propertyBlock;
@@ -114,12 +123,20 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Called when a this enters a portal transition.
+        /// </summary>
+        /// <param name="transition">The portal transition entered.</param>
         protected virtual void OnTriggerEnterTransition(PortalTransition transition)
         {
             if (_currentTransition == null)
                 _currentTransition = transition;
         }
 
+        /// <summary>
+        /// Called when a this exits a portal transition.
+        /// </summary>
+        /// <param name="transition">The portal transition exited.</param>
         protected virtual void OnTriggerExitTransition(PortalTransition transition)
             => RefreshCurrentTransition();
 
@@ -134,6 +151,13 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Tries to get the clipping plane information from a portal transition.
+        /// </summary>
+        /// <param name="transition">The portal transition to get information from.</param>
+        /// <param name="centre">Output parameter for the center of the clipping plane.</param>
+        /// <param name="normal">Output parameter for the normal of the clipping plane.</param>
+        /// <returns>True if clipping information was found, false otherwise.</returns>
         protected virtual bool TryGetSlice(PortalTransition transition, out Vector3 centre, out Vector3 normal)
         {
             if (transition && transition.transitionPlane)
@@ -152,6 +176,10 @@ namespace VRPortalToolkit
             return false;
         }
 
+        /// <summary>
+        /// Called after the object teleports through a portal.
+        /// </summary>
+        /// <param name="args">The teleportation data.</param>
         protected virtual void OnPostTeleport(Teleportation args)
         {
             if (_currentTransition && _currentTransition.portal && args.fromPortal == _currentTransition.portal)
@@ -161,7 +189,7 @@ namespace VRPortalToolkit
             }
         }
 
-        protected virtual IEnumerator DisableOverrideAfterFixedUpdate()
+        private IEnumerator DisableOverrideAfterFixedUpdate()
         {
             yield return _WaitForFixedUpdate;
 

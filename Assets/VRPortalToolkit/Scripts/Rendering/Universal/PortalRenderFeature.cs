@@ -1,18 +1,23 @@
 using Misc.EditorHelpers;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEditorInternal.VersionControl;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using VRPortalToolkit.Data;
-using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
+    /// <summary>
+    /// ScriptableRendererFeature for integrating portal rendering into the Universal Render Pipeline.
+    /// Configures and manages portal rendering passes, algorithms, and settings.
+    /// </summary>
     public class PortalRenderFeature : ScriptableRendererFeature
     {
+        [Tooltip("The rendering mode for portals (RenderTexture, Stencil, etc).")]
         [SerializeField] private RenderMode _renderMode;
+        /// <summary>
+        /// The rendering mode for portals (RenderTexture, Stencil, etc).
+        /// </summary>
         public RenderMode renderMode {
             get => _renderMode;
             set {
@@ -24,25 +29,43 @@ namespace VRPortalToolkit.Rendering.Universal
             }
         }
 
+        [Tooltip("The algorithm used for portal rendering traversal.")]
         [SerializeField] private PortalAlgorithm _algorithm = PortalAlgorithm.Predictive;
+        /// <summary>
+        /// The algorithm used for portal rendering traversal.
+        /// </summary>
         public PortalAlgorithm algorithm {
             get => _algorithm;
             set => _algorithm = value;
         }
 
+        /// <summary>
+        /// Defines the algorithm used for portal rendering traversal.
+        /// </summary>
         public enum PortalAlgorithm
         {
+            /// <summary>Uses breadth-first traversal for portal rendering.</summary>
             BreadthFirst = 0,
+            
+            /// <summary>Uses predictive traversal for portal rendering with prioritization.</summary>
             Predictive = 1
         }
 
+        [Tooltip("The layer mask for opaque objects.")]
         [Header("Filtering"), SerializeField] private LayerMask _opaqueLayerMask = -1;
+        /// <summary>
+        /// The layer mask for opaque objects.
+        /// </summary>
         public LayerMask opaqueLayerMask {
             get => _opaqueLayerMask;
             set => _opaqueLayerMask = value;
         }
 
+        [Tooltip("The layer mask for transparent objects.")]
         [SerializeField] private LayerMask _transparentLayerMask = -1;
+        /// <summary>
+        /// The layer mask for transparent objects.
+        /// </summary>
         public LayerMask transparentLayerMask {
             get => _transparentLayerMask;
             set => _transparentLayerMask = value;
@@ -50,34 +73,59 @@ namespace VRPortalToolkit.Rendering.Universal
 
         private bool _isDirty = false;
 
-        // TODO: Remove render mode, instead have a stencil max, and when that runs out, use render textures
+        /// <summary>
+        /// The rendering mode to use for portals.
+        /// </summary>
         public enum RenderMode
         {
+            /// <summary>Uses render textures for portal rendering.</summary>
             RenderTexture = 0,
-            StencilEarly = 1, // Before opaque, better for shadows memory
-            Stencil = 2, // Before transparent, less overdraw?
-            StencilLate = 3, // After transparent
+            
+            /// <summary>Uses stencil buffer before opaque objects for portal rendering (better for shadows).</summary>
+            StencilEarly = 1,
+            
+            /// <summary>Uses stencil buffer before transparent objects for portal rendering (less overdraw).</summary>
+            Stencil = 2,
+            
+            /// <summary>Uses stencil buffer after transparent objects for portal rendering.</summary>
+            StencilLate = 3
         }
 
+        [Tooltip("The minimum portal recursion depth.")]
         [Header("Scene Settings"), SerializeField] private int _minDepth = 1;
+        /// <summary>
+        /// The minimum portal recursion depth.
+        /// </summary>
         public int minDepth {
             get => _minDepth > 0 ? _minDepth : _minDepth = 0;
             set => _minDepth = value;
         }
 
+        [Tooltip("The maximum portal recursion depth.")]
         [SerializeField] private int _maxDepth = 32;
+        /// <summary>
+        /// The maximum portal recursion depth.
+        /// </summary>
         public int maxDepth {
             get => _maxDepth > 0 ? _maxDepth : _maxDepth = 0;
             set => _maxDepth = value;
         }
 
+        [Tooltip("The maximum number of portal renders per frame.")]
         [SerializeField] private int _maxRenders = 32;
+        /// <summary>
+        /// The maximum number of portal renders per frame.
+        /// </summary>
         public int maxRenders {
             get => _maxRenders > 0 ? _maxRenders : _maxRenders = 0;
             set => _maxRenders = value;
         }
 
+        [Tooltip("The maximum shadow recursion depth for portals.")]
         [SerializeField] private int _maxShadowDepth = 16;
+        /// <summary>
+        /// The maximum shadow recursion depth for portals.
+        /// </summary>
         public int maxShadowDepth {
             get => _maxShadowDepth > 0 ? _maxShadowDepth : _maxShadowDepth = 0;
             set => _maxShadowDepth = value;
@@ -88,37 +136,61 @@ namespace VRPortalToolkit.Rendering.Universal
 
         [ShowIf(nameof(showResolution), true, 1)]
 #endif
+        [Tooltip("The resolution scale for portal rendering.")]
         [SerializeField, Range(0f, 1f)] private float _portalResolution = 1f;
+        /// <summary>
+        /// The resolution scale for portal rendering.
+        /// </summary>
         public float portalResolution {
             get => _portalResolution;
             set => _portalResolution = Mathf.Clamp(value, 0f, 1f);
         }
 
+        [Tooltip("The resolution scale for the buffer effect.")]
         [SerializeField, Range(0f, 1f)] private float _bufferResolution = 1f;
+        /// <summary>
+        /// The resolution scale for the buffer effect.
+        /// </summary>
         public float bufferResolution {
             get => _bufferResolution;
             set => _bufferResolution = Mathf.Clamp(value, 0f, 1f);
         }
 
+        [Tooltip("The minimum portal recursion depth in the editor.")]
         [Header("Editor Settings"), SerializeField] private int _editorMinDepth = 0;
+        /// <summary>
+        /// The minimum portal recursion depth in the editor.
+        /// </summary>
         public int editorMinDepth {
             get => _editorMinDepth > 0 ? _editorMinDepth : _editorMinDepth = 0;
             set => _editorMinDepth = value;
         }
 
+        [Tooltip("The maximum portal recursion depth in the editor.")]
         [SerializeField] private int _editorMaxDepth = 16;
+        /// <summary>
+        /// The maximum portal recursion depth in the editor.
+        /// </summary>
         public int editorMaxDepth {
             get => _editorMaxDepth > 0 ? _editorMaxDepth : _editorMaxDepth = 0;
             set => _editorMaxDepth = value;
         }
 
+        [Tooltip("The maximum number of portal renders per frame in the editor.")]
         [SerializeField] private int _editorMaxRenders = 16;
+        /// <summary>
+        /// The maximum number of portal renders per frame in the editor.
+        /// </summary>
         public int editorMaxRenders {
             get => _editorMaxRenders > 0 ? _editorMaxRenders : _editorMaxRenders = 0;
             set => _editorMaxRenders = value;
         }
 
+        [Tooltip("The maximum shadow recursion depth for portals in the editor.")]
         [SerializeField] private int _editorMaxShadowDepth = 16;
+        /// <summary>
+        /// The maximum shadow recursion depth for portals in the editor.
+        /// </summary>
         public int editorMaxShadowDepth {
             get => _editorMaxShadowDepth > 0 ? _editorMaxShadowDepth : _editorMaxShadowDepth = 0;
             set => _editorMaxShadowDepth = value;
@@ -127,13 +199,21 @@ namespace VRPortalToolkit.Rendering.Universal
 #if UNITY_EDITOR
         [ShowIf(nameof(showResolution), true, 1)]
 #endif
+        [Tooltip("")]
         [SerializeField, Range(0f, 1f)] private float _editorPortalResolution = 1f;
+        /// <summary>
+        /// The resolution scale for portal rendering in the editor.
+        /// </summary>
         public float editorPortalResolution {
             get => _editorPortalResolution;
             set => _editorPortalResolution = Mathf.Clamp(value, 0f, 1f);
         }
 
+        [Tooltip("")]
         [SerializeField, Range(0f, 1f)] private float _editorBufferResolution = 1f;
+        /// <summary>
+        /// The resolution scale for the buffer effect in the editor.
+        /// </summary>
         public float editorBufferResolution {
             get => _editorBufferResolution;
             set => _editorBufferResolution = Mathf.Clamp(value, 0f, 1f);
@@ -141,6 +221,9 @@ namespace VRPortalToolkit.Rendering.Universal
 
         [Tooltip("Required for both Render Texture Portals, aswell as the buffer effect for Stencil Portals.")]
         [Header("Shaders"), SerializeField] private Material _portalStereo;
+        /// <summary>
+        /// The stereo material for portal rendering.
+        /// </summary>
         public Material portalStereo {
             get => _portalStereo;
             set => _portalStereo = value;
@@ -148,12 +231,18 @@ namespace VRPortalToolkit.Rendering.Universal
 
         [Tooltip("Required for Stencil Portals.")]
         [SerializeField] private Material _portalIncrease;
+        /// <summary>
+        /// The material for increasing the portal stencil value.
+        /// </summary>
         public Material portalIncrease {
             get => _portalIncrease;
             set => _portalIncrease = value;
         }
 
         [Tooltip("Required for Stencil Portals.")]
+        /// <summary>
+        /// The material for decreasing the portal stencil value.
+        /// </summary>
         [SerializeField] private Material _portalDecrease;
         public Material portalDecrease {
             get => _portalDecrease;
@@ -162,6 +251,9 @@ namespace VRPortalToolkit.Rendering.Universal
 
         [Tooltip("Required for Stencil Portals.")]
         [SerializeField] private Material _portalClearDepth;
+        /// <summary>
+        /// The material for clearing portal depth.
+        /// </summary>
         public Material portalClearDepth {
             get => _portalClearDepth;
             set => _portalClearDepth = value;
@@ -169,6 +261,9 @@ namespace VRPortalToolkit.Rendering.Universal
 
         [Tooltip("Required for Stencil Portals.")]
         [SerializeField] private Material _portalDepthOnly;
+        /// <summary>
+        /// The material for rendering portal depth only.
+        /// </summary>
         public Material portalDepthOnly {
             get => _portalDepthOnly;
             set => _portalDepthOnly = value;
@@ -176,6 +271,9 @@ namespace VRPortalToolkit.Rendering.Universal
 
         protected PortalPassNode rootPassNode;
 
+        /// <summary>
+        /// The camera used for rendering portals.
+        /// </summary>
         public static Camera renderCamera;
 
         protected static ShaderTagId[] shaderByIds;
@@ -206,11 +304,24 @@ namespace VRPortalToolkit.Rendering.Universal
         protected CompleteUndoStencilPortalPass completeUndoStencilPass;
         protected PortalDepthNormalsPass portalDepthNormalsPass;
 
+        /// <summary>
+        /// Contains the passes required for stencil-based portal rendering.
+        /// </summary>
         protected class PortalStencilPasses : PortalShadowPasses
         {
+            /// <summary>
+            /// The pass that begins rendering a stencil portal.
+            /// </summary>
             public BeginStencilPortalPass beginRenderPass { get; }
+            
+            /// <summary>
+            /// The pass that completes rendering a stencil portal.
+            /// </summary>
             public CompleteStencilPortalPass completeRenderPass { get; }
 
+            /// <summary>
+            /// Creates a new instance of the PortalStencilPasses class.
+            /// </summary>
             public PortalStencilPasses() : base()
             {
                 beginRenderPass = new BeginStencilPortalPass();
@@ -218,11 +329,24 @@ namespace VRPortalToolkit.Rendering.Universal
             }
         }
 
+        /// <summary>
+        /// Contains the passes required for texture-based portal rendering.
+        /// </summary>
         protected class PortalRenderPasses : PortalShadowPasses
         {
+            /// <summary>
+            /// The pass that begins rendering a texture portal.
+            /// </summary>
             public BeginTexturePortalPass beginRenderPass { get; }
+            
+            /// <summary>
+            /// The pass that completes rendering a texture portal.
+            /// </summary>
             public CompleteTexturePortalPass completeRenderPass { get; }
 
+            /// <summary>
+            /// Creates a new instance of the PortalRenderPasses class.
+            /// </summary>
             public PortalRenderPasses() : base()
             {
                 beginRenderPass = new BeginTexturePortalPass();
@@ -230,11 +354,24 @@ namespace VRPortalToolkit.Rendering.Universal
             }
         }
 
+        /// <summary>
+        /// Contains the shadow passes required for portal rendering.
+        /// </summary>
         protected class PortalShadowPasses
         {
+            /// <summary>
+            /// The pass that handles main light shadows for portals.
+            /// </summary>
             public MainLightShadowCasterInPortalPass mainLightShadowCasterPass { get; }
+            
+            /// <summary>
+            /// The pass that handles additional light shadows for portals.
+            /// </summary>
             public AdditionalLightsShadowCasterInPortalPass additionalLightsShadowCasterPass { get; }
 
+            /// <summary>
+            /// Creates a new instance of the PortalShadowPasses class.
+            /// </summary>
             public PortalShadowPasses()
             {
                 mainLightShadowCasterPass = new MainLightShadowCasterInPortalPass();
@@ -288,8 +425,7 @@ namespace VRPortalToolkit.Rendering.Universal
             _isDirty = false;
         }
 
-        // Here you can inject one or multiple render passes in the renderer.
-        // This method is called when setting up the renderer once per-camera.
+        /// <inheritdoc/>
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (_isDirty) Create();
@@ -443,6 +579,15 @@ namespace VRPortalToolkit.Rendering.Universal
             transparentFilteringSettings = new FilteringSettings(RenderQueueRange.transparent, transparentLayerMask);
         }
 
+        /// <summary>
+        /// Enqueues stencil-based portal rendering passes.
+        /// </summary>
+        /// <param name="renderer">The scriptable renderer.</param>
+        /// <param name="renderingData">The rendering data.</param>
+        /// <param name="passGroup">The portal pass group.</param>
+        /// <param name="maxShadowDepth">The maximum shadow depth.</param>
+        /// <param name="disableTransparentShadows">Whether to disable shadows on transparent objects.</param>
+        /// <param name="order">The rendering order for stencil operations.</param>
         protected virtual void EnqueueStencilNodes(ScriptableRenderer renderer, ref RenderingData renderingData, PortalPassNode passGroup, int maxShadowDepth, bool disableTransparentShadows, int order)
         {
             PortalRenderNode undoNode = TryGetTransitionNode(renderingData, passGroup.renderNode);
@@ -503,7 +648,7 @@ namespace VRPortalToolkit.Rendering.Universal
         }
 
 
-        public static PortalRenderNode GetOrAddChild(PortalRenderNode parent, IPortalRenderer renderer)
+        private static PortalRenderNode GetOrAddChild(PortalRenderNode parent, IPortalRenderer renderer)
         {
             if (parent.isStereo)
             {
@@ -682,6 +827,14 @@ namespace VRPortalToolkit.Rendering.Universal
             }
         }
 
+        /// <summary>
+        /// Enqueues texture-based portal rendering passes.
+        /// </summary>
+        /// <param name="renderer">The scriptable renderer.</param>
+        /// <param name="renderingData">The rendering data.</param>
+        /// <param name="passGroup">The portal pass group.</param>
+        /// <param name="maxShadowDepth">The maximum shadow depth.</param>
+        /// <param name="disableTransparentShadows">Whether to disable shadows on transparent objects.</param>
         protected virtual void EnqueueRenderNodes(ScriptableRenderer renderer, ref RenderingData renderingData, PortalPassNode passGroup, int maxShadowDepth, bool disableTransparentShadows)
         {
             float resolution = (renderingData.cameraData.isPreviewCamera || renderingData.cameraData.isSceneViewCamera) ? editorPortalResolution : portalResolution;

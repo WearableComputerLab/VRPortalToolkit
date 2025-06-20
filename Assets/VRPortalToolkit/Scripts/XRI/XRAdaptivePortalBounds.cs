@@ -5,15 +5,29 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Maintains and processes adaptive portal bounds for XRI.
+    /// </summary>
     [RequireComponent(typeof(XRPortalInteractable))]
     public class XRAdaptivePortalBounds : MonoBehaviour, IAdaptivePortalProcessor
     {
+        /// <summary>
+        /// Padding to apply around the calculated bounds.
+        /// </summary>
+        [Tooltip("Padding to apply around the calculated bounds.")]
         [SerializeField] private Vector2 _padding = new Vector2(0.05f, 0.05f);
+        /// <summary>
+        /// Gets or sets the padding to apply around the calculated bounds.
+        /// </summary>
         public Vector2 padding
         {
             get => _padding;
             set => _padding = value;
         }
+
+        /// <summary>
+        /// Gets the order of the adaptive portal processor.
+        /// </summary>
         int IAdaptivePortalProcessor.Order => 0;
 
         private XRPortalInteractable _interactable;
@@ -51,7 +65,7 @@ namespace VRPortalToolkit.XRI
         {
             if (positioning)
             {
-                if (!positioning.GetPortalsFromOrigin().Contains(_portal))
+                if (!positioning.GetPortalsFromSource().Contains(_portal))
                     return true;
             }
 
@@ -74,6 +88,7 @@ namespace VRPortalToolkit.XRI
                 _positionings.Add(positioning);
         }
 
+        /// <inheritdoc/>
         void IAdaptivePortalProcessor.Process(ref AdaptivePortalTransform apTransform)
         {
             if (!isActiveAndEnabled || !_portal) return;
@@ -95,10 +110,10 @@ namespace VRPortalToolkit.XRI
 
                     // Get start and end positions in the same space
                     for (int i = 0; i < index; i++)
-                        positioning.GetPortalFromOrigin(i)?.ModifyPoint(ref startPos);
+                        positioning.GetPortalFromSource(i)?.ModifyPoint(ref startPos);
 
                     for (int i = 0; i < positioning.portalCount - index; i++)
-                        positioning.GetPortalToOrigin(i)?.ModifyPoint(ref endPos);
+                        positioning.GetPortalToSource(i)?.ModifyPoint(ref endPos);
 
                     Ray ray = new Ray(startPos, endPos - startPos);
 
@@ -136,7 +151,7 @@ namespace VRPortalToolkit.XRI
         {
             for (int i = 0; i < positioning.portalCount; i++)
             {
-                Portal portal = positioning.GetPortalFromOrigin(i);
+                Portal portal = positioning.GetPortalFromSource(i);
                 if (portal == _portal)
                 {
                     index = i;

@@ -5,30 +5,48 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.Pointers
 {
+    /// <summary>
+    /// Main portal pointer class that handles raycasting through portals and manages hit detection.
+    /// </summary>
     [DefaultExecutionOrder(200)]
     public class PortalPointer : MonoBehaviour
     {
+        [Tooltip("The layer mask used for portal detection.")]
         [SerializeField] private LayerMask _portalMask = 1 << 3;
+        /// <summary>
+        /// The layer mask used for portal detection.
+        /// </summary>
         public virtual LayerMask portalMask
         {
             get => _portalMask;
             set => _portalMask = value;
         }
 
+        [Tooltip("Specifies whether to detect triggers when casting for portals.")]
         [SerializeField] private QueryTriggerInteraction _portalTriggerInteraction;
+        /// <summary>
+        /// Specifies whether to detect triggers when casting for portals.
+        /// </summary>
         public virtual QueryTriggerInteraction portalTriggerInteraction
         {
             get => _portalTriggerInteraction;
             set => _portalTriggerInteraction = value;
         }
 
+        [Tooltip("The maximum distance to cast.")]
         [SerializeField] private float _maxDistance = 10f;
+        /// <summary>
+        /// The maximum distance to cast.
+        /// </summary>
         public virtual float maxDistance
         {
             get => _maxDistance;
             set => _maxDistance = value;
         }
 
+        /// <summary>
+        /// The current distance limited by the actual path through portals.
+        /// </summary>
         public virtual float limitedDistance
         {
             get
@@ -45,61 +63,107 @@ namespace VRPortalToolkit.Pointers
             }
         }
 
+        [Tooltip("The maximum number of portal recursions allowed.")]
         [SerializeField] private int _maxRecursions = 32;
+        /// <summary>
+        /// The maximum number of portal recursions allowed.
+        /// </summary>
         public virtual int maxRecursions
         {
             get => _maxRecursions;
             set => _maxRecursions = value;
         }
 
+        [Tooltip("The layer mask used for raycast detection.")]
         [SerializeField] private LayerMask _raycastMask = ~0 & ~(1 << 2) & ~(1 << 3);
+        /// <summary>
+        /// The layer mask used for raycast detection.
+        /// </summary>
         public virtual LayerMask raycastMask
         {
             get => _raycastMask;
             set => _raycastMask = value;
         }
 
+        [Tooltip("Specifies whether to detect triggers when raycasting.")]
         [SerializeField] private QueryTriggerInteraction _raycastTriggerInteraction;
+        /// <summary>
+        /// Specifies whether to detect triggers when raycasting.
+        /// </summary>
         public virtual QueryTriggerInteraction raycastTriggerInteraction
         {
             get => _raycastTriggerInteraction;
             set => _raycastTriggerInteraction = value;
         }
 
+        /// <summary>
+        /// Event invoked when the ray first hits something.
+        /// </summary>
         public UnityAction<RaycastHit> raycastEntered;
+        
+        /// <summary>
+        /// Event invoked when the ray stops hitting something.
+        /// </summary>
         public UnityAction<RaycastHit> raycastExited;
 
-        [Header("Optional"), SerializeField] private PortalCaster _portalCaster;
+        [Header("Optional"), Tooltip("The portal caster to use for the raycast.")]
+        [SerializeField] private PortalCaster _portalCaster;
+        /// <summary>
+        /// The portal caster to use for the raycast.
+        /// </summary>
         public PortalCaster portalCaster
         {
             get => _portalCaster;
             set => _portalCaster = value;
         }
 
+        [Tooltip("The origin transform for the raycast.")]
         [SerializeField] private Transform _origin;
+        /// <summary>
+        /// The origin transform for the raycast.
+        /// </summary>
         public virtual Transform origin {
             get => _origin;
             set => _origin = value;
         }
 
-        // How is scale of the line determined
+        [Tooltip("How the scale of the line is determined.")]
         [SerializeField] private ScaleSpace _scaleSpace = ScaleSpace.World;
+        /// <summary>
+        /// How the scale of the line is determined.
+        /// </summary>
         public virtual ScaleSpace space {
             get => _scaleSpace;
             set => _scaleSpace = value;
         }
 
+        /// <summary>
+        /// Defines how the scale of the portal pointer is determined.
+        /// </summary>
         public enum ScaleSpace
         {
+            /// <summary>Use world space scaling.</summary>
             World = 0,
+            /// <summary>Use local space scaling.</summary>
             Local = 1,
+            /// <summary>Use origin transform scaling.</summary>
             Origin = 2
         }
 
+        /// <summary>
+        /// Gets the actual origin transform, falling back to this transform if not set.
+        /// </summary>
         public Transform actualOrigin => origin ? origin : transform;
 
         private int _portalRaysCount = 0;
+        /// <summary>
+        /// The number of portal rays in the current raycast.
+        /// </summary>
         public virtual int portalRaysCount => _portalRaysCount;
+        
+        /// <summary>
+        /// Whether the pointer has a valid hit.
+        /// </summary>
         public virtual bool isValid => hitInfo.collider;
 
         protected PortalRay[] castingPortalRays;
@@ -166,6 +230,9 @@ namespace VRPortalToolkit.Pointers
             Apply();
         }
 
+        /// <summary>
+        /// Applies the portal pointer logic.
+        /// </summary>
         public virtual void Apply()
         {
             if (_maxRecursions < 0) _maxRecursions = 0;
@@ -252,24 +319,29 @@ namespace VRPortalToolkit.Pointers
             _portalRaysCount = newPortalRaysCount;
         }
 
+        /// <summary>
+        /// Called when the raycast first hits something.
+        /// </summary>
         protected virtual void RaycastEntered()
         {
             // Enter the raycast
             raycastEntered?.Invoke(hitInfo);
         }
 
-        /*protected virtual void RaycastUpdated()
-        {
-            // Update the raycast
-            if (onRaycastStay != null) onRaycastStay.Invoke(this);
-        }*/
-
+        /// <summary>
+        /// Called when the raycast stops hitting something.
+        /// </summary>
         protected virtual void RaycastExited()
         {
             // Exit the previous one
             raycastExited?.Invoke(hitInfo);
         }
 
+        /// <summary>
+        /// Gets the portal rays and copies them to the provided array.
+        /// </summary>
+        /// <param name="portalRays">The array to copy portal rays to.</param>
+        /// <returns>The number of portal rays copied.</returns>
         public virtual int GetPortalRays(PortalRay[] portalRays)
         {
             int count = _portalRaysCount > portalRays.Length ? portalRays.Length : _portalRaysCount;
@@ -280,7 +352,12 @@ namespace VRPortalToolkit.Pointers
             return count;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Gets a specific portal ray by index.
+        /// </summary>
+        /// <param name="index">The index of the portal ray to get.</param>
+        /// <returns>The portal ray at the specified index.</returns>
+        /// <exception cref="IndexOutOfRangeException">Thrown if the index is out of range.</exception>
         public virtual PortalRay GetPortalRay(int index)
         {
             if (index < 0 || index >= _portalRaysCount) throw new IndexOutOfRangeException();
@@ -288,10 +365,19 @@ namespace VRPortalToolkit.Pointers
             return portalRays[index];
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Tries to get the current hit information.
+        /// </summary>
+        /// <param name="hitInfo">Output parameter for the hit information.</param>
+        /// <returns>True if there is a valid hit, false otherwise.</returns>
         public virtual bool TryGetHitInfo(out RaycastHit hitInfo) => TryGetHitInfo(out hitInfo, out int _);
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Tries to get the current hit information and the ray index that hit.
+        /// </summary>
+        /// <param name="hitInfo">Output parameter for the hit information.</param>
+        /// <param name="portalRayIndex">Output parameter for the ray index that hit.</param>
+        /// <returns>True if there is a valid hit, false otherwise.</returns>
         public virtual bool TryGetHitInfo(out RaycastHit hitInfo, out int portalRayIndex)
         {
             if (hitPortalRaysIndex >= 0)
@@ -307,7 +393,13 @@ namespace VRPortalToolkit.Pointers
             return false;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Tries to get the current hit information, the ray index that hit, and the total hit distance.
+        /// </summary>
+        /// <param name="hitInfo">Output parameter for the hit information.</param>
+        /// <param name="portalRayIndex">Output parameter for the ray index that hit.</param>
+        /// <param name="hitDistance">Output parameter for the total distance to the hit point through portals.</param>
+        /// <returns>True if there is a valid hit, false otherwise.</returns>
         public virtual bool TryGetHitInfo(out RaycastHit hitInfo, out int portalRayIndex, out float hitDistance)
         {
             if (TryGetHitInfo(out hitInfo, out portalRayIndex))

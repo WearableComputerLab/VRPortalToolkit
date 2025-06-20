@@ -6,39 +6,59 @@ using static UnityEngine.Camera;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Restricts the user from entering the adaptive portal.
+    /// </summary>
     [DefaultExecutionOrder(2)]
     public class XRAdaptivePortalRestriction : MonoBehaviour, IAdaptivePortalProcessor
     {
         private readonly static WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
 
+        [Tooltip("The connected restriction processor.")]
         [SerializeField] private XRAdaptivePortalRestriction _connected;
+        /// <summary>
+        /// The connected restriction processor.
+        /// </summary>
         public XRAdaptivePortalRestriction connected
         {
             get => _connected;
             set => _connected = value;
         }
 
+        [Tooltip("The portal interactable to restrict.")]
         [SerializeField] private XRPortalInteractable _portalInteractable;
+        /// <summary>
+        /// The portal interactable to restrict.
+        /// </summary>
         public XRPortalInteractable portalInteractable
         {
             get => _portalInteractable;
             set => _portalInteractable = value;
         }
 
+        [Tooltip("Restrict while the portal is selected.")]
         [SerializeField] private bool _restrictWhileSelected = true;
+        /// <summary>
+        /// Restrict while the portal is selected.
+        /// </summary>
         public bool restrictWhileSelected
         {
             get => _restrictWhileSelected;
             set => _restrictWhileSelected = value;
         }
 
+        [Tooltip("The minimum distance for restriction.")]
         [SerializeField] private float _distance = 0.01f;
+        /// <summary>
+        /// The minimum distance for restriction.
+        /// </summary>
         public float distance
         {
             get => _distance;
             set => _distance = value;
         }
 
+        /// <inheritdoc/>
         int IAdaptivePortalProcessor.Order => 10;
 
         protected readonly TriggerHandler<Camera> triggerHandler = new TriggerHandler<Camera>();
@@ -102,6 +122,7 @@ namespace VRPortalToolkit.XRI
             }
         }
 
+        /// <inheritdoc/>
         void IAdaptivePortalProcessor.Process(ref AdaptivePortalTransform apTransform)
         {
             // Plane = offset, Offset is secondary goal
@@ -146,14 +167,5 @@ namespace VRPortalToolkit.XRI
 
             return false;
         }
-
-        /*private void SetOffset(float z)
-        {
-            if (_offset)
-            {
-                Vector3 localPos = _offset.localPosition;
-                _offset.localPosition = new Vector3(localPos.x, localPos.y, z);
-            }
-        }*/
     }
 }

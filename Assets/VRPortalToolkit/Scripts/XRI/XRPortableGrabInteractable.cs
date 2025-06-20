@@ -1,5 +1,3 @@
-using EzySlice;
-using System;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using VRPortalToolkit.Data;
@@ -10,32 +8,47 @@ using static UnityEngine.XR.Interaction.Toolkit.XRInteractionUpdateOrder;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// XR grab interactable that supports portal-aware interactions and teleportation.
+    /// </summary>
     public class XRPortableGrabInteractable : XRGrabInteractable
     {
+        [Tooltip("The layer mask used for portal raycasting.")]
         [SerializeField] private LayerMask _portalMask = 1 << 3;
+        /// <summary>
+        /// The layer mask used for portal raycasting.
+        /// </summary>
         public virtual LayerMask portalMask
         {
             get => _portalMask;
             set => _portalMask = value;
         }
 
+        [Tooltip("The trigger interaction mode for portal raycasting.")]
         [SerializeField] private QueryTriggerInteraction _portalTriggerInteraction;
+        /// <summary>
+        /// The trigger interaction mode for portal raycasting.
+        /// </summary>
         public virtual QueryTriggerInteraction portalTriggerInteraction
         {
             get => _portalTriggerInteraction;
             set => _portalTriggerInteraction = value;
         }
 
+        [Tooltip("The maximum number of portals to trace through.")]
         [SerializeField] private int _maxPortals = 16;
+        /// <summary>
+        /// The maximum number of portals to trace through.
+        /// </summary>
         public int maxPortals { get => _maxPortals; set => _maxPortals = value; }
 
         private PortalRay[] _portalRays;
 
         private readonly PortalTrace _portalTrace = new PortalTrace();
 
-        Rigidbody _rigidbody;
-
         private Pose _preTeleportPose;
+
+        private Rigidbody _rigidbody;
 
         protected override void Awake()
         {
@@ -62,6 +75,7 @@ namespace VRPortalToolkit.XRI
             PortalPhysics.RemovePostTeleportListener(transform, OnInteractablePostTeleport);
         }
 
+        /// <inheritdoc/>
         protected override void OnSelectEntering(SelectEnterEventArgs args)
         {
             PortalPhysics.UnregisterPortable(transform);
@@ -84,11 +98,13 @@ namespace VRPortalToolkit.XRI
             interactor.transform.SetPositionAndRotation(interactorPose.position, interactorPose.rotation);
         }
 
+        /// <inheritdoc/>
         protected override void OnSelectEntered(SelectEnterEventArgs args)
         {
             base.OnSelectEntered(args);
         }
 
+        /// <inheritdoc/>
         protected override void OnSelectExiting(SelectExitEventArgs args)
         {
             PortalPhysics.RegisterPortable(transform);
@@ -108,13 +124,15 @@ namespace VRPortalToolkit.XRI
             interactor.transform.SetPositionAndRotation(interactorPose.position, interactorPose.rotation);
 
             _portalTrace.Clear();
-        }
+        }        
 
+        /// <inheritdoc/>
         protected override void OnSelectExited(SelectExitEventArgs args)
         {
             base.OnSelectExited(args);
         }
 
+        /// <inheritdoc/>
         public override void ProcessInteractable(UpdatePhase updatePhase)
         {
             if (isSelected)
@@ -160,6 +178,10 @@ namespace VRPortalToolkit.XRI
                 base.ProcessInteractable(updatePhase);
         }
 
+        /// <summary>
+        /// Called before the interactable is teleported.
+        /// </summary>
+        /// <param name="teleportation">The teleportation data.</param>
         protected virtual void OnInteractablePreTeleport(Teleportation teleportation)
         {
             if (isSelected)
@@ -168,6 +190,10 @@ namespace VRPortalToolkit.XRI
             _preTeleportPose = new Pose(transform.position, transform.rotation);
         }
 
+        /// <summary>
+        /// Called after the interactable is teleported.
+        /// </summary>
+        /// <param name="teleportation">The teleportation data.</param>
         protected virtual void OnInteractablePostTeleport(Teleportation teleportation)
         {
             // Fix the pose to be in interactor space
@@ -183,11 +209,19 @@ namespace VRPortalToolkit.XRI
                 transform.rotation * Quaternion.Inverse(_preTeleportPose.rotation)));
         }
 
+        /// <summary>
+        /// Called before the interactor is teleported.
+        /// </summary>
+        /// <param name="teleportation">The teleportation data.</param>
         protected virtual void OnInteractorPreTeleport(Teleportation teleportation)
         {
 
         }
 
+        /// <summary>
+        /// Called after the interactor is teleported.
+        /// </summary>
+        /// <param name="teleportation">The teleportation data.</param>
         protected virtual void OnInteractorPostTeleport(Teleportation teleportation)
         {
             _portalTrace.AddStartTeleport(teleportation.fromPortal);

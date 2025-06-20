@@ -7,75 +7,123 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit
 {
+    /// <summary>
+    /// Interface for components that can render a line through portals.
+    /// </summary>
     public interface IPortalLineRenderable
     {
+        /// <summary>
+        /// Gets the number of portal rays in the current line.
+        /// </summary>
         int portalRayCount { get; }
 
+        /// <summary>
+        /// Gets a specific portal ray by index.
+        /// </summary>
+        /// <param name="portalRayIndex">The index of the portal ray to get.</param>
+        /// <returns>The portal ray at the specified index.</returns>
         PortalRay GetPortalRay(int portalRayIndex);
 
+        /// <summary>
+        /// Tries to get the hit information for the line.
+        /// </summary>
+        /// <param name="position">Output parameter for the hit position.</param>
+        /// <param name="normal">Output parameter for the hit normal.</param>
+        /// <param name="portalRayIndex">Output parameter for the index of the ray that hit.</param>
+        /// <param name="isValidTarget">Output parameter indicating whether the hit is a valid target.</param>
+        /// <returns>True if hit information is available, false otherwise.</returns>
         bool TryGetHitInfo(out Vector3 position, out Vector3 normal, out int portalRayIndex, out bool isValidTarget);
     }
 
+    /// <summary>
+    /// Renders a line that can traverse through portals using LineRenderer components.
+    /// </summary>
     [RequireComponent(typeof(LineRenderer))]
     public class PortalLineVisual : MonoBehaviour
     {
         private static readonly List<PortalRay> _portalRays = new List<PortalRay>();
         private static readonly List<float> _lengths = new List<float>();
-
         private static readonly List<Vector3> _points = new List<Vector3>();
 
+        [Tooltip("The main LineRenderer component.")]
         [SerializeField] private LineRenderer _lineRenderer;
+        /// <summary>
+        /// The original LineRenderer component.
+        /// </summary>
         public LineRenderer lineRenderer
         {
             get => _lineRenderer;
             set => _lineRenderer = value;
         }
 
+        [Tooltip("The width of the line.")]
         [SerializeField] private float _lineWidth = 0.02f;
+        /// <summary>
+        /// The width of the line.
+        /// </summary>
         public float lineWidth
         {
             get => _lineWidth;
             set => _lineWidth = value;
         }
 
+        [Tooltip("The width curve of the line.")]
         [SerializeField] private AnimationCurve _widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
+        /// <summary>
+        /// The width curve of the line.
+        /// </summary>
         public AnimationCurve widthCurve
         {
             get => _widthCurve;
             set => _widthCurve = value;
         }
 
+        [Tooltip("The color gradient for valid targets.")]
         [SerializeField]
         private Gradient _validColor = new Gradient
         {
             colorKeys = new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
             alphaKeys = new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) },
         };
+        /// <summary>
+        /// The color gradient for valid targets.
+        /// </summary>
         public Gradient validColorGradient
         {
             get => _validColor;
             set => _validColor = value;
         }
 
+        [Tooltip("The color gradient for invalid targets.")]
         [SerializeField]
         private Gradient _invalidColor = new Gradient
         {
             colorKeys = new[] { new GradientColorKey(Color.red, 0f), new GradientColorKey(Color.red, 1f) },
             alphaKeys = new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) },
         };
+        /// <summary>
+        /// The color gradient for invalid targets.
+        /// </summary>
         public Gradient invalidColorGradient
         {
             get => _invalidColor;
             set => _invalidColor = value;
         }
 
+        [Tooltip("Whether to stop the line at the contact point.")]
         [SerializeField] private bool _stopAtContact = true;
+        /// <summary>
+        /// Whether to stop the line at the contact point.
+        /// </summary>
         public bool stopAtContact
         {
             get => _stopAtContact;
             set => _stopAtContact = value;
         }
 
+        /// <summary>
+        /// The IPortalLineRenderable component that provides line data.
+        /// </summary>
         public IPortalLineRenderable lineRenderable => _lineRenderable;
 
         private int _currentLength;

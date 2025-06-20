@@ -6,6 +6,9 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Snap turn provider that supports portal-based teleportation and rotation.
+    /// </summary>
     public class PortalSnapTurnProvider : ActionBasedSnapTurnProvider
     {
         private static FieldInfo _timeStartedField;
@@ -48,7 +51,6 @@ namespace VRPortalToolkit.XRI
             _currentTurnAmountField?.SetValue(this, time);
         }
 
-        // Copied from original
         protected virtual new void Update()
         {
             float timeStarted = GetTimeStarted();

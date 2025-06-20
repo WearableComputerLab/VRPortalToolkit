@@ -1,24 +1,14 @@
- using Misc.EditorHelpers;
-using System;
-using System.Collections;
+using Misc.EditorHelpers;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using UnityEngine;
-using UnityEngine.Events;
 using VRPortalToolkit.Physics;
-using VRPortalToolkit.Utilities;
-
-// Seam appear on objects going through portals
-// Transition head touching a portal no longer triggers teleport
-// Transitions and slice portables can't find the normal on the first frame (causes a bunch of visual glitches)
-// Portable ball needs a collider on the clones to prevent the ray from passing through on transitions
-// Flicker when translating with XRPortalRayInteractor (probably disable portable to solve)
-// Portals behave badly with XRPortalRayInteractor, seem to be pushed through there own portals :(
-
-// Should updater not 
 
 namespace VRPortalToolkit
 {
+    /// <summary>
+    /// Represents a portal in the VRPortalToolkit system. Handles teleportation, layer/tag changes, and anchor management.
+    /// </summary>
     public class Portal : MonoBehaviour, IPortal
     {
         private Matrix4x4 _previousWorldToLocalMatrix;
@@ -27,7 +17,11 @@ namespace VRPortalToolkit
             set => _previousWorldToLocalMatrix = value;
         }
 
+        [Tooltip("The portal connected to this portal.")]
         [SerializeField] private Portal _connectedPortal;
+        /// <summary>
+        /// The portal connected to this portal. Setting this property will automatically update the connection on both portals.
+        /// </summary>
         public Portal connected {
             get => _connectedPortal;
             set {
@@ -43,27 +37,46 @@ namespace VRPortalToolkit
                 }
             }
         }
+        /// <inheritdoc/>
         IPortal IPortal.connected => _connectedPortal;
 
         [Header("Local World")]
+        [Tooltip("The anchor transform representing the local space of this portal.")]
         [SerializeField] private Transform _localAnchor;
+        /// <summary>
+        /// The anchor transform representing the local space of this portal.
+        /// </summary>
         public Transform localAnchor {
             get => _localAnchor;
             set => _localAnchor = value;
         }
 
+        [Tooltip("The set of local layers used for layer mapping when teleporting through this portal.")]
         [SerializeField] private LayerMask[] _localLayers;
+        /// <summary>
+        /// The set of local layers used for layer mapping when teleporting through this portal.
+        /// </summary>
         public LayerMask[] localLayers {
             get => _localLayers;
             set => _localLayers = value;
         }
 
+        [Tooltip("The set of local tags used for tag mapping when teleporting through this portal.")]
         [SerializeField] public string[] _localTags;
+        /// <summary>
+        /// The set of local tags used for tag mapping when teleporting through this portal.
+        /// </summary>
         public string[] localTags {
             get => _localTags;
         }
 
+        /// <summary>
+        /// Event invoked before teleportation occurs through this portal.
+        /// </summary>
         public TeleportAction preTeleport;
+        /// <summary>
+        /// Event invoked after teleportation occurs through this portal.
+        /// </summary>
         public TeleportAction postTeleport;
 
         protected virtual void Reset()
@@ -91,12 +104,18 @@ namespace VRPortalToolkit
         public virtual Matrix4x4 teleportMatrix => _connectedPortal ? _connectedPortal._localAnchor.localToWorldMatrix * _localAnchor.worldToLocalMatrix : Matrix4x4.identity;
 
         private Rigidbody _rigidbody;
+        /// <summary>
+        /// The Rigidbody attached to this portal's GameObject, if any.
+        /// </summary>
         public new Rigidbody rigidbody {
             get => _rigidbody ? _rigidbody : _rigidbody = transform.GetComponent<Rigidbody>();
         }
 
         private List<Collider> _colliders = new List<Collider>();
         private ReadOnlyCollection<Collider> _readOnlyColliders;
+        /// <summary>
+        /// The colliders associated with this portal.
+        /// </summary>
         public IReadOnlyCollection<Collider> colliders => _readOnlyColliders;
 
         #region Unity Functions
@@ -107,31 +126,24 @@ namespace VRPortalToolkit
             _readOnlyColliders = new ReadOnlyCollection<Collider>(_colliders);
         }
 
-        /// <summary>Add this to all portals.</summary>
         protected virtual void OnEnable()
         {
             PortalPhysics.RegisterPortal(this);
             PortalPhysics.AddPostTeleportListener(transform, OnPostTeleport);
         }
 
-        /// <summary>Remove this from all portals.</summary>
         protected virtual void OnDisable()
         {
             PortalPhysics.UnregisterPortal(this);
             PortalPhysics.RemovePostTeleportListener(transform, OnPostTeleport);
         }
 
-        /*protected virtual void OnDrawGizmos()
-        {
-            if (teleportAnchor)
-            {
-                Gizmos.color = Color.HSVToRGB((GetHashCode() * 0.01f) % 1f, 1f, 1f);
-                Gizmos.DrawLine(worldAnchor.position, teleportAnchor.position);
-            }
-        }*/
-
         #endregion
 
+        /// <summary>
+        /// Called after teleportation occurs through this portal.
+        /// </summary>
+        /// <param name="teleportation">The teleportation data.</param>
         private void OnPostTeleport(Teleportation teleportation)
         {
             _previousWorldToLocalMatrix = transform.worldToLocalMatrix;
@@ -139,7 +151,13 @@ namespace VRPortalToolkit
 
         #region Physics Casting Functions
 
+        /// <summary>
+        /// Indicates whether the connected portal was active before casting.
+        /// </summary>
         protected bool previousConnectedActive;
+        /// <summary>
+        /// The previous world-to-local matrix of the connected portal.
+        /// </summary>
         protected Matrix4x4 previousConnectedMatrix;
 
         /// <inheritdoc/>
@@ -165,18 +183,34 @@ namespace VRPortalToolkit
 
         #endregion
 
+        /// <summary>
+        /// Teleports the given transform through this portal.
+        /// </summary>
+        /// <param name="transform">The transform to teleport.</param>
+        /// <param name="applyToChildren">Whether to apply changes to child objects.</param>
         public void Teleport(Transform transform, bool applyToChildren = true)
         {
             if (transform)
                 PortalPhysics.ForceTeleport(transform, () => TeleportLogic(transform, transform.GetComponent<Rigidbody>(), applyToChildren), this, this);
         }
 
+        /// <summary>
+        /// Teleports the given rigidbody through this portal.
+        /// </summary>
+        /// <param name="rigidbody">The rigidbody to teleport.</param>
+        /// <param name="applyToChildren">Whether to apply changes to child objects.</param>
         public void Teleport(Rigidbody rigidbody, bool applyToChildren = true)
         {
             if (rigidbody)
                 PortalPhysics.ForceTeleport(rigidbody.transform, () => TeleportLogic(rigidbody.transform, rigidbody, applyToChildren), this, this);
         }
 
+        /// <summary>
+        /// Handles the teleportation logic for the given transform and rigidbody.
+        /// </summary>
+        /// <param name="transform">The transform to teleport.</param>
+        /// <param name="rigidbody">The rigidbody to teleport.</param>
+        /// <param name="applyToChildren">Whether to apply changes to child objects.</param>
         protected virtual void TeleportLogic(Transform transform, Rigidbody rigidbody, bool applyToChildren)
         {
             if (usesTeleport)
@@ -242,6 +276,7 @@ namespace VRPortalToolkit
             return false;
         }
 
+        /// <inheritdoc/>
         public virtual int ModifyLayerMask(int layer)
         {
             ModifyLayerMask(ref layer);

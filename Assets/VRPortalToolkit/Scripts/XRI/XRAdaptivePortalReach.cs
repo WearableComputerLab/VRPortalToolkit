@@ -7,32 +7,48 @@ using VRPortalToolkit.XRI;
 
 namespace VRPortalToolkit
 {
+    /// <summary>
+    /// Handles reach gain for adaptive XR portals.
+    /// </summary>
     [DefaultExecutionOrder(1)]
     [RequireComponent(typeof(XRPortalInteractable))]
     public class XRAdaptivePortalReach : MonoBehaviour, IAdaptivePortalProcessor
     {
+        [Tooltip("The connected reach processor.")]
         [SerializeField] private XRAdaptivePortalReach _connected;
+        /// <summary>
+        /// The connected reach processor.
+        /// </summary>
         public XRAdaptivePortalReach connected
         {
             get => _connected;
             set => _connected = value;
         }
 
+        [Tooltip("The gain curve for reach calculation.")]
         [SerializeField] private AnimationCurve _gainCurve = AnimationCurve.Linear(0f, 0f, 1f, 0.5f);
+        /// <summary>
+        /// The gain curve for reach calculation.
+        /// </summary>
         public AnimationCurve gainCurve
         {
             get => _gainCurve;
             set => _gainCurve = value;
         }
 
+        [Tooltip("The ratio of reach gain to apply.")]
         [Range(0f, 1f)]
         [SerializeField] private float _ratio = 1f;
+        /// <summary>
+        /// The ratio of reach gain to apply.
+        /// </summary>
         public float ratio
         {
             get => _ratio;
             set => _ratio = Mathf.Clamp01(value);
         }
 
+        /// <inheritdoc/>
         int IAdaptivePortalProcessor.Order => 0;
 
         private XRPortalInteractable _interactable;
@@ -70,7 +86,7 @@ namespace VRPortalToolkit
         {
             if (positioning)
             {
-                if (!positioning.GetPortalsFromOrigin().Contains(_portal))
+                if (!positioning.GetPortalsFromSource().Contains(_portal))
                     return true;
             }
 
@@ -93,6 +109,7 @@ namespace VRPortalToolkit
                 _positionings.Add(positioning);
         }
 
+        /// <inheritdoc/>
         void IAdaptivePortalProcessor.Process(ref AdaptivePortalTransform apTransform)
         {
             if (!isActiveAndEnabled) return;
@@ -123,19 +140,19 @@ namespace VRPortalToolkit
 
             foreach (PortalRelativePosition positioning in _positionings)
             {
-                if (!positioning || !positioning.origin || !positioning.target) continue;
+                if (!positioning || !positioning.origin || !positioning.source) continue;
 
                 if (IsInteractor(positioning)) continue;
 
                 if (TryGetPortalIndex(positioning, out int index))
                 {
-                    Vector3 startPos = positioning.origin.position, endPos = positioning.target.position;
+                    Vector3 startPos = positioning.origin.position, endPos = positioning.source.position;
 
                     // Get start and end positions in this space
                     for (int i = 0; i < index; i++)
                     {
-                        positioning.GetPortalFromOrigin(i)?.ModifyPoint(ref startPos);
-                        positioning.GetPortalFromOrigin(i)?.ModifyPoint(ref endPos);
+                        positioning.GetPortalFromSource(i)?.ModifyPoint(ref startPos);
+                        positioning.GetPortalFromSource(i)?.ModifyPoint(ref endPos);
                     }
 
                     Ray ray = new Ray(startPos, endPos - startPos);
@@ -149,17 +166,6 @@ namespace VRPortalToolkit
 
             return gain;
         }
-
-        /*private void SetGain(float gain)
-        {
-            if (_offset)
-            {
-                float z = transform.InverseTransformPoint(transform.position + transform.forward * gain).z;
-
-                Vector3 localPos = _offset.localPosition;
-                _offset.localPosition = new Vector3(localPos.x, localPos.y, z);
-            }
-        }*/
 
         private bool IsInteractor(PortalRelativePosition positioning)
         {
@@ -179,7 +185,7 @@ namespace VRPortalToolkit
         {
             for (int i = 0; i < positioning.portalCount; i++)
             {
-                Portal portal = positioning.GetPortalFromOrigin(i);
+                Portal portal = positioning.GetPortalFromSource(i);
                 if (portal == _portal)
                 {
                     index = i;

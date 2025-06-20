@@ -1,39 +1,51 @@
 using Misc.EditorHelpers;
 using System;
-using TMPro;
-using UnityEditorInternal.VersionControl;
 using UnityEngine;
-using UnityEngine.Accessibility;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.XR.Interaction.Toolkit;
 using VRPortalToolkit.Data;
 using VRPortalToolkit.Rendering;
-using static VRPortalToolkit.XRI.XRPointAndPortal;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Manages overlay rendering for portals with transition effects.
+    /// </summary>
     public class XRPortalOverlay : PortalRendererBase
     {
         private static Mesh _circleMesh;
         private static Mesh _squareMesh;
 
+        [Tooltip("The origin transform for calculating transitions.")]
         [SerializeField] private Transform _origin;
+        /// <summary>
+        /// The origin transform for calculating transitions.
+        /// </summary>
         public Transform origin
         {
             get => _origin;
             set => _origin = value;
         }
 
+        /// <summary>
+        /// The type of transition effect.
+        /// </summary>
         public enum Transition
         {
+            /// <summary>No transition effect.</summary>
             None = 0,
+            /// <summary>Circular transition effect.</summary>
             Circle = 1,
+            /// <summary>Square transition effect.</summary>
             Square = 2,
         }
 
+        [Tooltip("The type of transition effect.")]
         [SerializeField] private Transition _transition;
+        /// <summary>
+        /// The type of transition effect.
+        /// </summary>
         public Transition transition
         {
             get => _transition;
@@ -45,31 +57,51 @@ namespace VRPortalToolkit.XRI
 
         [ShowIf(nameof(isAnimated))]
 #endif
+        [Tooltip("The time it takes to complete the transition.")]
         [SerializeField] private float _transitionTime = 1f;
+        /// <summary>
+        /// The time it takes to complete the transition.
+        /// </summary>
         public float transitionTime
         {
             get => _transitionTime;
             set => _transitionTime = value;
         }
 
+        [Tooltip("Whether the portal requires being selected to show the overlay.")]
         [SerializeField] private bool _requireSelected = true;
+        /// <summary>
+        /// Whether the portal requires being selected to show the overlay.
+        /// </summary>
         public bool requireSelected
         {
             get => _requireSelected;
             set => _requireSelected = value;
         }
 
+        /// <summary>
+        /// The triggers that activate the overlay.
+        /// </summary>
         [Flags]
         public enum Trigger
         {
+            /// <summary>No triggers.</summary>
             None = 0,
+            /// <summary>Activate when the portal is activated.</summary>
             IsActivated = 1 << 1,
+            /// <summary>Activate when directional input is used.</summary>
             DirectionInUse = 1 << 2,
+            /// <summary>Activate when velocity exceeds threshold.</summary>
             VelocityThreshold = 1 << 3,
+            /// <summary>Activate using manual trigger.</summary>
             ManualTrigger = 1 << 4,
         }
 
+        [Tooltip("The triggers that activate the overlay.")]
         [SerializeField] private Trigger _triggers = Trigger.DirectionInUse;
+        /// <summary>
+        /// The triggers that activate the overlay.
+        /// </summary>
         public Trigger triggers
         {
             get => _triggers;
@@ -81,7 +113,11 @@ namespace VRPortalToolkit.XRI
 
         [ShowIf(nameof(showVelocity))]
 #endif
+        [Tooltip("The velocity threshold for triggering the overlay.")]
         [SerializeField] private float _velocityThreshold = 0.1f;
+        /// <summary>
+        /// The velocity threshold for triggering the overlay.
+        /// </summary>
         public float velocityThreshold
         {
             get => _velocityThreshold;
@@ -91,7 +127,11 @@ namespace VRPortalToolkit.XRI
 #if UNITY_EDITOR
         [ShowIf(nameof(showVelocity))]
 #endif
+        [Tooltip("The angular velocity threshold for triggering the overlay.")]
         [SerializeField] private float _angularVelocityThreshold = 30f;
+        /// <summary>
+        /// The angular velocity threshold for triggering the overlay.
+        /// </summary>
         public float angularVelocityThreshold
         {
             get => _angularVelocityThreshold;
@@ -103,14 +143,22 @@ namespace VRPortalToolkit.XRI
 
         [ShowIf(nameof(showManual))]
 #endif
+        [Tooltip("Manual trigger flag for activating the overlay.")]
         [SerializeField] private bool _manualTrigger;
+        /// <summary>
+        /// Manual trigger flag for activating the overlay.
+        /// </summary>
         public bool manualTrigger
         {
             get => _manualTrigger;
             set => _manualTrigger = value;
         }
 
+        [Tooltip("The time the overlay remains visible after being triggered.")]
         [SerializeField] private float _overlayTime = 3f;
+        /// <summary>
+        /// The time the overlay remains visible after being triggered.
+        /// </summary>
         public float overlayTime
         {
             get => _overlayTime;
@@ -128,24 +176,36 @@ namespace VRPortalToolkit.XRI
 
         [SerializeField] private RaycastClipping _raycastClipping = new RaycastClipping() { clippingOffset = 0.1f };
 
+        /// <summary>
+        /// The layer mask for raycasting.
+        /// </summary>
         public LayerMask raycastMask
         {
             get => _raycastClipping.raycastMask;
             set => _raycastClipping.raycastMask = value;
         }
 
+        /// <summary>
+        /// The trigger interaction mode for raycasting.
+        /// </summary>
         public QueryTriggerInteraction raycastTriggerInteraction
         {
             get => _raycastClipping.raycastTriggerInteraction;
             set => _raycastClipping.raycastTriggerInteraction = value;
         }
 
+        /// <summary>
+        /// The radius for spherecasting.
+        /// </summary>
         public float raycastRadius
         {
             get => _raycastClipping.raycastRadius;
             set => _raycastClipping.raycastRadius = value;
         }
 
+        /// <summary>
+        /// The offset for clipping planes.
+        /// </summary>
         public float clippingOffset
         {
             get => _raycastClipping.clippingOffset;
@@ -158,8 +218,11 @@ namespace VRPortalToolkit.XRI
             get => _overrides;
             set => _overrides = value;
         }
+
+        /// <inheritdoc/>
         public override PortalRendererSettings Overrides => _overrides;
 
+        /// <inheritdoc/>
         public override IPortal Portal => _interactable?.portal;
 
         private XRPortalInteractable _interactable;
@@ -189,6 +252,7 @@ namespace VRPortalToolkit.XRI
             _interactable.activated.RemoveListener(OnActivated);
             _interactable.deactivated.RemoveListener(OnDeactivated);
         }
+
         private void OnActivated(ActivateEventArgs args) => _isActivating = true;
 
         private void OnDeactivated(DeactivateEventArgs args) => _isActivating = false;
@@ -266,6 +330,7 @@ namespace VRPortalToolkit.XRI
             return false;
         }
 
+        /// <inheritdoc/>
         public override bool TryGetWindow(PortalRenderNode renderNode, Vector3 cameraPosition, Matrix4x4 view, Matrix4x4 proj, out ViewWindow innerWindow)
         {
             if (isActiveAndEnabled && _transitionState > 0f && renderNode.depth == 0)// && renderNode.camera.cameraType != CameraType.SceneView && renderNode.camera.cameraType != CameraType.Preview)
@@ -290,20 +355,18 @@ namespace VRPortalToolkit.XRI
             return false;
         }
 
+        /// <inheritdoc/>
         public override void RenderDefault(PortalRenderNode renderNode, CommandBuffer commandBuffer)
         {
             // Do not render default overlays
             return;
         }
 
+        /// <inheritdoc/>
         public override void Render(PortalRenderNode renderNode, CommandBuffer commandBuffer, Material material, MaterialPropertyBlock properties = null)
         {
             if (isActiveAndEnabled)
             {
-                //Debug.Log("B");
-                //if (_transitionState >= 1 || _transition == Transition.None)
-                //    commandBuffer.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, material, 0, 0, properties);
-                //else
                 commandBuffer.DrawMesh(_transition == Transition.Circle ? GetCircleMesh() : GetSquareMesh(),
                     GetTransitionLocalToWorld(renderNode.camera), material, 0, 0, properties);
             }
@@ -327,6 +390,7 @@ namespace VRPortalToolkit.XRI
             return localToWorld;
         }
 
+        /// <inheritdoc/>
         public override bool TryGetClippingPlane(PortalRenderNode renderNode, out Vector3 clippingPlaneCentre, out Vector3 clippingPlaneNormal)
         {
             Vector3 start = renderNode.teleportMatrix.MultiplyPoint(_origin ? _origin.position : transform.position),

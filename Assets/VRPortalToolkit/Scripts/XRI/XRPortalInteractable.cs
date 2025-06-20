@@ -16,27 +16,43 @@ using static UnityEngine.XR.Interaction.Toolkit.XRInteractionUpdateOrder;
  * - XRPortalRayInteractor does no work for teleports cursor (because of the forward direction thing), also doesn't work through portals
  */
 
-// TODO: Add a timer of swap that flips the anchor when you put a portal over your head
-// TODO: Add bool for if you can hold both sides of a portal at the same time
-
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// XR interactable for portals, supporting grab, snap, and linked movement.
+    /// </summary>
     public class XRPortalInteractable : XRGrabInteractable
     {
         private readonly WaitForEndOfFrame _WaitForEndOfFrame = new WaitForEndOfFrame();
 
         const float k_DeltaTimeThreshold = 0.001f;
 
+        [Tooltip("The portal associated with this interactable.")]
         [SerializeField] private Portal _portal;
+        /// <summary>
+        /// The portal associated with this interactable.
+        /// </summary>
         public Portal portal { get => _portal; set => _portal = value; }
 
+        [Tooltip("The connected portal's XRPortalInteractable.")]
         [SerializeField] private XRPortalInteractable _connected;
+        /// <summary>
+        /// The connected portal's XRPortalInteractable.
+        /// </summary>
         public XRPortalInteractable connected { get => _connected; set => _connected = value; }
 
+        [Tooltip("The transform representing the ground level.")]
         [SerializeField] private Transform _groundLevel;
+        /// <summary>
+        /// The transform representing the ground level.
+        /// </summary>
         public Transform groundLevel { get => _groundLevel; set => _groundLevel = value; }
 
+        [Tooltip("How the opposite portal moves when this portal is moved")]
         [SerializeField] private LinkedMovement _linkedMovement = LinkedMovement.Anchored;
+        /// <summary>
+        /// How the opposite portal moves when this portal is moved.
+        /// </summary>
         public LinkedMovement linkedMovement {
             get => _linkedMovement;
             set {
@@ -55,9 +71,11 @@ namespace VRPortalToolkit.XRI
             Anchored = 2,
         }
 
-        // TODO: Levelness is implemented rather naively here (there isn't much of a way for heigh to be updated
-        // (Though I suppose you would just update container as its ground level
+        [Tooltip("How the portal's levelness is handled.")]
         [SerializeField] private Levelness _levelness = Levelness.LevelElevation | Levelness.LevelOrientation;
+        /// <summary>
+        /// How the portal's levelness is handled.
+        /// </summary>
         public Levelness levelness { get => _levelness; set => _levelness = value; }
 
         [Flags]
@@ -68,18 +86,34 @@ namespace VRPortalToolkit.XRI
             LevelOrientation = 1 << 2,
         }
 
+        [Tooltip("Whether to use the snap distance threshold.")]
         [SerializeField] private bool _useSnapDistanceThreshold = true;
+        /// <summary>
+        /// When the two sides of the portals are too close, should they snap together.
+        /// </summary>
         public bool useSnapDistanceThreshold { get => _useSnapDistanceThreshold; set => _useSnapDistanceThreshold = value; }
 
+        [Tooltip("The snap distance threshold.")]
         [ShowIf(nameof(_useSnapDistanceThreshold))]
         [SerializeField] private float _snapDistanceThreshold = 0.1f;
+        /// <summary>
+        /// The snap distance threshold.
+        /// </summary>
         public float snapDistanceThreshold { get => _snapDistanceThreshold; set => _snapDistanceThreshold = value; }
 
+        [Tooltip("Whether to use the snap angle threshold.")]
         [SerializeField] private bool _useSnapAngleThreshold = true;
+        /// <summary>
+        /// When the two sides of the portals are too similar, should they snap together.
+        /// </summary>
         public bool useSnapAngleThreshold { get => _useSnapAngleThreshold; set => _useSnapAngleThreshold = value; }
 
+        [Tooltip("The snap angle threshold.")]
         [ShowIf(nameof(_useSnapAngleThreshold))]
         [SerializeField] private float _snapAngleThreshold = 3f;
+        /// <summary>
+        /// The snap angle threshold.
+        /// </summary>
         public float snapAngleThreshold { get => _snapAngleThreshold; set => _snapAngleThreshold = value; }
 
         // TODO: Currently do not support scaled movement
@@ -123,13 +157,14 @@ namespace VRPortalToolkit.XRI
             PortalPhysics.RemovePostTeleportListener(transform, OnPostTeleport);
         }
 
+        /// <inheritdoc/>
         public override bool IsSelectableBy(IXRSelectInteractor interactor)
         {
             if (base.IsSelectableBy(interactor))
             {
                 if (IsSelected(interactor)) return true;
 
-                // When portals are too  close, only allow the most recently used to be grabbed
+                // When portals are too close, only allow the most recently used to be grabbed
                 if (IsWithinSnapThreshold() && _connected && (_connected.isSelected || _connected._lastGrabTime > _lastGrabTime))
                     return false;
 
@@ -137,7 +172,7 @@ namespace VRPortalToolkit.XRI
                 IEnumerable<Portal> from = null, to = null;
 
                 PortalRelativePosition positioning = interactor.transform.GetComponentInParent<PortalRelativePosition>();
-                if (positioning) from = positioning.GetPortalsToOrigin();
+                if (positioning) from = positioning.GetPortalsToSource();
 
                 if (interactor is IXRPortableInteractor portableInteractor)
                     to = portableInteractor.GetPortalsToInteractable(this);
@@ -151,6 +186,7 @@ namespace VRPortalToolkit.XRI
             return false;
         }
 
+        /// <inheritdoc/>
         protected override void OnSelectEntering(SelectEnterEventArgs args)
         {
             PortalPhysics.UnregisterPortable(transform);
@@ -166,7 +202,7 @@ namespace VRPortalToolkit.XRI
             {
                 // Do teleportations
                 Pose interactorPose = new Pose(interactor.position, interactor.rotation);
-                _interactorPositioning.GetPortalsToOrigin().ModifyTransform(interactor);
+                _interactorPositioning.GetPortalsToSource().ModifyTransform(interactor);
 
                 // Do the actual hard work
                 base.OnSelectEntering(args);
@@ -194,6 +230,10 @@ namespace VRPortalToolkit.XRI
             _lastGrabTime = Time.time;
         }
 
+        /// <summary>
+        /// Checks if the connected portal is within the snap threshold.
+        /// </summary>
+        /// <returns>True if within snap threshold, otherwise false.</returns>
         public virtual bool IsWithinSnapThreshold()
         {
             if (!_connected) return false;
@@ -206,11 +246,13 @@ namespace VRPortalToolkit.XRI
             return _useSnapAngleThreshold && Quaternion.Angle(transform.rotation, Quaternion.LookRotation(-connected.transform.forward, connected.transform.up)) < _snapAngleThreshold;
         }
 
+        /// <inheritdoc/>
         protected override void OnSelectEntered(SelectEnterEventArgs args)
         {
             base.OnSelectEntered(args);
         }
 
+        /// <inheritdoc/>
         protected override void OnSelectExiting(SelectExitEventArgs args)
         {
             base.OnSelectExiting(args);
@@ -230,11 +272,16 @@ namespace VRPortalToolkit.XRI
             _lastGrabTime = Time.time;
         }
 
+        /// <inheritdoc/>
         protected override void OnSelectExited(SelectExitEventArgs args)
         {
             base.OnSelectExited(args);
         }
 
+        /// <summary>
+        /// Processes the interactable during the specified update phase.
+        /// </summary>
+        /// <param name="updatePhase">The update phase.</param>
         public override void ProcessInteractable(UpdatePhase updatePhase)
         {
             if (_interactorOrigin != _interactorPositioning?.origin)
@@ -254,7 +301,7 @@ namespace VRPortalToolkit.XRI
 
                     // Do teleportations
                     Pose interactorPose = new Pose(interactor.position, interactor.rotation);
-                    _interactorPositioning.GetPortalsToOrigin().ModifyTransform(interactor);
+                    _interactorPositioning.GetPortalsToSource().ModifyTransform(interactor);
 
                     // Do the actual hard work
                     base.ProcessInteractable(updatePhase);
@@ -275,6 +322,13 @@ namespace VRPortalToolkit.XRI
 
 
         }
+
+        /// <summary>
+        /// Processes the linked movement of the connected portal.
+        /// </summary>
+        /// <param name="updatePhase">The update phase.</param>
+        /// <param name="connectedPrevious">The previous transform of the connected portal.</param>
+        /// <param name="connectedTarget">The target transform of the connected portal.</param>
         protected virtual void ProcessLinkedMovement(UpdatePhase updatePhase, in Matrix4x4 connectedPrevious, in Matrix4x4 connectedTarget)
         {
             if (!isSelected)
@@ -356,6 +410,11 @@ namespace VRPortalToolkit.XRI
                     _connected.transform.localScale);
         }
 
+        /// <summary>
+        /// Levels the orientation of the portal based on the connected portal's target pose.
+        /// </summary>
+        /// <param name="connectedTargetPose">The target pose of the connected portal.</param>
+        /// <param name="targetPose">The target pose of this portal.</param>
         protected virtual void LevelOrientation(Pose connectedTargetPose, ref Pose targetPose)
         {
             // Store forward
@@ -376,7 +435,11 @@ namespace VRPortalToolkit.XRI
             targetPose.rotation = Quaternion.AngleAxis(Vector3.SignedAngle(newForward, _forward, up), up) * targetPose.rotation;
         }
 
-        // TODO: Does not use scale (well atleast this objects scale)
+        /// <summary>
+        /// Levels the elevation of the portal based on the connected portal's target pose.
+        /// </summary>
+        /// <param name="connectedTargetPose">The target pose of the connected portal.</param>
+        /// <param name="targetPose">The target pose of this portal.</param>
         protected virtual void LevelElevation(Pose connectedTargetPose, ref Pose targetPose)
         {
             if (_connected)
@@ -450,6 +513,11 @@ namespace VRPortalToolkit.XRI
         }
 
         private Pose _originPreTeleportLocalPose;
+
+        /// <summary>
+        /// Called before the origin teleports through a portal.
+        /// </summary>
+        /// <param name="teleportation">The teleportation event data.</param>
         protected virtual void OnOriginPreTeleport(Teleportation teleportation)
         {
             // Not sure if there is anything that should be done here
@@ -457,8 +525,9 @@ namespace VRPortalToolkit.XRI
         }
 
         /// <summary>
-        /// After the origin teleports through our portal, we swap the portals controller
+        /// Called after the origin teleports through a portal.
         /// </summary>
+        /// <param name="teleportation">The teleportation event data.</param>
         protected virtual void OnOriginPostTeleport(Teleportation teleportation)
         {
             if (isSelected)

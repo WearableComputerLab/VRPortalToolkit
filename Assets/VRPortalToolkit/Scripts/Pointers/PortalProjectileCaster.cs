@@ -4,44 +4,71 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.Pointers
 {
+    /// <summary>
+    /// Implements a projectile-based portal casting that simulates the path of a projectile under gravity.
+    /// </summary>
     public class PortalProjectileCaster : PortalCaster
     {
+        [Tooltip("The transform used to determine the up direction for gravity.")]
         [SerializeField] private Transform _upright;
+        /// <summary>
+        /// The transform used to determine the up direction for gravity.
+        /// </summary>
         public virtual Transform upright
         {
             get => _upright;
             set => _upright = value;
         }
 
+        [Tooltip("The initial velocity of the projectile.")]
         [SerializeField] private float _velocity = 16f;
+        /// <summary>
+        /// The initial velocity of the projectile.
+        /// </summary>
         public virtual float velocity
         {
             get => _velocity;
             set => _velocity = value;
         }
 
+        [Tooltip("The acceleration due to gravity applied to the projectile.")]
         [SerializeField] private float _acceleration = 9.8f;
+        /// <summary>
+        /// The acceleration due to gravity applied to the projectile.
+        /// </summary>
         public virtual float acceleration
         {
             get => _acceleration;
             set => _acceleration = value;
         }
 
+        [Tooltip("Additional flight time to add to the calculated trajectory.")]
         [SerializeField] private float _additionalFlightTime = 0.5f;
+        /// <summary>
+        /// Additional flight time to add to the calculated trajectory.
+        /// </summary>
         public virtual float additionalFlightTime
         {
             get => _additionalFlightTime;
             set => _additionalFlightTime = value;
         }
 
+        [Tooltip("The number of sample points along the projectile path.")]
         [SerializeField] private int _sampleFrequency = 20;
+        /// <summary>
+        /// The number of sample points along the projectile path.
+        /// </summary>
         public virtual int sampleFrequency
         {
             get => _sampleFrequency;
             set => _sampleFrequency = value;
         }
 
-        [Header("Optional"), SerializeField] private PortalCaster _portalCaster;
+        [Header("Optional"), Tooltip("Optional portal caster to use for actual casting.")]
+        [SerializeField] private PortalCaster _portalCaster;
+        /// <summary>
+        /// Optional portal caster to use for actual casting.
+        /// </summary>
         public virtual PortalCaster portalCaster
         {
             get => _portalCaster;
@@ -50,7 +77,7 @@ namespace VRPortalToolkit.Pointers
 
         protected PortalRay[] castingRays;
 
-        // TODO: Increasing sample size decreases length for some reason
+        /// <inheritdoc/>
         public override int GetPortalRays(Matrix4x4 origin, ref PortalRay[] portalRays, int maxRecursions, float maxDistance, LayerMask layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
             if (portalRays == null || portalRays.Length < maxRecursions + _sampleFrequency)
@@ -120,11 +147,19 @@ namespace VRPortalToolkit.Pointers
             return portalRaysCount;
         }
 
+        /// <summary>
+        /// Calculates a point on a projectile trajectory.
+        /// </summary>
+        /// <param name="t">Time parameter.</param>
+        /// <param name="velocity">The initial velocity vector.</param>
+        /// <param name="acceleration">The acceleration vector (typically gravity).</param>
+        /// <returns>The calculated point on the projectile trajectory.</returns>
         protected static Vector3 CalculateProjectilePoint(float t, Vector3 velocity, Vector3 acceleration)
         {
             return velocity * t + 0.5f * acceleration * t * t;
         }
 
+        /// <inheritdoc/>
         public override bool Cast(PortalRay[] portalRays, int rayCount, out RaycastHit hitInfo, out int rayIndex, LayerMask layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
             if (_portalCaster)

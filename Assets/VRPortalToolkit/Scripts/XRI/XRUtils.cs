@@ -7,6 +7,9 @@ using static UnityEngine.XR.Interaction.Toolkit.XRGrabInteractable;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Utility class for accessing and manipulating XR interaction toolkit components.
+    /// </summary>
     public static class XRUtils
     {
         private static object[] _args1 = new object[1];
@@ -22,6 +25,12 @@ namespace VRPortalToolkit.XRI
                     Debug.LogError("\"m_TargetPose\" field could not be found!");
             }
         }
+
+        /// <summary>
+        /// Gets the target pose from an XR grab interactable.
+        /// </summary>
+        /// <param name="interactable">The grab interactable.</param>
+        /// <returns>The target pose.</returns>
         public static Pose GetTargetPose(XRGrabInteractable interactable)
         {
             UpdateTargetPoseField();
@@ -31,6 +40,12 @@ namespace VRPortalToolkit.XRI
 
             return default;
         }
+
+        /// <summary>
+        /// Sets the target pose for an XR grab interactable.
+        /// </summary>
+        /// <param name="interactable">The grab interactable.</param>
+        /// <param name="pose">The pose to set.</param>
         public static void SetTargetPose(XRGrabInteractable interactable, Pose pose)
         {
             UpdateTargetPoseField();
@@ -39,6 +54,12 @@ namespace VRPortalToolkit.XRI
                 _targetPoseField.SetValue(interactable, pose);
         }
 
+        /// <summary>
+        /// Performs a kinematic update on a rigidbody based on the target pose.
+        /// </summary>
+        /// <param name="interactable">The grab interactable.</param>
+        /// <param name="rigidbody">The rigidbody to update.</param>
+        /// <param name="targetPose">The target pose.</param>
         public static void PerformKinematicUpdate(XRGrabInteractable interactable, Rigidbody rigidbody, Pose targetPose)
         {
             if (rigidbody)
@@ -57,6 +78,12 @@ namespace VRPortalToolkit.XRI
         }
 
         private static MethodInfo _onTeleportedMethod;
+
+        /// <summary>
+        /// Invokes the OnTeleported method on an XR grab interactable.
+        /// </summary>
+        /// <param name="interactable">The grab interactable.</param>
+        /// <param name="pose">The teleportation pose.</param>
         public static void OnTeleported(XRGrabInteractable interactable, Pose pose)
         {
             if (_onTeleportedMethod == null)
@@ -77,6 +104,12 @@ namespace VRPortalToolkit.XRI
         #region XRRayInteractor
 
         private static FieldInfo _raycastHitsField;
+
+        /// <summary>
+        /// Gets the raycast hits from an XR ray interactor.
+        /// </summary>
+        /// <param name="interactor">The ray interactor.</param>
+        /// <returns>The array of raycast hits.</returns>
         public static RaycastHit[] GetRaycastHits(XRRayInteractor interactor)
         {
             if (_raycastHitsField == null)
@@ -92,8 +125,6 @@ namespace VRPortalToolkit.XRI
 
             return default;
         }
-        //m_RaycastHitsCount
-
 
         private static FieldInfo _raycastHitsCountField;
         private static void UpdateRaycastHitsCountField()
@@ -106,6 +137,12 @@ namespace VRPortalToolkit.XRI
                     Debug.LogError("\"m_RaycastHitsCount\" field could not be found!");
             }
         }
+
+        /// <summary>
+        /// Gets the count of raycast hits from an XR ray interactor.
+        /// </summary>
+        /// <param name="interactor">The ray interactor.</param>
+        /// <returns>The count of raycast hits.</returns>
         public static int GetRaycastHitsCount(XRRayInteractor interactor)
         {
             UpdateRaycastHitsCountField();
@@ -115,6 +152,12 @@ namespace VRPortalToolkit.XRI
 
             return -1;
         }
+
+        /// <summary>
+        /// Sets the count of raycast hits for an XR ray interactor.
+        /// </summary>
+        /// <param name="interactor">The ray interactor.</param>
+        /// <param name="count">The count to set.</param>
         public static void SetRaycastHitsCount(XRRayInteractor interactor, int count)
         {
             UpdateRaycastHitsCountField();
@@ -136,8 +179,13 @@ namespace VRPortalToolkit.XRI
             }
         }
 
-
         private static FieldInfo _throwSmoothingVelocityFramesField;
+
+        /// <summary>
+        /// Gets the throwing velocity of an XR grab interactable.
+        /// </summary>
+        /// <param name="interactable">The grab interactable.</param>
+        /// <returns>The throwing velocity.</returns>
         public static Vector3 GetThrowingVelocity(XRGrabInteractable interactable)
         {
             if (_throwSmoothingVelocityFramesField == null)
@@ -160,6 +208,12 @@ namespace VRPortalToolkit.XRI
         }
 
         private static FieldInfo _throwSmoothingAngularVelocityFramesField;
+
+        /// <summary>
+        /// Gets the throwing angular velocity of an XR grab interactable.
+        /// </summary>
+        /// <param name="interactable">The grab interactable.</param>
+        /// <returns>The throwing angular velocity.</returns>
         public static Vector3 GetThrowingAngularVelocity(XRGrabInteractable interactable)
         {
             if (_throwSmoothingAngularVelocityFramesField == null)

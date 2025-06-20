@@ -8,11 +8,16 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit
 {
+    /// <summary>
+    /// Maintains a transform's position relative to a portal.
+    /// </summary>
     public class PortalRelativePosition : MonoBehaviour
     {
         [Tooltip("The transform to raycast from.")]
-
         [SerializeField] private Transform _origin;
+        /// <summary>
+        /// The transform to raycast from.
+        /// </summary>
         public Transform origin
         {
             get => _origin;
@@ -33,28 +38,43 @@ namespace VRPortalToolkit
         }
 
         [Tooltip("The transform to replicate.")]
-        [SerializeField] private Transform _target;
-        public virtual Transform target
+        [SerializeField] private Transform _source;
+        /// <summary>
+        /// The transform to replicate.
+        /// </summary>
+        public virtual Transform source
         {
-            get => _target;
-            set => _target = value;
+            get => _source;
+            set => _source = value;
         }
 
+        [Tooltip("The layer mask used for portal raycasting.")]
         [SerializeField] private LayerMask _portalMask = 1 << 3;
+        /// <summary>
+        /// The layer mask used for portal raycasting.
+        /// </summary>
         public virtual LayerMask portalMask
         {
             get => _portalMask;
             set => _portalMask = value;
         }
 
+        [Tooltip("The trigger interaction mode for portal raycasting.")]
         [SerializeField] private QueryTriggerInteraction _portalTriggerInteraction;
+        /// <summary>
+        /// The trigger interaction mode for portal raycasting.
+        /// </summary>
         public virtual QueryTriggerInteraction portalTriggerInteraction
         {
             get => _portalTriggerInteraction;
             set => _portalTriggerInteraction = value;
         }
 
+        [Tooltip("The maximum number of portals to trace through.")]
         [SerializeField] private int _maxPortals = 16;
+        /// <summary>
+        /// The maximum number of portals to trace through.
+        /// </summary>
         public int maxPortals { get => _maxPortals; set => _maxPortals = value; }
 
         private PortalRay[] _portalRays;
@@ -73,26 +93,28 @@ namespace VRPortalToolkit
             PortalPhysics.RemovePostTeleportListener(_origin, OnOriginPostTeleport);
         }
 
-        public void Update()
+        protected void Update()
         {
             UpdatePose();
         }
 
-        public void LateUpdate()
-        {
-
-            UpdatePose();
-        }
-
-        public void FixedUpdate()
+        protected void LateUpdate()
         {
             UpdatePose();
         }
 
+        protected void FixedUpdate()
+        {
+            UpdatePose();
+        }
+
+        /// <summary>
+        /// Updates the pose of the transform relative to the portal.
+        /// </summary>
         protected virtual void UpdatePose()
         {
-            Transform origin = _origin ? _origin : _target,
-                target = _target ? _target : _origin;
+            Transform origin = _origin ? _origin : _source,
+                target = _source ? _source : _origin;
 
             if (origin)
             {
@@ -126,38 +148,56 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Called after the transform is teleported.
+        /// </summary>
+        /// <param name="teleportation">The teleportation data.</param>
         private void OnPostTeleport(Teleportation teleportation)
         {
             _portalTrace.AddEndTeleport(teleportation.fromPortal);
         }
 
+        /// <summary>
+        /// Called after the origin is teleported.
+        /// </summary>
+        /// <param name="teleportation">The teleportation data.</param>
         private void OnOriginPostTeleport(Teleportation teleportation)
         {
             if (teleportation.fromPortal != null)
-            {
                 _portalTrace.AddStartTeleport(teleportation.fromPortal);
-
-                // Swap to connected portal if we went through a portal we were holding.
-                /*if (IsSelectedPortal(teleportation.fromPortal) && teleportation.fromPortal.connected)
-                {
-                    BaseInteractable interactable = teleportation.fromPortal.connected.GetComponentInParent<BaseInteractable>();
-                    UpdatePose();
-
-                    Select(interactable);
-                }*/
-            }
             else
                 PortalPhysics.ForceTeleport(transform, UpdatePose, teleportation.source);
         }
 
+        /// <summary>
+        /// Gets the number of portals in the current trace.
+        /// </summary>
         public int portalCount => _portalTrace.Count;
 
-        public Portal GetPortalFromOrigin(int index) => _portalTrace.GetPortal(index);
+        /// <summary>
+        /// Gets the portal at the specified index from the source.
+        /// </summary>
+        /// <param name="index">The index of the portal.</param>
+        /// <returns>The portal at the specified index.</returns>
+        public Portal GetPortalFromSource(int index) => _portalTrace.GetPortal(index);
 
-        public IEnumerable<Portal> GetPortalsFromOrigin() => _portalTrace.GetPortals();
+        /// <summary>
+        /// Gets all portals from the origin.
+        /// </summary>
+        /// <returns>An enumerable of portals from the source.</returns>
+        public IEnumerable<Portal> GetPortalsFromSource() => _portalTrace.GetPortals();
 
-        public Portal GetPortalToOrigin(int index) => _portalTrace.GetUndoPortal(index);
+        /// <summary>
+        /// Gets the portal at the specified index to the source.
+        /// </summary>
+        /// <param name="index">The index of the portal.</param>
+        /// <returns>The portal at the specified index.</returns>
+        public Portal GetPortalToSource(int index) => _portalTrace.GetUndoPortal(index);
 
-        public IEnumerable<Portal> GetPortalsToOrigin() => _portalTrace.GetUndoPortals();
+        /// <summary>
+        /// Gets all portals to the origin.
+        /// </summary>
+        /// <returns>An enumerable of portals to the source.</returns>
+        public IEnumerable<Portal> GetPortalsToSource() => _portalTrace.GetUndoPortals();
     }
 }

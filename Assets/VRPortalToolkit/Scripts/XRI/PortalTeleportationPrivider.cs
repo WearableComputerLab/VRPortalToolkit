@@ -14,8 +14,8 @@ namespace VRPortalToolkit.XRI
     {
         private bool _isTeleporting;
 
-
         private static FieldInfo _timeStartedField;
+
         private float GetStartTime()
         {
             if (_timeStartedField == null)

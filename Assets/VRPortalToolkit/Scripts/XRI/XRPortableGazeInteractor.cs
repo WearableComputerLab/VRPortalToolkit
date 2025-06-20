@@ -7,20 +7,31 @@ using VRPortalToolkit.Physics;
 // TODO: This has not been tested
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// XR gaze interactor that supports portal-aware interactions.
+    /// </summary>
     public class XRPortableGazeInteractor : XRGazeInteractor, IXRPortableInteractor
     {
         private readonly static int MaxRaycasts = 10;
         private readonly static List<IXRInteractable> _results = new List<IXRInteractable>(1);
         private readonly PortalRay[] castPortalRays = new PortalRay[MaxRaycasts];
 
+        [Tooltip("The layer mask used for portal raycasting.")]
         [SerializeField] private LayerMask _portalMask = 1 << 3;
+        /// <summary>
+        /// The layer mask used for portal raycasting.
+        /// </summary>
         public virtual LayerMask portalMask
         {
             get => _portalMask;
             set => _portalMask = value;
         }
 
+        [Tooltip("The trigger interaction mode for portal raycasting.")]
         [SerializeField] private QueryTriggerInteraction _portalTriggerInteraction;
+        /// <summary>
+        /// The trigger interaction mode for portal raycasting.
+        /// </summary>
         public virtual QueryTriggerInteraction portalTriggerInteraction
         {
             get => _portalTriggerInteraction;
@@ -34,6 +45,11 @@ namespace VRPortalToolkit.XRI
         private int _portalIndex;
         private RaycastHit _hitInfo;
 
+        /// <summary>
+        /// Gets the portals needed to travel to the specified interactable.
+        /// </summary>
+        /// <param name="interactable">The XR interactable.</param>
+        /// <returns>An enumerable of portals.</returns>
         public IEnumerable<Portal> GetPortalsToInteractable(IXRInteractable interactable)
         {
             IEnumerable<Portal> from = GetPortalsToRaycastHit(), to = null;
@@ -53,7 +69,8 @@ namespace VRPortalToolkit.XRI
                 yield return _portalRays[i].fromPortal;
 
         }
-        /// <inheritdoc />
+
+        /// <inheritdoc/>
         protected override void OnSelectEntering(SelectEnterEventArgs args)
         {
             base.OnSelectEntering(args);
@@ -69,6 +86,7 @@ namespace VRPortalToolkit.XRI
             }
         }
 
+        /// <inheritdoc/>
         public override void PreprocessInteractor(XRInteractionUpdateOrder.UpdatePhase updatePhase)
         {
             // Perform base without actually raycasting
@@ -154,6 +172,7 @@ namespace VRPortalToolkit.XRI
                 _portalIndex = -1;
         }
 
+        /// <inheritdoc/>
         public override void GetValidTargets(List<IXRInteractable> targets)
         {
             targets.Clear();

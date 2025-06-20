@@ -6,18 +6,29 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Handles hand reach extensions through portals.
+    /// </summary>
     [DefaultExecutionOrder(10)]
     [RequireComponent(typeof(XRPortalInteractable))]
     public class XRPortalHandReach : MonoBehaviour
     {
+        [Tooltip("The transform to offset.")]
         [SerializeField] private Transform _offset;
+        /// <summary>
+        /// The transform to offset.
+        /// </summary>
         public Transform offset
         {
             get => _offset;
             set => _offset = value;
         }
 
+        [Tooltip("The gain curve for calculating reach adjustments.")]
         [SerializeField] private AnimationCurve _gainCurve = AnimationCurve.Linear(0f, 0f, 1f, 0.5f);
+        /// <summary>
+        /// The gain curve for calculating reach adjustments.
+        /// </summary>
         public AnimationCurve gainCurve
         {
             get => _gainCurve;
@@ -70,7 +81,7 @@ namespace VRPortalToolkit.XRI
         {
             if (positioning)
             {
-                if (!positioning.GetPortalsFromOrigin().Contains(_portal))
+                if (!positioning.GetPortalsFromSource().Contains(_portal))
                     return true;
             }
 
@@ -93,6 +104,9 @@ namespace VRPortalToolkit.XRI
                 _positionings.Add(positioning);
         }
 
+        /// <summary>
+        /// Updates all interactor positions based on portal transitions.
+        /// </summary>
         public void UpdateInteractors()
         {
             if (isActiveAndEnabled && _portal && _gainCurve != null)
@@ -114,10 +128,10 @@ namespace VRPortalToolkit.XRI
 
                         // Get start and end positions in the same space
                         for (int i = 0; i < index; i++)
-                            positioning.GetPortalFromOrigin(i)?.ModifyPoint(ref startPos);
+                            positioning.GetPortalFromSource(i)?.ModifyPoint(ref startPos);
 
                         for (int i = 0; i < positioning.portalCount - index; i++)
-                            positioning.GetPortalToOrigin(i)?.ModifyPoint(ref endPos);
+                            positioning.GetPortalToSource(i)?.ModifyPoint(ref endPos);
 
                         Ray ray = new Ray(startPos, endPos - startPos);
 
@@ -129,7 +143,7 @@ namespace VRPortalToolkit.XRI
 
                         // Return end position to original space
                         for (int i = index; i < positioning.portalCount; i++)
-                            positioning.GetPortalFromOrigin(i)?.ModifyPoint(ref endPos);
+                            positioning.GetPortalFromSource(i)?.ModifyPoint(ref endPos);
 
                         positioning.transform.position = endPos;
                     }
@@ -155,7 +169,7 @@ namespace VRPortalToolkit.XRI
         {
             for (int i = 0; i < positioning.portalCount; i++)
             {
-                Portal portal = positioning.GetPortalFromOrigin(i);
+                Portal portal = positioning.GetPortalFromSource(i);
                 if (portal == _portal)
                 {
                     index = i;

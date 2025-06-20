@@ -4,24 +4,39 @@ using UnityEngine.XR.Interaction.Toolkit;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Handles doorway state and animation for adaptive XR portals.
+    /// </summary>
     [RequireComponent(typeof(AdaptivePortal))]
     public class XRAdaptivePortalDoorway : MonoBehaviour, IAdaptivePortalProcessor
     {
+        [Tooltip("The connected doorway.")]
         [SerializeField] private XRAdaptivePortalDoorway _connected;
+        /// <summary>
+        /// The connected doorway.
+        /// </summary>
         public XRAdaptivePortalDoorway connected
         {
             get => _connected;
             set => _connected = value;
         }
 
+        [Tooltip("The size of the doorway.")]
         [SerializeField] private Vector2 _doorwaySize = new Vector2(0.8f, 2f);
+        /// <summary>
+        /// The size of the doorway.
+        /// </summary>
         public Vector2 doorwaySize
         {
             get => _doorwaySize;
             set => _doorwaySize = value;
         }
 
+        [Tooltip("The time it takes to transition to/from doorway state.")]
         [SerializeField] private float _transitionTime = 1f;
+        /// <summary>
+        /// The time it takes to transition to/from doorway state.
+        /// </summary>
         public float transformTime
         {
             get => _transitionTime;
@@ -30,13 +45,20 @@ namespace VRPortalToolkit.XRI
 
         [Tooltip("If the portal is thrown to the ground faster than this, it will turn into a doorway.")]
         [SerializeField] private float _dropVelocityThreshold = 1f;
+        /// <summary>
+        /// If the portal is thrown to the ground faster than this, it will turn into a doorway.
+        /// </summary>
         public float dropVelocityThreshold
         {
             get => _dropVelocityThreshold;
             set => _dropVelocityThreshold = value;
         }
 
+        [Tooltip("Whether this portal is currently a doorway.")]
         [SerializeField] private bool _isDoorway;
+        /// <summary>
+        /// Whether this portal is currently a doorway.
+        /// </summary>
         public bool isDoorway
         {
             get => _isDoorway;
@@ -87,6 +109,7 @@ namespace VRPortalToolkit.XRI
         private Pose _fromPose;
         private Pose _groundLevel;
 
+        /// <inheritdoc/>
         int IAdaptivePortalProcessor.Order => 100;
 
         private XRPortalInteractable _interactable;
@@ -154,6 +177,7 @@ namespace VRPortalToolkit.XRI
                 isDoorway = !_isDoorway;
             }
         }
+
         protected virtual void Awake()
         {
             _lastState = _isDoorway;
@@ -218,6 +242,7 @@ namespace VRPortalToolkit.XRI
             }
         }
 
+        /// <inheritdoc/>
         void IAdaptivePortalProcessor.Process(ref AdaptivePortalTransform apTransform)
         {
             if (!isActiveAndEnabled) return;

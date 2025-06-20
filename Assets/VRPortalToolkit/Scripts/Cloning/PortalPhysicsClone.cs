@@ -8,14 +8,17 @@ using Misc;
 
 namespace VRPortalToolkit
 {
-    // TODO: get rid of local layer
-    // I dont know how, I just know I dont like it (and right now its broken)
-
+    /// <summary>
+    /// Handles cloning of objects as they interact with portals for seamless transitions.
+    /// </summary>
     [DefaultExecutionOrder(1010)]
     public class PortalPhysicsClone : MonoBehaviour
     {
         private static readonly WaitForFixedUpdate _WaitForFixedUpdate = new WaitForFixedUpdate();
 
+        /// <summary>
+        /// The original GameObject to be cloned and mimicked.
+        /// </summary>
         [SerializeField] private GameObject _original;
         public virtual GameObject original
         {
@@ -34,9 +37,15 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// The template GameObject used for cloning. Otherwise, the original gameObject will be cloned with only the relevant components.
+        /// </summary>
         [SerializeField] private GameObject _template;
         public virtual GameObject template { get => _template; set => _template = value; }
 
+        /// <summary>
+        /// The maximum number of clones allowed. Or -1 for unlimited.
+        /// </summary>
         [SerializeField] private int _maxCloneCount = -1;
         public virtual int maxCloneCount
         {
@@ -52,6 +61,9 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// The layer mode for the original object.
+        /// </summary>
         [SerializeField] private PortalLayerMode _originalLayerMode = PortalLayerMode.CollidersOnly;
         public virtual PortalLayerMode originalLayerMode
         {
@@ -75,6 +87,9 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// The layer mode for the clone.
+        /// </summary>
         [SerializeField] private PortalLayerMode _cloneLayerMode = PortalLayerMode.CollidersOnly;
         public virtual PortalLayerMode cloneLayerMode
         {
@@ -90,6 +105,9 @@ namespace VRPortalToolkit
             }
         }
 
+        /// <summary>
+        /// Specifies the layer mode for objects interacting with portals.
+        /// </summary>
         public enum PortalLayerMode
         {
             Ignore = 0,
@@ -97,6 +115,9 @@ namespace VRPortalToolkit
             AllGameObjects = 2,
         }
 
+        /// <summary>
+        /// Stores information about a clone and its associated components.
+        /// </summary>
         protected class CloneHandler
         {
             public GameObject original;

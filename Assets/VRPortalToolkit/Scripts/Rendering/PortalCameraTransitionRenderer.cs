@@ -8,6 +8,9 @@ using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering
 {
+    /// <summary>
+    /// Internal renderer class that handles rendering portal transitions for cameras.
+    /// </summary>
     internal class PortalCameraTransitionRenderer : IPortalRenderer
     {
         private static readonly Vector2[] _corners = new Vector2[4] {
@@ -24,20 +27,30 @@ namespace VRPortalToolkit.Rendering
 
         private readonly Mesh[] _meshes = new Mesh[2];
 
+        /// <summary>
+        /// The camera associated with this transition renderer.
+        /// </summary>
         public Camera camera { get; set; }
 
+        /// <inheritdoc/>
         public IPortalCameraTransition transition { get; set; }
 
+        /// <inheritdoc/>
         public int Layer => transition.layer;
 
+        /// <inheritdoc/>
         public IPortal Portal => transition.portal;
 
+        /// <inheritdoc/>
         public PortalRendererSettings Overrides => default;
 
+        /// <inheritdoc/>
         public void PreCull(PortalRenderNode renderNode) { }
 
+        /// <inheritdoc/>
         public void PostCull(PortalRenderNode renderNode) { }
 
+        /// <inheritdoc/>
         public void Render(PortalRenderNode renderNode, CommandBuffer commandBuffer, Material material, MaterialPropertyBlock properties = null)
         {
             if (renderNode.depth > 1 || transition == null) return;
@@ -59,10 +72,13 @@ namespace VRPortalToolkit.Rendering
             }
         }
 
+        /// <inheritdoc/>
         public void RenderDefault(PortalRenderNode renderNode, CommandBuffer commandBuffer) { } // Intentionally blank
 
+        /// <inheritdoc/>
         public void PostRender(PortalRenderNode renderNode) { }
 
+        /// <inheritdoc/>
         public bool TryGetWindow(PortalRenderNode renderNode, Vector3 cameraPosition, Matrix4x4 view, Matrix4x4 proj, out ViewWindow innerWindow)
         {
             // We only draw the transition on top of the original render
@@ -76,6 +92,7 @@ namespace VRPortalToolkit.Rendering
             return true;
         }
 
+        /// <inheritdoc/>
         public bool TryGetClippingPlane(PortalRenderNode renderNode, out Vector3 clippingPlaneCentre, out Vector3 clippingPlaneNormal)
         {
             // TODO: This is causing issues?
@@ -143,7 +160,6 @@ namespace VRPortalToolkit.Rendering
 
             mesh = null;
             return false;
-
         }
 
         private static bool TryIntersects(Vector2 lineStart, Vector2 lineEnd, Vector2 rayOrigin, Vector2 rayDirection, out Vector2 intersection)

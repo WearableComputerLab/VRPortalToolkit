@@ -9,10 +9,17 @@ using VRPortalToolkit.Portables;
 
 namespace VRPortalToolkit.Pointers
 {
+    /// <summary>
+    /// Manages the cursor position and rotation for a portal pointer.
+    /// </summary>
     [DefaultExecutionOrder(101)] // Execute after pointer
     public class PortalPointerCursor : MonoBehaviour
     {
+        [Tooltip("The PortalPointer that provides raycast data.")]
         [SerializeField] private PortalPointer _raycaster;
+        /// <summary>
+        /// The PortalPointer that provides raycast data.
+        /// </summary>
         public PortalPointer raycaster
         {
             get => _raycaster;
@@ -32,59 +39,98 @@ namespace VRPortalToolkit.Pointers
             }
         }
 
+        [Tooltip("The transform to move to the cursor position.")]
         [SerializeField] private Transform _target;
+        /// <summary>
+        /// The transform to move to the cursor position.
+        /// </summary>
         public virtual Transform target
         {
             get => _target;
             set => _target = value;
         }
 
+        /// <summary>
+        /// Determines how the cursor is rotated when there is no hit.
+        /// </summary>
         public enum DefaultMode
         {
+            /// <summary>Only position the cursor, don't change rotation.</summary>
             PositionOnly = 0,
+            /// <summary>Orient the cursor in the forward direction.</summary>
             Forward = 1,
+            /// <summary>Orient the cursor in the backward direction.</summary>
             Backward = 2
         }
 
+        [Tooltip("How the cursor is rotated when there is no hit.")]
         [SerializeField] public DefaultMode _defaultMode = DefaultMode.Forward;
+        /// <summary>
+        /// How the cursor is rotated when there is no hit.
+        /// </summary>
         public DefaultMode defaultMode
         {
             get => _defaultMode;
             set => _defaultMode = value;
         }
 
+        /// <summary>
+        /// Determines how the cursor is rotated when there is a hit.
+        /// </summary>
         public enum HitMode
         {
+            /// <summary>Ignore hits and use default mode.</summary>
             Ignore = 0,
+            /// <summary>Only position the cursor, don't change rotation.</summary>
             PositionOnly = 1,
+            /// <summary>Orient the cursor in the forward direction.</summary>
             Forward = 2,
+            /// <summary>Orient the cursor in the backward direction.</summary>
             Backward = 3,
+            /// <summary>Orient the cursor based on the hit normal.</summary>
             Normal = 4,
+            /// <summary>Orient the cursor based on the reversed hit normal.</summary>
             Reversed = 5
         }
 
+        [Tooltip("How the cursor is rotated when there is a hit.")]
         [SerializeField] public HitMode _hitMode = HitMode.Normal;
+        /// <summary>
+        /// How the cursor is rotated when there is a hit.
+        /// </summary>
         public virtual HitMode hitMode
         {
             get => _hitMode;
             set => _hitMode = value;
         }
 
-        [Header("Optional"), SerializeField] private Transform _upright;
+        [Header("Optional"), Tooltip("Optional transform to use for determining the up direction.")]
+        [SerializeField] private Transform _upright;
+        /// <summary>
+        /// Optional transform to use for determining the up direction.
+        /// </summary>
         public virtual Transform upright
         {
             get => _upright;
             set => _upright = value;
         }
 
+        [Tooltip("Whether to use a default scale for the cursor.")]
         [SerializeField] private bool _usesDefaultScale = false;
+        /// <summary>
+        /// Whether to use a default scale for the cursor.
+        /// </summary>
         public virtual bool usesDefaultScale {
             get => _usesDefaultScale;
             set => _usesDefaultScale = value;
         }
 
         [ShowIf(nameof(usesDefaultScale))]
+        [Tooltip("The default scale to use for the cursor.")]
         [SerializeField] private Vector3 _defaultScale = Vector3.one;
+        /// <summary>
+        /// The default scale to use for the cursor.
+        /// </summary>
         public virtual Vector3 defaultScale {
             get => _defaultScale;
             set => _defaultScale = value;
@@ -124,11 +170,19 @@ namespace VRPortalToolkit.Pointers
             PeformTeleports(0);
         }
 
+        /// <summary>
+        /// Adds teleport listeners to the raycaster.
+        /// </summary>
+        /// <param name="raycaster">The raycaster to add listeners to.</param>
         protected virtual void AddRaycasterListeners(PortalPointer raycaster)
         {
             if (raycaster) PortalPhysics.AddPostTeleportListener(raycaster.transform, RaycasterPostTeleport);
         }
 
+        /// <summary>
+        /// Removes teleport listeners from the raycaster.
+        /// </summary>
+        /// <param name="raycaster">The raycaster to remove listeners from.</param>
         protected virtual void RemoveRaycasterListeners(PortalPointer raycaster)
         {
             if (raycaster) PortalPhysics.RemovePostTeleportListener(raycaster.transform, RaycasterPostTeleport);
@@ -139,6 +193,9 @@ namespace VRPortalToolkit.Pointers
             Apply();
         }
 
+        /// <summary>
+        /// Applies the cursor logic, positioning and rotating it based on the raycaster.
+        /// </summary>
         public virtual void Apply()
         {
             if (!raycaster || raycaster.portalRaysCount <= 0) return;
@@ -190,7 +247,12 @@ namespace VRPortalToolkit.Pointers
             }
         }
 
-        // altUp is used as a backup if forwad is parallel to up. Normal may also be parallel, so this isnt perfect
+        /// <summary>
+        /// Gets a rotation for the cursor based on direction vectors.
+        /// </summary>
+        /// <param name="forward">The forward direction.</param>
+        /// <param name="altUp">The alternative up direction.</param>
+        /// <returns>The calculated rotation.</returns>
         protected virtual Quaternion GetRotation(Vector3 forward, Vector3 altUp)
         {
             Vector3 up = upright ? upright.up : Vector3.up;
@@ -203,6 +265,13 @@ namespace VRPortalToolkit.Pointers
             return Quaternion.LookRotation(forward, up);
         }
 
+        /// <summary>
+        /// Gets the end position and direction of a raycast.
+        /// </summary>
+        /// <param name="rayIndex">The index of the ray to get the end for.</param>
+        /// <param name="rayDistance">The distance along the ray.</param>
+        /// <param name="origin">Output parameter for the calculated origin.</param>
+        /// <param name="direction">Output parameter for the calculated direction.</param>
         protected virtual void GetRaycastEnd(int rayIndex, float rayDistance, out Vector3 origin, out Vector3 direction)
         {
             PortalRay portalRay = raycaster.GetPortalRay(rayIndex);
@@ -224,6 +293,10 @@ namespace VRPortalToolkit.Pointers
             direction = endMatrix.GetColumn(2);
         }
 
+        /// <summary>
+        /// Performs teleportations for the cursor through portals.
+        /// </summary>
+        /// <param name="rayCount">The number of rays to consider for teleportation.</param>
         protected virtual void PeformTeleports(int rayCount)
         {
             if (_usesDefaultScale) _target.localScale = defaultScale;
@@ -295,6 +368,13 @@ namespace VRPortalToolkit.Pointers
             }
         }
 
+        /// <summary>
+        /// Converts a direction from world space to the original space before portal transformations.
+        /// </summary>
+        /// <param name="rayCount">The number of rays to consider for transformations.</param>
+        /// <param name="direction">The direction to convert.</param>
+        /// <param name="rayIndex">The starting ray index.</param>
+        /// <returns>The direction in original space.</returns>
         protected virtual Vector3 GetOriginalDirection(int rayCount, Vector3 direction, int rayIndex = 0)
         {
             for (int i = raycaster.portalRaysCount - 1; i >= 0; i--)
@@ -307,6 +387,13 @@ namespace VRPortalToolkit.Pointers
             return direction.normalized;
         }
 
+        /// <summary>
+        /// Tries to get the next portal in the raycast sequence.
+        /// </summary>
+        /// <param name="rayIndex">The current ray index, will be incremented if a portal is found.</param>
+        /// <param name="rayCount">The total number of rays.</param>
+        /// <param name="portal">Output parameter for the found portal.</param>
+        /// <returns>True if a portal was found, false otherwise.</returns>
         protected virtual bool TryGetNextPortal(ref int rayIndex, int rayCount, out Portal portal)
         {
             if (rayIndex >= rayCount)
@@ -328,6 +415,10 @@ namespace VRPortalToolkit.Pointers
             return portal;
         }
 
+        /// <summary>
+        /// Called after the raycaster teleports through a portal.
+        /// </summary>
+        /// <param name="args">The teleportation data.</param>
         protected virtual void RaycasterPostTeleport(Teleportation args)
         {
             if (args.fromPortal && args.fromPortal.connected)

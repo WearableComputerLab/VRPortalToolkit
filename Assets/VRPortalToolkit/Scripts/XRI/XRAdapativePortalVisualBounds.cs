@@ -1,40 +1,59 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Expands the bounds bounds of the adaptive portals to maintain visibility of a target transform.
+    /// </summary>
     [RequireComponent(typeof(XRPortalInteractable))]
     public class XRAdapativePortalVisualBounds : MonoBehaviour, IAdaptivePortalProcessor
     {
+        [Tooltip("The target transform for bounds calculation.")]
         [SerializeField] private Transform _target;
+        /// <summary>
+        /// The target transform to keep visible.
+        /// </summary>
         public Transform target
         {
             get => _target;
             set => _target = value;
         }
 
+        [Tooltip("The local bounds to use for the visual bounds.")]
         [SerializeField] private Bounds _bounds;
+        /// <summary>
+        /// The local bounds to use for the visual bounds.
+        /// </summary>
         public Bounds bounds
         {
             get => _bounds;
             set => _bounds = value;
         }
 
+        [Tooltip("Padding to apply around the calculated bounds.")]
         [SerializeField] private Vector2 _padding = new Vector2(0.05f, 0.05f);
+        /// <summary>
+        /// Padding to apply around the calculated bounds.
+        /// </summary>
         public Vector2 padding
         {
             get => _padding;
             set => _padding = value;
         }
 
+        [Tooltip("Whether the target must be active for bounds to be considered.")]
         [SerializeField] private bool _requiresActive;
+        /// <summary>
+        /// Whether the target must be active for bounds to be considered.
+        /// </summary>
         public bool requiresActive
         {
             get => _requiresActive;
             set => _requiresActive = value;
         }
+
+        /// <inheritdoc/>
         int IAdaptivePortalProcessor.Order => 0;
 
         private XRPortalInteractable _interactable;
@@ -50,6 +69,7 @@ namespace VRPortalToolkit.XRI
                 Gizmos.DrawWireCube(_bounds.center, _bounds.size);
             }
         }
+
         protected void Awake()
         {
             _interactable = GetComponent<XRPortalInteractable>();
@@ -102,6 +122,7 @@ namespace VRPortalToolkit.XRI
             new Vector3 (-1, 1, -1), new Vector3 (1, -1, -1), new Vector3 (1, 1, -1), new Vector3 (1, -1, 1),
         };
 
+        /// <inheritdoc/>
         void IAdaptivePortalProcessor.Process(ref AdaptivePortalTransform apTransform)
         {
             if (!isActiveAndEnabled || !_interactable || !_interactable.connected || _interactor == null || !_interactorPositioning || !_target || (_requiresActive && !_target.gameObject.activeInHierarchy))

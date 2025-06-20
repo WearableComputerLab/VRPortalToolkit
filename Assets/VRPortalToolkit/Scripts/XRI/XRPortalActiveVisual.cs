@@ -2,10 +2,17 @@ using UnityEngine;
 
 namespace VRPortalToolkit.XRI
 {
+    /// <summary>
+    /// Visualizes the active/inactive state of a portal in XR.
+    /// </summary>
     [RequireComponent(typeof(XRPointAndPortal))]
     public class XRPortalActiveVisual : MonoBehaviour
     {
+        [Tooltip("The GameObject to show when the portal is active.")]
         [SerializeField] private GameObject _activeVisual;
+        /// <summary>
+        /// The GameObject to show when the portal is active.
+        /// </summary>
         public GameObject activeVisual
         {
             get => _activeVisual;
@@ -18,7 +25,11 @@ namespace VRPortalToolkit.XRI
             }
         }
 
+        [Tooltip("The GameObject to show when the portal is inactive.")]
         [SerializeField] private GameObject _inactiveVisual;
+        /// <summary>
+        /// The GameObject to show when the portal is inactive.
+        /// </summary>
         public GameObject inactiveVisual
         {
             get => _inactiveVisual;
@@ -32,6 +43,9 @@ namespace VRPortalToolkit.XRI
         }
 
         private XRPointAndPortal _pointAndPortal;
+        /// <summary>
+        /// The XRPointAndPortal component associated with this visual.
+        /// </summary>
         public XRPointAndPortal pointAndPortal => _pointAndPortal;
 
         protected virtual void Awake()

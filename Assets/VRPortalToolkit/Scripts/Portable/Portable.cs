@@ -1,10 +1,6 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using System.Linq;
-using VRPortalToolkit.Utilities;
 using VRPortalToolkit.Data;
 using VRPortalToolkit.Physics;
 
@@ -17,14 +13,23 @@ using VRPortalToolkit.Physics;
 
 namespace VRPortalToolkit.Portables
 {
+    /// <summary>
+    /// Represents an object that can be teleported through portals and interact with portal systems.
+    /// </summary>
     public class Portable : MonoBehaviour, IPortable
     {
+        /// <summary>
+        /// The origin used for tracking when a portable passes through a portal.
+        /// </summary>
         [SerializeField] private Transform _origin;
         public Transform origin {
             get => _origin;
             set => _origin = value;
         }
 
+        /// <summary>
+        /// The layer mask used to determine which portals this object can interact with.
+        /// </summary>
         [SerializeField] private LayerMask _portalLayerMask = 1 << 3;
         public LayerMask portalLayerMask {
             get => _portalLayerMask;
@@ -32,10 +37,16 @@ namespace VRPortalToolkit.Portables
         }
 
         private Rigidbody _rigidbody;
+        /// <summary>
+        /// The Rigidbody attached to this portable object, if any.
+        /// </summary>
         public new Rigidbody rigidbody => _rigidbody ? _rigidbody : _rigidbody = transform.GetComponent<Rigidbody>();
 
-        /// <summary>Should children's layer and tags also be updated during teleportation?<summary/>
+        /// <summary>Should children's layer and tags also be updated during teleportation.<summary/>
         [SerializeField] private bool _applyToChildren;
+        /// <summary>
+        /// Should children's layer and tags also be updated during teleportation.
+        /// </summary>
         public bool applyToChildren {
             get => _applyToChildren;
             set => _applyToChildren = value;
@@ -49,18 +60,27 @@ namespace VRPortalToolkit.Portables
         }
 
         [SerializeField] private OverrideMode _overridePortalsMode;
+        /// <summary>
+        /// The override mode for which portals this object can use.
+        /// </summary>
         public OverrideMode overridePortalsMode {
             get => _overridePortalsMode;
             set => _overridePortalsMode = value;
         }
 
         [SerializeField] private List<Portal> _overridePortals;
+        /// <summary>
+        /// The list of portals to override the default portal set.
+        /// </summary>
         public List<Portal> overridePortals {
             get => _overridePortals;
             set => _overridePortals = value;
         }
 
         /// <inheritdoc/>
+        /// <summary>
+        /// Gets the set of valid portals for this portable object based on the override mode.
+        /// </summary>
         public virtual IEnumerable<Portal> validPortals {
             get {
                 switch (_overridePortalsMode)
@@ -88,35 +108,15 @@ namespace VRPortalToolkit.Portables
 
         // These are deprecated
         [Header("Portal Events")]
+        /// <summary>
+        /// Event invoked before teleportation occurs through a portal.
+        /// </summary>
         [HideInInspector] public UnityEvent<Portal> preTeleport;
+        /// <summary>
+        /// Event invoked after teleportation occurs through a portal.
+        /// </summary>
         [HideInInspector] public UnityEvent<Portal> postTeleport;
 
-        /*protected class PortableHandler : IPortable
-        {
-            public Portable portable;
-
-            public PortableHandler(Portable portable)
-            {
-                this.portable = portable;
-            }
-
-            public LayerMask portalLayerMask => (portable) ? (portable.portalLayerMask) : ((LayerMask)1 << 3);
-
-            public Vector3 GetOrigin()
-            {
-                if (portable)
-                {
-                    if (portable.origin)
-                        return portable.origin.position;
-
-                    return portable.transform.position;
-                }
-
-                return Vector3.zero;
-            }
-
-            public void Teleport(Portal portal) => portable?.Teleport(portal);
-        }*/
 
         protected virtual void Reset()
         {
@@ -229,6 +229,7 @@ namespace VRPortalToolkit.Portables
             }
         }
 
+        /// <inheritdoc/>
         public Vector3 GetOrigin() => origin ? origin.position : transform.position;
     }
 }
