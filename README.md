@@ -1,6 +1,8 @@
 # VRPortalToolkit
 By Daniel Ablett, Andrew Cunningham, Gun Lee and Bruce Thomas
 
+[![IMAGE ALT TEXT](https://github.com/user-attachments/assets/cc901978-9529-44dd-9e28-914c0f5ead4f)](http://www.youtube.com/watch?v=Coo1kQwj0x8 "Point & Portal")
+
 A toolkit for portals in Unity, specifically intended for virtual reality (but also works in standard mono). Portal rendering is implemented using Unity's Universal Render Pipeline (URP) and does **not** require custom shaders for objects. This toolkit was designed to be easily added to existing projects with minimal effort.
 
 ## Features
