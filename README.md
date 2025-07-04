@@ -14,9 +14,9 @@ A toolkit for portals in Unity, specifically intended for virtual reality (but a
 * Physics interactions through portals
 * XR Interaction Toolkit support for interacting through portals
 * A variety of portal interaction techniques:
-  * **Point & Portal** - Interact with distant objects through portals
+  * **Point & Portal** - Place portals at a distance quickly using a pointer
   * **Adaptive Portals** - Self-adjusting portals that respond to user interactions
-  * **Portal Overlays** - Create overlapping virtual worlds visible through portals
+  * **Portal Overlays** - Overlays that support users understanding of portals
 
 ## Requirements
 * Unity 2020.3.32f1 or similar
