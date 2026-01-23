@@ -123,12 +123,12 @@ namespace VRPortalToolkit
 
                 if (!rigidbody.isKinematic)
                 {
-                    Vector3 velocity = rigidbody.velocity, angularVelocity = rigidbody.angularVelocity;
+                    Vector3 velocity = rigidbody.linearVelocity, angularVelocity = rigidbody.angularVelocity;
 
                     portal.ModifyVector(ref velocity);
                     portal.ModifyVector(ref angularVelocity);
 
-                    rigidbody.velocity = velocity;
+                    rigidbody.linearVelocity = velocity;
                     rigidbody.angularVelocity = angularVelocity;
                 }
             }

@@ -1,10 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering;
-using VRPortalToolkit.Rendering.Universal;
+using UnityEngine.Rendering.Universal;
 using VRPortalToolkit.Rendering;
+using VRPortalToolkit.Rendering.Universal;
 using VRPortalToolkit.Utilities;
 
 namespace VRPortalToolkit.Rendering
@@ -50,6 +51,7 @@ namespace VRPortalToolkit.Rendering
         }
 
         /// <inheritdoc/>
+        [Obsolete]
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             //RenderTextureDescriptor descriptor = new RenderTextureDescriptor(cameraTextureDescriptor.width, cameraTextureDescriptor.height, RenderTextureFormat.ARGB32, 32);

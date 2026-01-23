@@ -39,8 +39,8 @@ namespace VRPortalToolkit.Cloning
             {
                 clone.isKinematic = original.isKinematic;
                 clone.mass = original.mass;
-                clone.drag = original.drag;
-                clone.angularDrag = original.angularDrag;
+                clone.linearDamping = original.linearDamping;
+                clone.angularDamping = original.angularDamping;
                 clone.useGravity = original.useGravity;
                 clone.interpolation = original.interpolation;
                 clone.collisionDetectionMode = original.collisionDetectionMode;
@@ -59,7 +59,7 @@ namespace VRPortalToolkit.Cloning
                 }
                 else
                 {
-                    Vector3 velocity = original.velocity, angularVelocity = original.angularVelocity;
+                    Vector3 velocity = original.linearVelocity, angularVelocity = original.angularVelocity;
 
                     for (int i = 0; i < cloneInfo.PortalCount; i++)
                     {
@@ -76,7 +76,7 @@ namespace VRPortalToolkit.Cloning
                     clone.MovePosition(localToWorld.GetColumn(3));
                     clone.MoveRotation(localToWorld.rotation);
 
-                    clone.velocity = velocity;
+                    clone.linearVelocity = velocity;
                     clone.angularVelocity = angularVelocity;
                 }
 

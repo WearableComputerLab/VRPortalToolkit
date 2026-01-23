@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.XR;
 using VRPortalToolkit.Data;
 
 namespace VRPortalToolkit.Rendering.Universal
@@ -39,18 +40,6 @@ namespace VRPortalToolkit.Rendering.Universal
             set => _algorithm = value;
         }
 
-        /// <summary>
-        /// Defines the algorithm used for portal rendering traversal.
-        /// </summary>
-        public enum PortalAlgorithm
-        {
-            /// <summary>Uses breadth-first traversal for portal rendering.</summary>
-            BreadthFirst = 0,
-            
-            /// <summary>Uses predictive traversal for portal rendering with prioritization.</summary>
-            Predictive = 1
-        }
-
         [Tooltip("The layer mask for opaque objects.")]
         [Header("Filtering"), SerializeField] private LayerMask _opaqueLayerMask = -1;
         /// <summary>
@@ -72,24 +61,6 @@ namespace VRPortalToolkit.Rendering.Universal
         }
 
         private bool _isDirty = false;
-
-        /// <summary>
-        /// The rendering mode to use for portals.
-        /// </summary>
-        public enum RenderMode
-        {
-            /// <summary>Uses render textures for portal rendering.</summary>
-            RenderTexture = 0,
-            
-            /// <summary>Uses stencil buffer before opaque objects for portal rendering (better for shadows).</summary>
-            StencilEarly = 1,
-            
-            /// <summary>Uses stencil buffer before transparent objects for portal rendering (less overdraw).</summary>
-            Stencil = 2,
-            
-            /// <summary>Uses stencil buffer after transparent objects for portal rendering.</summary>
-            StencilLate = 3
-        }
 
         [Tooltip("The minimum portal recursion depth.")]
         [Header("Scene Settings"), SerializeField] private int _minDepth = 1;
@@ -438,7 +409,7 @@ namespace VRPortalToolkit.Rendering.Universal
             renderCamera.clearFlags = camera.clearFlags;
             renderCamera.targetTexture = null;
 
-            if (renderingData.cameraData.xrRendering && XRGraphics.stereoRenderingMode != XRGraphics.StereoRenderingMode.MultiPass)
+            if (renderingData.cameraData.xrRendering && XRSettings.stereoRenderingMode != XRSettings.StereoRenderingMode.MultiPass)
             {
                 camera.TryGetCullingParameters(true, out var cullingParameters);
                 renderCamera.projectionMatrix = cullingParameters.stereoProjectionMatrix;
@@ -450,7 +421,7 @@ namespace VRPortalToolkit.Rendering.Universal
                 renderCamera.projectionMatrix = renderingData.cameraData.GetProjectionMatrix(0);
             }
 
-            if (renderingData.cameraData.xrRendering && XRGraphics.stereoRenderingMode == XRGraphics.StereoRenderingMode.MultiPass)
+            if (renderingData.cameraData.xrRendering && XRSettings.stereoRenderingMode == XRSettings.StereoRenderingMode.MultiPass)
             {
                 if (renderingData.cameraData.GetProjectionMatrix().m02 <= 0f)
                     FrameBuffer.SetCurrent(camera, Camera.MonoOrStereoscopicEye.Left);
@@ -490,7 +461,7 @@ namespace VRPortalToolkit.Rendering.Universal
 
             if (_algorithm == PortalAlgorithm.BreadthFirst)
             {
-                if (renderingData.cameraData.xrRendering && XRGraphics.stereoRenderingMode != XRGraphics.StereoRenderingMode.MultiPass)
+                if (renderingData.cameraData.xrRendering && XRSettings.stereoRenderingMode != XRSettings.StereoRenderingMode.MultiPass)
                     rootPassNode.renderNode = PortalAlgorithms.GetStereoTree(camera, camera.transform.localToWorldMatrix, renderCamera.worldToCameraMatrix, renderCamera.projectionMatrix, renderCamera.cullingMask, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0),
                         renderingData.cameraData.GetViewMatrix(1), renderingData.cameraData.GetProjectionMatrix(1), minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers());
                 else
@@ -502,7 +473,7 @@ namespace VRPortalToolkit.Rendering.Universal
                 // Also, might be better to use a rect, instead of a position
                 Vector2? focus = null;//new Vector2(0.5f, 0.5f);
 
-                if (renderingData.cameraData.xrRendering && XRGraphics.stereoRenderingMode != XRGraphics.StereoRenderingMode.MultiPass)
+                if (renderingData.cameraData.xrRendering && XRSettings.stereoRenderingMode != XRSettings.StereoRenderingMode.MultiPass)
                     rootPassNode.renderNode = PortalAlgorithms.GetPredictiveStereoTree(camera, camera.transform.localToWorldMatrix, renderCamera.worldToCameraMatrix, renderCamera.projectionMatrix, renderCamera.cullingMask, renderingData.cameraData.GetViewMatrix(0), renderingData.cameraData.GetProjectionMatrix(0),
                         renderingData.cameraData.GetViewMatrix(1), renderingData.cameraData.GetProjectionMatrix(1), minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers(), focus);
                 else
@@ -646,7 +617,6 @@ namespace VRPortalToolkit.Rendering.Universal
 
             return null;
         }
-
 
         private static PortalRenderNode GetOrAddChild(PortalRenderNode parent, IPortalRenderer renderer)
         {

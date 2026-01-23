@@ -217,7 +217,7 @@ namespace VRPortalToolkit.Portables
 
                 if (rigidbody)
                 {
-                    _rigidbody.velocity = portal.ModifyVector(_rigidbody.velocity);
+                    _rigidbody.linearVelocity = portal.ModifyVector(_rigidbody.linearVelocity);
                     _rigidbody.angularVelocity = portal.ModifyVector(_rigidbody.angularVelocity);
                 }
             }

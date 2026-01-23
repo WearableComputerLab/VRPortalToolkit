@@ -223,7 +223,7 @@ namespace VRPortalToolkit
 
                 if (rigidbody && !rigidbody.isKinematic)
                 {
-                    rigidbody.velocity = this.ModifyVector(rigidbody.velocity);
+                    rigidbody.linearVelocity = this.ModifyVector(rigidbody.linearVelocity);
                     rigidbody.angularVelocity = this.ModifyVector(rigidbody.angularVelocity);
                 }
             }

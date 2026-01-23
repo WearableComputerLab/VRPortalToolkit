@@ -32,6 +32,8 @@ namespace VRPortalToolkit.Rendering.Universal
 
             if (forwardLights == null) forwardLights = new ForwardLights();
         }
+
+        [Obsolete]
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             if (PortalPassStack.Current != null && PortalPassStack.Current.colorTexture)

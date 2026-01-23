@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -30,6 +31,7 @@ namespace VRPortalToolkit.Rendering.Universal
         }
 
         /// <inheritdoc/>
+        [Obsolete]
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             if (resolution > 0)
@@ -48,6 +50,7 @@ namespace VRPortalToolkit.Rendering.Universal
         }
 
         /// <inheritdoc/>
+        [Obsolete]
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (FrameBuffer.current == null)

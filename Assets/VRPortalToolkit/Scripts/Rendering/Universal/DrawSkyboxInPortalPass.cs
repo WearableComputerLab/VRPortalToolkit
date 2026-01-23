@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.XR;
 
 namespace VRPortalToolkit.Rendering.Universal
 {
@@ -37,7 +38,7 @@ namespace VRPortalToolkit.Rendering.Universal
                 if (renderingData.cameraData.xrRendering)
                 {
                     // Setup Legacy XR buffer states
-                    if (XRGraphics.stereoRenderingMode != XRGraphics.StereoRenderingMode.MultiPass)
+                    if (XRSettings.stereoRenderingMode != XRSettings.StereoRenderingMode.MultiPass)
                     {
                         // TODO: Doesnt work for stencils
 

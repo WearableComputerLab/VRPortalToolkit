@@ -490,12 +490,12 @@ namespace VRPortalToolkit.XRI
 
             // Do velocity tracking
             // Scale initialized velocity by prediction factor
-            _rigidbody.velocity *= (1f - velocityDamping);
+            _rigidbody.linearVelocity *= (1f - velocityDamping);
             var positionDelta = attachPointCompatibilityMode == AttachPointCompatibilityMode.Default
                 ? targetPose.position - transform.position
                 : targetPose.position - _rigidbody.worldCenterOfMass;
             var velocity = positionDelta / deltaTime;
-            _rigidbody.velocity += (velocity * velocityScale);
+            _rigidbody.linearVelocity += (velocity * velocityScale);
 
             // Do angular velocity tracking
             // Scale initialized velocity by prediction factor

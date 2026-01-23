@@ -236,7 +236,7 @@ namespace VRPortalToolkit
             {
                 //Matrix4x4 localToWorld = Matrix4x4.TRS(rigidbody.transform.position, rigidbody.transform.rotation, rigidbody.transform.localScale);
                 Matrix4x4 localToWorld = Matrix4x4.TRS(rigidbody.position, rigidbody.rotation, rigidbody.transform.localScale);
-                Vector3 velocity = rigidbody.velocity, angularVelocity = rigidbody.angularVelocity;
+                Vector3 velocity = rigidbody.linearVelocity, angularVelocity = rigidbody.angularVelocity;
 
                 foreach (TPortal portal in portals)
                 {
@@ -258,7 +258,7 @@ namespace VRPortalToolkit
 
                 if (!rigidbody.isKinematic)
                 {
-                    rigidbody.velocity = velocity;
+                    rigidbody.linearVelocity = velocity;
                     rigidbody.angularVelocity = angularVelocity;
                 }
             }
