@@ -75,6 +75,32 @@ namespace VRPortalToolkit.Rendering
         /// <inheritdoc/>
         public void RenderDefault(PortalRenderNode renderNode, CommandBuffer commandBuffer) { } // Intentionally blank
 
+
+        /// <inheritdoc/>
+        public void Render(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer, Material material, MaterialPropertyBlock properties = null)
+        {
+            if (renderNode.depth > 1 || transition == null) return;
+
+            transition.GetTransitionPlane(out Vector3 centre, out Vector3 normal);
+
+            if (!renderNode.isStereo)
+            {
+                if (TryGetMesh(centre, normal, renderNode.parent.worldToCameraMatrix, renderNode.parent.projectionMatrix, ref _meshes[0]))
+                    commandBuffer.DrawMesh(_meshes[0], Matrix4x4.identity, material, 0, -1, properties);
+            }
+            else
+            {
+                if (TryGetMesh(centre, normal, renderNode.parent.GetStereoViewMatrix(0), renderNode.parent.GetStereoProjectionMatrix(0), ref _meshes[0]))
+                    commandBuffer.DrawMesh(_meshes[0], Matrix4x4.identity, material, 0, -1, properties);
+
+                if (TryGetMesh(centre, normal, renderNode.parent.GetStereoViewMatrix(1), renderNode.parent.GetStereoProjectionMatrix(1), ref _meshes[1]))
+                    commandBuffer.DrawMesh(_meshes[1], Matrix4x4.identity, material, 0, -1, properties);
+            }
+        }
+
+        /// <inheritdoc/>
+        public void RenderDefault(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer) { } // Intentionally blank
+        
         /// <inheritdoc/>
         public void PostRender(PortalRenderNode renderNode) { }
 

@@ -53,6 +53,12 @@ namespace VRPortalToolkit.Rendering
 
         /// <inheritdoc/>
         public abstract void RenderDefault(PortalRenderNode renderNode, CommandBuffer commandBuffer);
+        
+        /// <inheritdoc/>
+        public abstract void Render(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer, Material material, MaterialPropertyBlock properties = null);
+
+        /// <inheritdoc/>
+        public abstract void RenderDefault(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer);
 
         /// <inheritdoc/>
         public virtual void PostRender(PortalRenderNode renderNode) {}

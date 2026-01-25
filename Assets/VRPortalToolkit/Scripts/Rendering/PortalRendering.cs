@@ -146,6 +146,22 @@ namespace VRPortalToolkit.Rendering
         void RenderDefault(PortalRenderNode renderNode, CommandBuffer commandBuffer);
 
         /// <summary>
+        /// Renders the portal using the specified material.
+        /// </summary>
+        /// <param name="renderNode">The current render node.</param>
+        /// <param name="commandBuffer">The command buffer to render into.</param>
+        /// <param name="material">The material to use for rendering.</param>
+        /// <param name="properties">Optional material property block to use.</param>
+        void Render(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer, Material material, MaterialPropertyBlock properties = null);
+
+        /// <summary>
+        /// Renders the portal using its default rendering method.
+        /// </summary>
+        /// <param name="renderNode">The current render node.</param>
+        /// <param name="commandBuffer">The command buffer to render into.</param>
+        void RenderDefault(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer);
+
+        /// <summary>
         /// Called after the portal is rendered.
         /// </summary>
         /// <param name="renderNode">The current render node.</param>

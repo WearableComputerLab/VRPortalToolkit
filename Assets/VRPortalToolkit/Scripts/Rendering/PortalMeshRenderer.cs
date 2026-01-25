@@ -213,6 +213,29 @@ namespace VRPortalToolkit.Rendering
         }
 
         /// <inheritdoc/>
+        public override void Render(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer, Material material, MaterialPropertyBlock properties = null)
+        {
+            if (isActiveAndEnabled)
+            {
+                commandBuffer.SetGlobalInt(PropertyID.PortalCullMode, (int)_cullMode);
+                Matrix4x4 localToWorld = transform.localToWorldMatrix;
+
+                // TODO: flip if required
+
+                if (filter && _filter.sharedMesh)
+                    for (int i = 0; i < _filter.sharedMesh.subMeshCount; i++)
+                        commandBuffer.DrawMesh(_filter.sharedMesh, localToWorld, material, i, -1, properties);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void RenderDefault(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer)
+        {
+            if (isActiveAndEnabled && defaultMaterial)
+                Render(renderNode, commandBuffer, defaultMaterial);
+        }
+
+        /// <inheritdoc/>
         public override void PostRender(PortalRenderNode renderNode)
         {
             postRender?.Invoke(renderNode);

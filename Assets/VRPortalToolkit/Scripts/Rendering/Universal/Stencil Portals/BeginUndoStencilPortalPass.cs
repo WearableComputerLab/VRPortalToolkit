@@ -46,7 +46,7 @@ namespace VRPortalToolkit.Rendering.Universal
         {
             if (passNode == null || passNode.renderNode == null || passNode.renderNode.parent == null)
             {
-                Debug.LogError(nameof(BeginStencilPortalPass) + "' passGroup is invalid!");
+                Debug.LogError(nameof(IncreaseStencilPortalsPass) + "' passGroup is invalid!");
                 return;
             }
 

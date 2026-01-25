@@ -2,7 +2,9 @@ using Misc;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using VRPortalToolkit.Data;
 using VRPortalToolkit.Utilities;
 
@@ -12,8 +14,8 @@ namespace VRPortalToolkit.Rendering
 
     public sealed class PortalRenderNode : IEnumerable<PortalRenderNode>, IDisposable
     {
-        private static ObjectPool<PortalRenderNode> _nodePool = new ObjectPool<PortalRenderNode>(() => new PortalRenderNode(false));
-        private static ObjectPool<PortalRenderNode> _stereoNodePool = new ObjectPool<PortalRenderNode>(() => new PortalRenderNode(true));
+        private static Misc.ObjectPool<PortalRenderNode> _nodePool = new Misc.ObjectPool<PortalRenderNode>(() => new PortalRenderNode(false));
+        private static Misc.ObjectPool<PortalRenderNode> _stereoNodePool = new Misc.ObjectPool<PortalRenderNode>(() => new PortalRenderNode(true));
 
         public static PortalRenderNode Get(Camera camera)
         {
@@ -611,6 +613,28 @@ namespace VRPortalToolkit.Rendering
                     _projectionMatrices[0] = CameraUtility.CalculateScissorMatrix(_projectionMatrices[0], rect);
                     _projectionMatrices[1] = CameraUtility.CalculateScissorMatrix(_projectionMatrices[1], rect);
                 }
+            }
+        }
+
+        public void SetViewAndProjectionMatrices(CommandBuffer cmd)
+        {
+            cmd.SetViewProjectionMatrices(worldToCameraMatrix, projectionMatrix);
+
+            if (isStereo)
+            {
+                cmd.SetStereoViewProjectionMatrices(GetStereoViewMatrix(0), GetStereoProjectionMatrix(0),
+                    GetStereoViewMatrix(1), GetStereoProjectionMatrix(1));
+            }
+        }
+
+        public void SetViewAndProjectionMatrices(RasterCommandBuffer cmd)
+        {
+            cmd.SetViewProjectionMatrices(worldToCameraMatrix, projectionMatrix);
+
+            if (isStereo)
+            {
+                cmd.SetStereoViewProjectionMatrices(GetStereoViewMatrix(0), GetStereoProjectionMatrix(0),
+                    GetStereoViewMatrix(1), GetStereoProjectionMatrix(1));
             }
         }
     }

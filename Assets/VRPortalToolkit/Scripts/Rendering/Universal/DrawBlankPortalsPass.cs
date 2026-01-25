@@ -1,9 +1,8 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.UIElements;
 using VRPortalToolkit.Data;
 
 namespace VRPortalToolkit.Rendering.Universal
@@ -11,7 +10,7 @@ namespace VRPortalToolkit.Rendering.Universal
     /// <summary>
     /// Render pass that draws blank or placeholder portals when a portal is invalid or render limit is reached.
     /// </summary>
-    public class DrawBlankPortalsPass : PortalRenderPass
+    public class DrawBlankPortalsPass : ScriptableRenderPass
     {
         private static MaterialPropertyBlock propertyBlock;
 
@@ -24,71 +23,76 @@ namespace VRPortalToolkit.Rendering.Universal
         /// Initializes a new instance of the DrawBlankPortalsPass class.
         /// </summary>
         /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
-        public DrawBlankPortalsPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent)
+        public DrawBlankPortalsPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingSkybox) : base()
         {
+            this.renderPassEvent = renderPassEvent;
             if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
         }
 
-        /// <inheritdoc/>
-        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+        private class PassData
         {
-            CommandBuffer cmd = CommandBufferPool.Get();
+            public Material material;
+            public UniversalCameraData cameraData;
+        }
 
-            //using (new ProfilingScope(cmd, profilingSampler))
+        static void ExecutePass(PassData data, RasterGraphContext context)
+        {
+            PortalRenderNode parentNode = PortalRenderStack.Current;
+
+            RawColorHistory history = data.cameraData.historyManager.GetHistoryForRead<RawColorHistory>();
+            RTHandle historyTexture = history?.GetPreviousTexture(0); // 0 gets the immediately previous frame
+
+            bool hasFrameBuffer = FrameBuffer.current != null && historyTexture != null;
+
+            //context.cmd.SetGlobalInt(PropertyID.PortalStencilRef, PortalPassStack.Current.stateBlock.stencilReference);
+            if (hasFrameBuffer) propertyBlock.SetTexture(PropertyID.MainTex, historyTexture);
+
+            foreach (PortalRenderNode renderNode in parentNode.children)
             {
-                PortalRenderNode parentNode = PortalPassStack.Current.renderNode;
-
-                bool hasFrameBuffer = FrameBuffer.current != null && FrameBuffer.current.texture;
-
-                PortalPassStack.Current.SetViewAndProjectionMatrices(cmd);
-
-                cmd.SetGlobalInt(PropertyID.PortalStencilRef, PortalPassStack.Current.stateBlock.stencilReference);
-                if (hasFrameBuffer) propertyBlock.SetTexture(PropertyID.MainTex, FrameBuffer.current.texture);
-
-                foreach (PortalRenderNode renderNode in parentNode.children)
+                if (!renderNode.isValid)
                 {
-                    if (!renderNode.isValid)
+                    if (hasFrameBuffer && TryFindAncestorNode(renderNode, FrameBuffer.current.rootNode, out PortalRenderNode originalNode))
                     {
-                        if (hasFrameBuffer && TryFindAncestorNode(renderNode, FrameBuffer.current.rootNode, out PortalRenderNode originalNode))
+                        Material material = renderNode.overrides.portalStereo ? renderNode.overrides.portalStereo : data.material;
+
+                        if (renderNode.isStereo)
                         {
-                            Material material = renderNode.overrides.portalStereo ? renderNode.overrides.portalStereo : this.material;
-
-                            if (renderNode.isStereo)
-                            {
-                                UpdateScaleAndTranslation(GetWindow(parentNode.GetStereoViewMatrix(0), parentNode.GetStereoProjectionMatrix(0), renderNode),
-                                    originalNode.GetStereoWindow(0), PropertyID.MainTex_ST);
-                                UpdateScaleAndTranslation(GetWindow(parentNode.GetStereoViewMatrix(1), parentNode.GetStereoProjectionMatrix(1), renderNode),
-                                    originalNode.GetStereoWindow(1), PropertyID.MainTex_ST_2);
-                            }
-                            else
-                                UpdateScaleAndTranslation(GetWindow(parentNode.worldToCameraMatrix, parentNode.projectionMatrix, renderNode),
-                                    originalNode.window, PropertyID.MainTex_ST);
-
-                            // This is the old way, that didnt take perspective into account
-
-                            //if (renderNode.isStereo)
-                            //{
-                            //    UpdateScaleAndTranslation(renderNode.GetStereoWindow(0), originalNext.parent.GetStereoWindow(0), feature.portalStereo, PropertyID.MainTex_ST);
-                            //    UpdateScaleAndTranslation(renderNode.GetStereoWindow(1), originalNext.parent.GetStereoWindow(1), feature.portalStereo, PropertyID.MainTex_ST_2);
-                            //}
-                            //else
-                            //    UpdateScaleAndTranslation(renderNode.window, originalNext.parent.window, feature.portalStereo, PropertyID.MainTex_ST);
-
-                            foreach (IPortalRenderer renderer in renderNode.renderers)
-                                renderer.Render(renderNode, cmd, material, propertyBlock);
+                            UpdateScaleAndTranslation(GetWindow(parentNode.GetStereoViewMatrix(0), parentNode.GetStereoProjectionMatrix(0), renderNode),
+                                originalNode.GetStereoWindow(0), PropertyID.MainTex_ST);
+                            UpdateScaleAndTranslation(GetWindow(parentNode.GetStereoViewMatrix(1), parentNode.GetStereoProjectionMatrix(1), renderNode),
+                                originalNode.GetStereoWindow(1), PropertyID.MainTex_ST_2);
                         }
                         else
-                        {
-                            foreach (IPortalRenderer renderer in renderNode.renderers)
-                                renderer.RenderDefault(renderNode, cmd);
-                        }
+                            UpdateScaleAndTranslation(GetWindow(parentNode.worldToCameraMatrix, parentNode.projectionMatrix, renderNode),
+                                originalNode.window, PropertyID.MainTex_ST);
+
+                        foreach (IPortalRenderer renderer in renderNode.renderers)
+                            renderer.Render(renderNode, context.cmd, material, propertyBlock);
+                    }
+                    else
+                    {
+                        foreach (IPortalRenderer renderer in renderNode.renderers)
+                            renderer.RenderDefault(renderNode, context.cmd);
                     }
                 }
-
-                context.ExecuteCommandBuffer(cmd);
             }
+        }
 
-            CommandBufferPool.Release(cmd);
+        public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+        {
+            const string passName = "Draw Blank Portals Pass";
+
+            // This adds a raster render pass to the graph, specifying the name and the data type that will be passed to the ExecutePass function.
+            using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData))
+            {
+                passData.material = material;
+                UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
+                passData.cameraData = frameData.Get<UniversalCameraData>();
+
+                builder.AllowGlobalStateModification(true);
+                builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
+            }
         }
 
         /// <summary>
@@ -123,7 +127,7 @@ namespace VRPortalToolkit.Rendering.Universal
         /// <param name="root">The root node to start searching from.</param>
         /// <param name="nextNode">The output ancestor node if found.</param>
         /// <returns>True if an ancestor node was found, false otherwise.</returns>
-        protected virtual bool TryFindAncestorNode(PortalRenderNode target, PortalRenderNode root, out PortalRenderNode nextNode)
+        private static bool TryFindAncestorNode(PortalRenderNode target, PortalRenderNode root, out PortalRenderNode nextNode)
         {
             PortalRenderNode current = root;
             PortalRenderNode lastValid = null;
@@ -153,7 +157,7 @@ namespace VRPortalToolkit.Rendering.Universal
             return nextNode != null;
         }
 
-        private bool TryGetChildWithPortal(PortalRenderNode parent, IPortal portal, out PortalRenderNode child)
+        private static bool TryGetChildWithPortal(PortalRenderNode parent, IPortal portal, out PortalRenderNode child)
         {
             if (parent != null)
             {
@@ -171,7 +175,7 @@ namespace VRPortalToolkit.Rendering.Universal
             return false;
         }
 
-        private IEnumerable<PortalRenderNode> GetPath(PortalRenderNode node)
+        private static IEnumerable<PortalRenderNode> GetPath(PortalRenderNode node)
         {
             if (node != null && node.parent != null)
             {
@@ -183,7 +187,7 @@ namespace VRPortalToolkit.Rendering.Universal
         }
 
         // Assumes view and proj are from the parent, not the node
-        private ViewWindow GetWindow(Matrix4x4 view, Matrix4x4 proj, PortalRenderNode node)
+        private static ViewWindow GetWindow(Matrix4x4 view, Matrix4x4 proj, PortalRenderNode node)
         {
             if (node.portal.connected != null)
             {
@@ -199,7 +203,7 @@ namespace VRPortalToolkit.Rendering.Universal
             return default;
         }
 
-        private IEnumerable<PortalRenderNode> GetLoop(PortalRenderNode current, IPortal portal)
+        private static IEnumerable<PortalRenderNode> GetLoop(PortalRenderNode current, IPortal portal)
         {
             if (current != null && current.parent != null && current.parent.parent != null)
             {

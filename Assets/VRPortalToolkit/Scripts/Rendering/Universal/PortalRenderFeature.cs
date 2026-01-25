@@ -283,20 +283,20 @@ namespace VRPortalToolkit.Rendering.Universal
             /// <summary>
             /// The pass that begins rendering a stencil portal.
             /// </summary>
-            public BeginStencilPortalPass beginRenderPass { get; }
+            public IncreaseStencilPortalsPass beginRenderPass { get; }
             
             /// <summary>
             /// The pass that completes rendering a stencil portal.
             /// </summary>
-            public CompleteStencilPortalPass completeRenderPass { get; }
+            public DecreaseStencilPortalsPass completeRenderPass { get; }
 
             /// <summary>
             /// Creates a new instance of the PortalStencilPasses class.
             /// </summary>
             public PortalStencilPasses() : base()
             {
-                beginRenderPass = new BeginStencilPortalPass();
-                completeRenderPass = new CompleteStencilPortalPass();
+                beginRenderPass = new IncreaseStencilPortalsPass();
+                completeRenderPass = new DecreaseStencilPortalsPass();
             }
         }
 
@@ -368,7 +368,7 @@ namespace VRPortalToolkit.Rendering.Universal
             PortalPassGroupPool.Release(rootPassNode);
             rootPassNode = PortalPassGroupPool.Get();
 
-            beginPass = new BeginPortalPass() { portalPassNode = rootPassNode };
+            beginPass = new BeginPortalPass();// { portalPassNode = rootPassNode };
             drawOpaquesPass = new DrawObjectsInPortalPass();
             drawTransparentsPass = new DrawObjectsInPortalPass();
             drawSkyBoxPass = new DrawSkyboxInPortalPass();

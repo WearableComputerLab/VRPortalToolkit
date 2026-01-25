@@ -6,6 +6,7 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering;
 using VRPortalToolkit.Rendering.Universal;
 using VRPortalToolkit.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 
 namespace VRPortalToolkit
 {
@@ -15,21 +16,20 @@ namespace VRPortalToolkit
     public class BeginPortalPass : PortalRenderPass
     {
         /// <summary>
-        /// The portal pass node associated with this pass.
-        /// </summary>
-        public PortalPassNode portalPassNode { get; set; }
-
-        /// <summary>
         /// Initializes a new instance of the BeginPortalPass class.
         /// </summary>
         /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
-        public BeginPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques) : base(renderPassEvent) { }
-
-        /// <inheritdoc/>
-        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+        public BeginPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRendering) : base()
         {
-            PortalPassStack.Clear();
-            PortalPassStack.Push(portalPassNode);
+            this.renderPassEvent = renderPassEvent;
+        }
+
+        public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+        {
+            PortalRendering.onPreRender?.Invoke(PortalRenderStack.Current);
+
+            foreach (var renderer in PortalRenderStack.Current.renderers)
+                renderer?.PreCull(PortalRenderStack.Current);
         }
     }
 }

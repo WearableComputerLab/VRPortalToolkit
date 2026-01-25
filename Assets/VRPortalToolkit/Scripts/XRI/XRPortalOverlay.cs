@@ -372,6 +372,23 @@ namespace VRPortalToolkit.XRI
             }
         }
 
+        /// <inheritdoc/>
+        public override void RenderDefault(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer)
+        {
+            // Do not render default overlays
+            return;
+        }
+
+        /// <inheritdoc/>
+        public override void Render(PortalRenderNode renderNode, RasterCommandBuffer commandBuffer, Material material, MaterialPropertyBlock properties = null)
+        {
+            if (isActiveAndEnabled)
+            {
+                commandBuffer.DrawMesh(_transition == Transition.Circle ? GetCircleMesh() : GetSquareMesh(),
+                    GetTransitionLocalToWorld(renderNode.camera), material, 0, 0, properties);
+            }
+        }
+
         private Matrix4x4 GetTransitionLocalToWorld(Camera camera)
         {
             Vector3 originPosition = _origin ? _origin.position : transform.position;

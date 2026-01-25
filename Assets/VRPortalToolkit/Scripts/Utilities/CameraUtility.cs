@@ -414,5 +414,83 @@ namespace VRPortalToolkit.Utilities
         };
 
         private static Vector4[] stereoEyeIndices = new Vector4[2] { Vector4.zero, Vector4.one };
+
+        /// <summary>
+        /// Sets stereo view and projection matrices in a command buffer.
+        /// </summary>
+        /// <param name="commandBuffer">The command buffer to set the matrices in.</param>
+        /// <param name="leftView">The left eye view matrix.</param>
+        /// <param name="leftProj">The left eye projection matrix.</param>
+        /// <param name="rightView">The right eye view matrix.</param>
+        /// <param name="rightProj">The right eye projection matrix.</param>
+        public static void SetStereoViewProjectionMatrices(this RasterCommandBuffer commandBuffer, Matrix4x4 leftView, Matrix4x4 leftProj, Matrix4x4 rightView, Matrix4x4 rightProj)
+        {
+            if (stereoConstraints == null) stereoConstraints = new StereoConstants();
+
+            stereoConstraints.viewMatrix[0] = leftView;
+            stereoConstraints.projMatrix[0] = leftProj;
+            stereoConstraints.viewMatrix[1] = rightView;
+            stereoConstraints.projMatrix[1] = rightProj;
+
+            for (int i = 0; i < 2; i++)
+            {
+                stereoConstraints.gpuProjectionMatrix[i] = GL.GetGPUProjectionMatrix(stereoConstraints.projMatrix[i], true);
+                stereoConstraints.viewProjMatrix[i] = stereoConstraints.gpuProjectionMatrix[i] * stereoConstraints.viewMatrix[i];
+                stereoConstraints.invViewMatrix[i] = Matrix4x4.Inverse(stereoConstraints.viewMatrix[i]);
+                stereoConstraints.invGpuProjMatrix[i] = Matrix4x4.Inverse(stereoConstraints.gpuProjectionMatrix[i]);
+                stereoConstraints.invViewProjMatrix[i] = Matrix4x4.Inverse(stereoConstraints.viewProjMatrix[i]);
+                stereoConstraints.invProjMatrix[i] = Matrix4x4.Inverse(stereoConstraints.projMatrix[i]);
+                stereoConstraints.worldSpaceCameraPos[i] = stereoConstraints.invViewMatrix[i].GetColumn(3);
+            }
+
+            commandBuffer.SetGlobalMatrixArray(UNITY_STEREO_MATRIX_V, stereoConstraints.viewMatrix);
+            commandBuffer.SetGlobalMatrixArray(UNITY_STEREO_MATRIX_P, stereoConstraints.gpuProjectionMatrix);
+            commandBuffer.SetGlobalMatrixArray(UNITY_STEREO_MATRIX_VP, stereoConstraints.viewProjMatrix);
+
+            commandBuffer.SetGlobalMatrixArray(UNITY_STEREO_CAMERA_PROJECTION, stereoConstraints.projMatrix);
+
+            commandBuffer.SetGlobalMatrixArray(UNITY_STEREO_MATRIX_IV, stereoConstraints.invViewMatrix);
+            commandBuffer.SetGlobalMatrixArray(UNITY_STEREO_MATRIX_IP, stereoConstraints.invGpuProjMatrix);
+            commandBuffer.SetGlobalMatrixArray(UNITY_STEREO_MATRIX_IVP, stereoConstraints.invViewProjMatrix);
+
+            commandBuffer.SetGlobalMatrixArray(UNITY_STEREO_CAMERA_INV_PROJECTION, stereoConstraints.invProjMatrix);
+
+            commandBuffer.SetGlobalVectorArray(UNITY_STEREO_VECTOR_CAMPOS, stereoConstraints.worldSpaceCameraPos);
+        }
+
+        /// <summary>
+        /// Enables single-pass stereo rendering in a command buffer.
+        /// </summary>
+        /// <param name="cmd">The command buffer to enable single-pass in.</param>
+        public static void StartSinglePass(RasterCommandBuffer cmd)
+        {
+            if (SystemInfo.supportsMultiview)
+            {
+                cmd.EnableShaderKeyword("STEREO_MULTIVIEW_ON");
+                cmd.SetGlobalVectorArray("unity_StereoEyeIndices", stereoEyeIndices);
+            }
+            else
+            {
+                cmd.EnableShaderKeyword("STEREO_INSTANCING_ON");
+                cmd.SetInstanceMultiplier(2);
+            }
+        }
+
+        /// <summary>
+        /// Disables single-pass stereo rendering in a command buffer.
+        /// </summary>
+        /// <param name="cmd">The command buffer to disable single-pass in.</param>
+        public static void StopSinglePass(RasterCommandBuffer cmd)
+        {
+            if (SystemInfo.supportsMultiview)
+            {
+                cmd.DisableShaderKeyword("STEREO_MULTIVIEW_ON");
+            }
+            else
+            {
+                cmd.DisableShaderKeyword("STEREO_INSTANCING_ON");
+                cmd.SetInstanceMultiplier(1);
+            }
+        }
     }
 }

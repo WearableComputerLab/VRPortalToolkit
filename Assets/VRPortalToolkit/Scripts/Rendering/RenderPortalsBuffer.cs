@@ -13,7 +13,7 @@ namespace VRPortalToolkit
     {
         private static ObjectPool<RenderPortalsBuffer> _pool = new ObjectPool<RenderPortalsBuffer>(() => new RenderPortalsBuffer());
 
-        private static Dictionary<PortalRenderNode, RenderPortalsBuffer> _bufferByCamera = new Dictionary<PortalRenderNode, RenderPortalsBuffer>();
+        private static Dictionary<PortalRenderNode, RenderPortalsBuffer> _bufferByNode = new Dictionary<PortalRenderNode, RenderPortalsBuffer>();
 
         private PortalRenderNode _renderNode;
         /// <summary>
@@ -38,9 +38,9 @@ namespace VRPortalToolkit
         {
             if (renderNode == null) return null;
 
-            if (!_bufferByCamera.TryGetValue(renderNode, out RenderPortalsBuffer buffer))
+            if (!_bufferByNode.TryGetValue(renderNode, out RenderPortalsBuffer buffer))
             {
-                _bufferByCamera[renderNode] = buffer = _pool.Get();
+                _bufferByNode[renderNode] = buffer = _pool.Get();
                 buffer._renderNode = renderNode;
             }
 
@@ -54,14 +54,14 @@ namespace VRPortalToolkit
         /// <param name="buffer">Output parameter for the found buffer.</param>
         /// <returns>True if a buffer was found, false otherwise.</returns>
         public static bool TryGetBuffer(PortalRenderNode renderNode, out RenderPortalsBuffer buffer)
-            => _bufferByCamera.TryGetValue(renderNode, out buffer);
+            => _bufferByNode.TryGetValue(renderNode, out buffer);
 
         /// <summary>
         /// Checks if a buffer exists for the specified render node.
         /// </summary>
         /// <param name="renderNode">The render node to check.</param>
         /// <returns>True if a buffer exists, false otherwise.</returns>
-        public static bool HasBuffer(PortalRenderNode renderNode) => _bufferByCamera.ContainsKey(renderNode);
+        public static bool HasBuffer(PortalRenderNode renderNode) => _bufferByNode.ContainsKey(renderNode);
         
         /// <summary>
         /// Clears and releases the buffer for the specified render node.
@@ -69,10 +69,10 @@ namespace VRPortalToolkit
         /// <param name="renderNode">The render node to clear the buffer for.</param>
         public static void ClearBuffer(PortalRenderNode renderNode)
         {
-            if (_bufferByCamera.TryGetValue(renderNode, out RenderPortalsBuffer buffer))
+            if (_bufferByNode.TryGetValue(renderNode, out RenderPortalsBuffer buffer))
             {
                 buffer.ClearTexture();
-                _bufferByCamera.Remove(renderNode);
+                _bufferByNode.Remove(renderNode);
                 _pool.Release(buffer);
             }
         }
@@ -82,13 +82,13 @@ namespace VRPortalToolkit
         /// </summary>
         public static void ClearBuffers()
         {
-            foreach (var pair in _bufferByCamera)
+            foreach (var pair in _bufferByNode)
             {
                 pair.Value.ClearTexture();
                 _pool.Release(pair.Value);
             }
 
-            _bufferByCamera.Clear();
+            _bufferByNode.Clear();
         }
 
         /// <summary>

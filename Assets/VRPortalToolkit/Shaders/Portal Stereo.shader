@@ -2,7 +2,7 @@ Shader "VRPortalToolkit/Portal Stereo"
 {
     Properties
     {
-        [MainTexture] _MainTex("Main Texture", 2DArray) = "white" {}
+        [MainTexture] _MainTex("Main Texture", any) = "white" {}
         [MainColor] _Color("Color", Color) = (1, 1, 1, 1)
 
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest("Z Test", Float) = 4
@@ -42,15 +42,19 @@ Shader "VRPortalToolkit/Portal Stereo"
 
               #include "UnityCG.cginc"
 
-              //uniform float4 _MainTex_ST;
-              //uniform float4 _MainTex_ST_2; // used for stereo
-
               float4 _Color;
 
+#if defined(STEREO_INSTANCING_ON) || defined(STEREO_MULTIVIEW_ON)
               UNITY_INSTANCING_BUFFER_START(Props)
                   UNITY_DEFINE_INSTANCED_PROP(float4, _MainTex_ST)
                   UNITY_DEFINE_INSTANCED_PROP(float4, _MainTex_ST_2)
               UNITY_INSTANCING_BUFFER_END(Props)
+
+              UNITY_DECLARE_TEX2DARRAY(_MainTex);
+#else
+              sampler2D _MainTex;
+              float4 _MainTex_ST;
+#endif
 
               struct appdata
               {
@@ -89,19 +93,20 @@ Shader "VRPortalToolkit/Portal Stereo"
                    return o;
               }
 
-              UNITY_DECLARE_TEX2DARRAY(_MainTex);
-
               fixed4 frag(v2f i) : SV_Target
               {
                    // Allow single pass instancing
                    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
                    float2 screenUV = i.screenPos.xy / i.screenPos.w;
-
-                   float4 st = _MainTex_ST_2 * unity_StereoEyeIndex + _MainTex_ST * (1 - unity_StereoEyeIndex);
                    
+#if defined(STEREO_INSTANCING_ON) || defined(STEREO_MULTIVIEW_ON)
+                   float4 st = _MainTex_ST_2 * unity_StereoEyeIndex + _MainTex_ST * (1 - unity_StereoEyeIndex);
                    return UNITY_SAMPLE_TEX2DARRAY(_MainTex, float3(tilingAndOffset(screenUV, st), unity_StereoEyeIndex)) * _Color.rgba;
-              }
+#else
+                   return tex2D(_MainTex, TRANSFORM_TEX(screenUV, _MainTex));
+#endif
+               }
               ENDCG
          }
     }

@@ -26,11 +26,11 @@ namespace VRPortalToolkit.Rendering
         /// </summary>
         public Camera camera => _camera;
 
-        private RenderTexture _texture;
-        /// <summary>
-        /// Gets the render texture used by this frame buffer.
-        /// </summary>
-        public RenderTexture texture => _texture;
+        //private RenderTexture _texture;
+        ///// <summary>
+        ///// Gets the render texture used by this frame buffer.
+        ///// </summary>
+        //public RenderTexture texture => _texture;
 
         private RenderTargetIdentifier _identifier;
         /// <summary>
@@ -152,7 +152,7 @@ namespace VRPortalToolkit.Rendering
 
             if (_bufferByCamera.TryGetValue(key, out FrameBuffer buffer))
             {
-                buffer.ClearTexture();
+                //buffer.ClearTexture();
                 buffer.rootNode = null;
                 _bufferByCamera.Remove(key);
             }
@@ -165,35 +165,35 @@ namespace VRPortalToolkit.Rendering
         {
             foreach (var pair in _bufferByCamera)
             {
-                pair.Value.ClearTexture();
+                //pair.Value.ClearTexture();
                 pair.Value.rootNode = null;
             }
 
             _bufferByCamera.Clear();
         }
 
-        /// <summary>
-        /// Updates the render texture for this frame buffer with the specified descriptor.
-        /// </summary>
-        /// <param name="descriptor">The descriptor for the new render texture.</param>
-        public void UpdateTexture(RenderTextureDescriptor descriptor)
-        {
-            ClearTexture();
-            _texture = RenderTexture.GetTemporary(descriptor);
-            _identifier = new RenderTargetIdentifier(_texture, 0, CubemapFace.Unknown, -1);
-        }
+        ///// <summary>
+        ///// Updates the render texture for this frame buffer with the specified descriptor.
+        ///// </summary>
+        ///// <param name="descriptor">The descriptor for the new render texture.</param>
+        //public void UpdateTexture(RenderTextureDescriptor descriptor)
+        //{
+        //    ClearTexture();
+        //    _texture = RenderTexture.GetTemporary(descriptor);
+        //    _identifier = new RenderTargetIdentifier(_texture, 0, CubemapFace.Unknown, -1);
+        //}
 
-        /// <summary>
-        /// Clears and releases the render texture used by this frame buffer.
-        /// </summary>
-        public void ClearTexture()
-        {
-            if (_texture != null)
-            {
-                RenderTexture.ReleaseTemporary(_texture);
-                _identifier = default(RenderTargetIdentifier);
-                _texture = null;
-            }
-        }
+        ///// <summary>
+        ///// Clears and releases the render texture used by this frame buffer.
+        ///// </summary>
+        //public void ClearTexture()
+        //{
+        //    if (_texture != null)
+        //    {
+        //        RenderTexture.ReleaseTemporary(_texture);
+        //        _identifier = default(RenderTargetIdentifier);
+        //        _texture = null;
+        //    }
+        //}
     }
 }
