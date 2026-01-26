@@ -64,7 +64,6 @@ namespace VRPortalToolkit.XRI
         protected readonly TriggerHandler<Camera> triggerHandler = new TriggerHandler<Camera>();
         protected readonly HashSet<Collider> _stayedColliders = new HashSet<Collider>();
         private IEnumerator _waitFixedUpdateLoop;
-        private bool _isPrimary = false;
 
         protected virtual void Awake()
         {

@@ -13,13 +13,15 @@ namespace VRPortalToolkit
     /// <summary>
     /// Render pass that begins the portal rendering process and initializes the portal pass stack.
     /// </summary>
-    public class BeginPortalPass : PortalRenderPass
+    public class PortalCameraSetupPass : PortalRenderPass
     {
+        public bool clearDepth { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the BeginPortalPass class.
         /// </summary>
         /// <param name="renderPassEvent">When this render pass should execute during rendering.</param>
-        public BeginPortalPass(RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRendering) : base()
+        public PortalCameraSetupPass(RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRendering) : base()
         {
             this.renderPassEvent = renderPassEvent;
         }
@@ -27,13 +29,13 @@ namespace VRPortalToolkit
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
             var cameraData = frameData.Get<UniversalCameraData>();
-            cameraData.clearDepth = false;
-            cameraData.renderType = CameraRenderType.Overlay;
 
-            PortalRendering.onPreRender?.Invoke(PortalRenderStack.Current);
-
-            foreach (var renderer in PortalRenderStack.Current.renderers)
-                renderer?.PreCull(PortalRenderStack.Current);
+            if (!clearDepth)
+            {
+                cameraData.clearDepth = false;
+                cameraData.renderType = CameraRenderType.Overlay;
+                cameraData.camera.clearFlags = CameraClearFlags.Nothing;
+            }
         }
     }
 }

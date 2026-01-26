@@ -56,14 +56,7 @@ namespace VRPortalToolkit.Rendering.Universal
         public RenderMode renderMode
         {
             get => _renderMode;
-            set
-            {
-                if (_renderMode != value)
-                {
-                    _isDirty = true;
-                    Validate.UpdateField(this, nameof(_renderMode), _renderMode = value);
-                }
-            }
+            set => _renderMode = value;
         }
 
         [Tooltip("The algorithm used for portal rendering traversal.")]
@@ -98,8 +91,6 @@ namespace VRPortalToolkit.Rendering.Universal
             get => _transparentLayerMask;
             set => _transparentLayerMask = value;
         }
-
-        private bool _isDirty = false;
 
         [Tooltip("The minimum portal recursion depth.")]
         [Header("Scene Settings"), SerializeField] private int _minDepth = 1;
@@ -296,15 +287,19 @@ namespace VRPortalToolkit.Rendering.Universal
             set => _portalDepthOnly = value;
         }
 
+        public Material testMaterial;
+
         public static Camera renderCamera { get; private set; }
         private static UniversalAdditionalCameraData _renderCameraData;
 
-        private PropertyInfo _renderFeaturesProperty;
+        private static PropertyInfo _renderFeaturesProperty;
+        private static FieldInfo _clearDepthsField;
 
         private PortalRenderNode _rootNode;
 
         private Queue<ScriptableRenderPass> _passesQueue = new Queue<ScriptableRenderPass>();
 
+        private PortalCameraSetupPass setupPass;
         private BeginPortalPass beginPass;
         private CompletePortalPass completePass;
         private DrawDepthOnlyPortalsPass depthOnlyPortalPass;
@@ -312,10 +307,10 @@ namespace VRPortalToolkit.Rendering.Universal
         private DrawTexturePortalsPass renderTexturePortalsPass;
         private IncreaseStencilPortalsPass increaseStencilPortalsPass;
         private DecreaseStencilPortalsPass decreaseStencilPortalsPass;
-
-
         //private BeginUndoStencilPortalPass beginUndoStencilPass;
         //private CompleteUndoStencilPortalPass completeUndoStencilPass;
+
+        private bool? _restoreClearDepth;
 
         protected virtual void OnValidate()
         {
@@ -325,6 +320,7 @@ namespace VRPortalToolkit.Rendering.Universal
         /// <inheritdoc/>
         public override void Create()
         {
+            setupPass = new PortalCameraSetupPass();
             beginPass = new BeginPortalPass();
             completePass = new CompletePortalPass();
             blankPortalsRenderPass = new DrawBlankPortalsPass();
@@ -363,6 +359,9 @@ namespace VRPortalToolkit.Rendering.Universal
         {
             if (!isActive || camera == renderCamera) return;
 
+            //if (_restoreClearDepth.HasValue && _clearDepthsField != null)
+            //    _clearDepthsField.SetValue(camera.GetUniversalAdditionalCameraData(), _restoreClearDepth.Value);
+
             PortalRenderStack.Clear();
             RenderPortalsBuffer.ClearBuffers();
         }
@@ -373,15 +372,14 @@ namespace VRPortalToolkit.Rendering.Universal
         {
             // Decide if this is a camera that will be rendered by this feature
             if (!isActive || camera == renderCamera) return;
+            _restoreClearDepth = null;
 
-            var universalData = camera.GetUniversalAdditionalCameraData();
+            var cameraData = camera.GetUniversalAdditionalCameraData();
 
-            if (!universalData || universalData.scriptableRenderer == null) return;
+            if (!cameraData || cameraData.scriptableRenderer == null) return;
 
-            //if (universalData.scriptableRenderer is UniversalRenderer d) d.data
-            
             _renderFeaturesProperty ??= typeof(ScriptableRenderer).GetProperty("rendererFeatures", BindingFlags.NonPublic | BindingFlags.Instance);
-            var features = _renderFeaturesProperty.GetValue(universalData.scriptableRenderer) as List<ScriptableRendererFeature>;
+            var features = _renderFeaturesProperty.GetValue(cameraData.scriptableRenderer) as List<ScriptableRendererFeature>;
 
             if (!features.Contains(this)) return;
 
@@ -467,19 +465,26 @@ namespace VRPortalToolkit.Rendering.Universal
             blankPortalsRenderPass.material = portalStereo;
             renderTexturePortalsPass.material = portalStereo;
             depthOnlyPortalPass.depthOnlyMaterial = portalDepthOnly;
+            increaseStencilPortalsPass.increaseMaterial = testMaterial;//portalIncrease;
+            increaseStencilPortalsPass.clearDepthMaterial = testMaterial;//portalClearDepth;
+            decreaseStencilPortalsPass.depthMaterial = testMaterial;//portalDepthOnly;
+            decreaseStencilPortalsPass.clearDepthMaterial = testMaterial;//portalClearDepth;
+            decreaseStencilPortalsPass.decreaseMaterial = testMaterial;//portalDecrease;
             increaseStencilPortalsPass.increaseMaterial = portalIncrease;
             increaseStencilPortalsPass.clearDepthMaterial = portalClearDepth;
             decreaseStencilPortalsPass.depthMaterial = portalDepthOnly;
             decreaseStencilPortalsPass.clearDepthMaterial = portalClearDepth;
             decreaseStencilPortalsPass.decreaseMaterial = portalDecrease;
 
+            _clearDepthsField ??= typeof(UniversalAdditionalCameraData).GetField("m_ClearDepth", BindingFlags.NonPublic | BindingFlags.Instance);
+
             if (renderMode == RenderMode.RenderTexture)
-                RenderTexturePortals(camera, _rootNode, maxShadowDepth);
+                RenderTexturePortals(camera, cameraData, _rootNode, maxShadowDepth);
             else
-                RenderStencilPortals(camera, _rootNode, maxShadowDepth);
+                RenderStencilPortals(camera, cameraData, cameraData.scriptableRenderer, _rootNode, maxShadowDepth);
         }
 
-        private void RenderTexturePortals(Camera camera, PortalRenderNode root, int maxShadowDepth)
+        private void RenderTexturePortals(Camera camera, UniversalAdditionalCameraData cameraData, PortalRenderNode root, int maxShadowDepth)
         {
             var isSceneCamera = camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.SceneView;
 
@@ -572,12 +577,28 @@ namespace VRPortalToolkit.Rendering.Universal
             renderCamera.rect = child.cullingWindow.GetRect();
         }
 
-        private void RenderStencilPortals(Camera camera, PortalRenderNode root, int maxShadowDepth)
+        private void RenderStencilPortals(Camera camera, UniversalAdditionalCameraData cameraData, ScriptableRenderer renderer, PortalRenderNode root, int maxShadowDepth)
         {
+            StencilManager.Begin(renderer);
+
+            //_clearDepthsField.SetValue(_renderCameraData, false);
+
+            setupPass.clearDepth = true;
             increaseStencilPortalsPass.nodesToIncrease.Clear();
             decreaseStencilPortalsPass.nodesToDecrease.Clear();
             RenderStencilPortalsRecursive(camera, root, maxShadowDepth);
             PortalRenderStack.Pop();
+
+            //if (root.validChildCount > 0)
+            //{
+            //    if ((bool)_clearDepthsField.GetValue(cameraData))
+            //    {
+            //        _restoreClearDepth = true;
+            //        _clearDepthsField.SetValue(cameraData, false);
+            //    }
+            //}
+
+            StencilManager.Complete();
         }
 
         private void RenderStencilPortalsRecursive(Camera camera, PortalRenderNode parent, int maxShadowDepth)
@@ -591,6 +612,7 @@ namespace VRPortalToolkit.Rendering.Universal
                     increaseStencilPortalsPass.nodesToIncrease.Add(child);
                     RenderStencilPortalsRecursive(camera, child, maxShadowDepth);
                     
+                    _passesQueue.Enqueue(setupPass);
                     _passesQueue.Enqueue(beginPass);
                     _passesQueue.Enqueue(increaseStencilPortalsPass);
 
@@ -603,7 +625,9 @@ namespace VRPortalToolkit.Rendering.Universal
                     decreaseStencilPortalsPass.nodesToDecrease.Add(child);
                     _passesQueue.Enqueue(decreaseStencilPortalsPass);
                     _passesQueue.Enqueue(completePass);
+                    StencilManager.SetStencil(child.depth);
                     renderCamera.Render();
+                    setupPass.clearDepth = false;
 
                     increaseStencilPortalsPass.nodesToIncrease.Clear();
                     PortalRenderStack.Pop();
@@ -642,6 +666,207 @@ namespace VRPortalToolkit.Rendering.Universal
             while (_passesQueue.TryDequeue(out var pass))
             {
                 renderer.EnqueuePass(pass);
+            }
+        }
+
+        public static class StencilManager
+        {
+            private static FieldInfo _GBufferPass_field;
+            private static object _GBufferPass;
+            private static Type _GBufferPass_type;
+            private static FieldInfo _GBufferPass_RenderStateBlock_field;
+            private static RenderStateBlock _GBufferPass_RenderStateBlock;
+            private static FieldInfo _GBufferPass_RenderStateBlocks_field;
+            private static RenderStateBlock[] _GBufferPass_RenderStateBlocks;
+            private static RenderStateBlock[] _renderStateBlocks;
+
+            private static FieldInfo _DrawObjectsPass_RenderStateBlock_field;
+
+            private static FieldInfo _RenderOpaqueForwardOnlyPass_field;
+            private static DrawObjectsPass _RenderOpaqueForwardOnlyPass;
+            private static RenderStateBlock _RenderOpaqueForwardOnlyPass_RenderStateBlock;
+
+            private static FieldInfo _RenderOpaqueForwardPass_field;
+            private static DrawObjectsPass _RenderOpaqueForwardPass;
+            private static RenderStateBlock _RenderOpaqueForwardPass_RenderStateBlock;
+
+            private static FieldInfo _RenderOpaqueForwardWithRenderingLayersPass_field;
+            private static DrawObjectsPass _RenderOpaqueForwardWithRenderingLayersPass;
+            private static RenderStateBlock _RenderOpaqueForwardWithRenderingLayersPass_RenderStateBlock;
+
+            private static FieldInfo _RenderTransparentForwardPass_field;
+            private static DrawObjectsPass _RenderTransparentForwardPass;
+            private static RenderStateBlock _RenderTransparentForwardPass_RenderStateBlock;
+            
+            public static void Begin(ScriptableRenderer renderer)
+            {
+                _GBufferPass_field ??= typeof(UniversalRenderer).GetField("m_GBufferPass", BindingFlags.NonPublic | BindingFlags.Instance);
+                _GBufferPass = _GBufferPass_field.GetValue(renderer);
+
+                if (_GBufferPass != null)
+                {
+                    _GBufferPass_type ??= _GBufferPass.GetType();
+                    _GBufferPass_RenderStateBlock_field ??= _GBufferPass_type.GetField("m_RenderStateBlock", BindingFlags.NonPublic | BindingFlags.Instance);
+                    _GBufferPass_RenderStateBlocks_field ??= _GBufferPass_type.GetField("s_RenderStateBlocks", BindingFlags.NonPublic | BindingFlags.Static);
+
+                    _GBufferPass_RenderStateBlock = (RenderStateBlock)_GBufferPass_RenderStateBlock_field.GetValue(_GBufferPass);
+                    _GBufferPass_RenderStateBlocks = (RenderStateBlock[])_GBufferPass_RenderStateBlocks_field.GetValue(null);
+
+                    if (_renderStateBlocks == null)
+                        _renderStateBlocks = new RenderStateBlock[5];
+                }
+
+                _RenderOpaqueForwardOnlyPass_field ??= typeof(UniversalRenderer).GetField("m_RenderOpaqueForwardOnlyPass", BindingFlags.NonPublic | BindingFlags.Instance);
+                _RenderOpaqueForwardPass_field ??= typeof(UniversalRenderer).GetField("m_RenderOpaqueForwardPass", BindingFlags.NonPublic | BindingFlags.Instance);
+                _RenderOpaqueForwardWithRenderingLayersPass_field ??= typeof(UniversalRenderer).GetField("m_RenderOpaqueForwardWithRenderingLayersPass", BindingFlags.NonPublic | BindingFlags.Instance);
+                _RenderTransparentForwardPass_field ??= typeof(UniversalRenderer).GetField("m_RenderTransparentForwardPass", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                _DrawObjectsPass_RenderStateBlock_field ??= typeof(DrawObjectsPass).GetField("m_RenderStateBlock", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                GetDrawingObjectsPass(renderer, _RenderOpaqueForwardOnlyPass_field, out _RenderOpaqueForwardOnlyPass, out _RenderOpaqueForwardOnlyPass_RenderStateBlock);
+                GetDrawingObjectsPass(renderer, _RenderOpaqueForwardPass_field, out _RenderOpaqueForwardPass, out _RenderOpaqueForwardPass_RenderStateBlock);
+                GetDrawingObjectsPass(renderer, _RenderOpaqueForwardWithRenderingLayersPass_field, out _RenderOpaqueForwardWithRenderingLayersPass, out _RenderOpaqueForwardWithRenderingLayersPass_RenderStateBlock);
+                GetDrawingObjectsPass(renderer, _RenderTransparentForwardPass_field, out _RenderTransparentForwardPass, out _RenderTransparentForwardPass_RenderStateBlock);
+
+                Debug.Log($"{_GBufferPass}, {_RenderOpaqueForwardOnlyPass}, {_RenderOpaqueForwardPass}, {_RenderOpaqueForwardWithRenderingLayersPass}, {_RenderTransparentForwardPass}");
+            }
+
+            public static void SetStencil(int stencilReference)
+            {
+                return;
+                StencilState stencilState = new StencilState(true, 255, 255, CompareFunction.Equal);
+
+                StencilState forwardOnlyStencilState = DeferredLights_OverwriteStencil(stencilState, 0b_0110_0000);
+                int forwardOnlyStencilRef = stencilReference | 0b_0000_0000;
+
+                if (_GBufferPass != null)
+                {
+                    var block = _GBufferPass_RenderStateBlock;
+                    block.stencilState = forwardOnlyStencilState;
+                    block.stencilReference = forwardOnlyStencilRef;
+                    block.mask = RenderStateMask.Stencil;
+
+                    _renderStateBlocks[0] = DeferredLights_OverwriteStencil(block, 0b_0110_0000, 0b_0010_0000);
+                    _renderStateBlocks[1] = DeferredLights_OverwriteStencil(block, 0b_0110_0000, 0b_0100_0000);
+                    _renderStateBlocks[2] = DeferredLights_OverwriteStencil(block, 0b_0110_0000, 0b_0000_0000);
+                    _renderStateBlocks[3] = DeferredLights_OverwriteStencil(block, 0b_0110_0000, 0b_0000_0000);  // Fill GBuffer, but skip lighting pass for ComplexLit
+                    _renderStateBlocks[4] = _renderStateBlocks[0];
+
+                    _GBufferPass_RenderStateBlock_field.SetValue(_GBufferPass, block);
+                    _GBufferPass_RenderStateBlocks_field.SetValue(null, _renderStateBlocks);
+                }
+
+                SetStencil(_RenderOpaqueForwardOnlyPass, _RenderOpaqueForwardOnlyPass_RenderStateBlock, stencilState, stencilReference);
+                SetStencil(_RenderOpaqueForwardPass, _RenderOpaqueForwardPass_RenderStateBlock, stencilState, stencilReference);
+                SetStencil(_RenderOpaqueForwardWithRenderingLayersPass, _RenderOpaqueForwardWithRenderingLayersPass_RenderStateBlock, stencilState, stencilReference);
+                SetStencil(_RenderTransparentForwardPass, _RenderTransparentForwardPass_RenderStateBlock, stencilState, stencilReference);
+            }
+
+            private static void SetStencil(DrawObjectsPass pass, RenderStateBlock block, in StencilState stencilState, int stencilReference)
+            {
+                if (pass != null)
+                {
+                    block.stencilReference = stencilReference;
+                    block.mask = RenderStateMask.Stencil;
+                    block.stencilState = stencilState;
+                    _DrawObjectsPass_RenderStateBlock_field.SetValue(pass, block);
+                }
+            }
+
+            public static void Complete()
+            {
+                if (_GBufferPass != null)
+                {
+                    _GBufferPass_RenderStateBlock_field.SetValue(_GBufferPass, _GBufferPass_RenderStateBlock);
+                    _GBufferPass_RenderStateBlocks_field.SetValue(null, _GBufferPass_RenderStateBlocks);
+                }
+
+                RestoreDrawingObjectsPass(_RenderOpaqueForwardOnlyPass, _RenderOpaqueForwardOnlyPass_RenderStateBlock);
+                RestoreDrawingObjectsPass(_RenderOpaqueForwardPass, _RenderOpaqueForwardPass_RenderStateBlock);
+                RestoreDrawingObjectsPass(_RenderOpaqueForwardWithRenderingLayersPass, _RenderOpaqueForwardWithRenderingLayersPass_RenderStateBlock);
+                RestoreDrawingObjectsPass(_RenderTransparentForwardPass, _RenderTransparentForwardPass_RenderStateBlock);
+            }
+
+            private static void GetDrawingObjectsPass(ScriptableRenderer renderer, FieldInfo fieldInfo, out DrawObjectsPass pass, out RenderStateBlock block)
+            {
+                pass = (DrawObjectsPass)fieldInfo.GetValue(renderer);
+                if (pass != null)
+                    block = (RenderStateBlock)_DrawObjectsPass_RenderStateBlock_field.GetValue(pass);
+                else
+                    block = default;
+            }
+
+            private static void RestoreDrawingObjectsPass(DrawObjectsPass pass, in RenderStateBlock block)
+            {
+                if (pass != null)
+                    _DrawObjectsPass_RenderStateBlock_field.SetValue(pass, block);
+            }
+
+
+            private static StencilState DeferredLights_OverwriteStencil(StencilState s, int stencilWriteMask)
+            {
+                if (!s.enabled)
+                {
+                    return new StencilState(
+                        true,
+                        0, (byte)stencilWriteMask,
+                        CompareFunction.Always, StencilOp.Replace, StencilOp.Keep, StencilOp.Keep,
+                        CompareFunction.Always, StencilOp.Replace, StencilOp.Keep, StencilOp.Keep
+                    );
+                }
+
+                CompareFunction funcFront = s.compareFunctionFront != CompareFunction.Disabled ? s.compareFunctionFront : CompareFunction.Always;
+                CompareFunction funcBack = s.compareFunctionBack != CompareFunction.Disabled ? s.compareFunctionBack : CompareFunction.Always;
+                StencilOp passFront = s.passOperationFront;
+                StencilOp failFront = s.failOperationFront;
+                StencilOp zfailFront = s.zFailOperationFront;
+                StencilOp passBack = s.passOperationBack;
+                StencilOp failBack = s.failOperationBack;
+                StencilOp zfailBack = s.zFailOperationBack;
+
+                return new StencilState(
+                    true,
+                    (byte)(s.readMask & 0x0F), (byte)(s.writeMask | stencilWriteMask),
+                    funcFront, passFront, failFront, zfailFront,
+                    funcBack, passBack, failBack, zfailBack
+                );
+            }
+
+            private static RenderStateBlock DeferredLights_OverwriteStencil(RenderStateBlock block, int stencilWriteMask, int stencilRef)
+            {
+                if (!block.stencilState.enabled)
+                {
+                    block.stencilState = new StencilState(
+                        true,
+                        0, (byte)stencilWriteMask,
+                        CompareFunction.Always, StencilOp.Replace, StencilOp.Keep, StencilOp.Keep,
+                        CompareFunction.Always, StencilOp.Replace, StencilOp.Keep, StencilOp.Keep
+                    );
+                }
+                else
+                {
+                    StencilState s = block.stencilState;
+                    CompareFunction funcFront = s.compareFunctionFront != CompareFunction.Disabled ? s.compareFunctionFront : CompareFunction.Always;
+                    CompareFunction funcBack = s.compareFunctionBack != CompareFunction.Disabled ? s.compareFunctionBack : CompareFunction.Always;
+                    StencilOp passFront = s.passOperationFront;
+                    StencilOp failFront = s.failOperationFront;
+                    StencilOp zfailFront = s.zFailOperationFront;
+                    StencilOp passBack = s.passOperationBack;
+                    StencilOp failBack = s.failOperationBack;
+                    StencilOp zfailBack = s.zFailOperationBack;
+
+                    block.stencilState = new StencilState(
+                        true,
+                        (byte)(s.readMask & 0x0F), (byte)(s.writeMask | stencilWriteMask),
+                        funcFront, passFront, failFront, zfailFront,
+                        funcBack, passBack, failBack, zfailBack
+                    );
+                }
+
+                block.mask |= RenderStateMask.Stencil;
+                block.stencilReference = (block.stencilReference & (int)0b_0000_1111) | stencilRef;
+
+                return block;
             }
         }
     }

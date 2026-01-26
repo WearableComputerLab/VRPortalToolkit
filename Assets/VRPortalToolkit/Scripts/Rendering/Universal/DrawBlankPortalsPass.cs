@@ -88,7 +88,6 @@ namespace VRPortalToolkit.Rendering.Universal
                 passData.material = material;
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 passData.cameraData = frameData.Get<UniversalCameraData>();
-
                 builder.AllowGlobalStateModification(true);
                 builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));

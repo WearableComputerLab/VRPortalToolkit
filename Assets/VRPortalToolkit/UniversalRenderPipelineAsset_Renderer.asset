@@ -127,3 +127,4 @@ MonoBehaviour:
   _portalDecrease: {fileID: 2100000, guid: 1610932ed2cb46d4a89736052e6d551a, type: 2}
   _portalClearDepth: {fileID: 2100000, guid: 341ceec8b7a572c4a8e3b4271af4f049, type: 2}
   _portalDepthOnly: {fileID: 2100000, guid: 733b792f0cd776f47b9541770721d1b8, type: 2}
+  testMaterial: {fileID: 2100000, guid: 5d23a445f91912a408fada61f54461c8, type: 2}

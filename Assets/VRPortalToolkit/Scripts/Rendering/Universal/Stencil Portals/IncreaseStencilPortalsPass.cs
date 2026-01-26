@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -58,9 +59,9 @@ namespace VRPortalToolkit.Rendering.Universal
                 Material increaseMaterial = renderNode.overrides.portalIncrease ? renderNode.overrides.portalIncrease : data.increaseMaterial,
                     clearDepthMaterial = renderNode.overrides.portalClearDepth ? renderNode.overrides.portalClearDepth : data.clearDepthMaterial;
 
-                // TODO: I dont think this actually offered any improvement
-                //if (setViewport) cmd.SetViewport(viewport);
+                // I dont think this actually moves the camera
                 renderNode.parent.SetViewAndProjectionMatrices(context.cmd);
+                //context.cmd.SetViewport(renderNode.parent.cullingWindow.GetRect());
 
                 // Masking
                 context.cmd.SetGlobalInt(PropertyID.PortalStencilRef, renderNode.depth - 1);
@@ -78,8 +79,6 @@ namespace VRPortalToolkit.Rendering.Universal
                     foreach (IPortalRenderer renderer in renderNode.renderers)
                         renderer?.Render(renderNode, context.cmd, clearDepthMaterial);
                 }
-
-                // 
                 //float width = renderingData.cameraData.cameraTargetDescriptor.width,
                 //    height = renderingData.cameraData.cameraTargetDescriptor.height;
 
@@ -92,6 +91,7 @@ namespace VRPortalToolkit.Rendering.Universal
             }
 
             PortalRenderStack.Current.SetViewAndProjectionMatrices(context.cmd);
+            //context.cmd.SetViewport(PortalRenderStack.Current.cullingWindow.GetRect());
         }
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -105,9 +105,12 @@ namespace VRPortalToolkit.Rendering.Universal
                 passData.clearDepthMaterial = clearDepthMaterial;
                 passData.increaseMaterial = increaseMaterial;
                 passData.nodesToIncrease = nodesToIncrease;
+                var cameraData = frameData.Get<UniversalCameraData>();
 
                 builder.AllowGlobalStateModification(true);
-                builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                builder.SetRenderAttachment(resourceData.backBufferColor, 0);
+                builder.SetRenderAttachmentDepth(resourceData.backBufferDepth, 0);
+                //builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
             }
         }

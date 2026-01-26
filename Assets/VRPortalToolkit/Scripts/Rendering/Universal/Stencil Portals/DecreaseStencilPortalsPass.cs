@@ -51,6 +51,7 @@ namespace VRPortalToolkit.Rendering.Universal
 
         static void ExecutePass(PassData data, RasterGraphContext context)
         {
+            return;
             foreach (var renderNode in data.nodesToDecrease)
             {
                 Material decreaseMaterial = renderNode.overrides.portalDecrease ? renderNode.overrides.portalDecrease : data.decreaseMaterial,
