@@ -1,10 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.Rendering.Universal.Internal;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering;
-using VRPortalToolkit.Rendering.Universal;
 using VRPortalToolkit.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 
@@ -36,7 +31,7 @@ namespace VRPortalToolkit
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
-            const string passName = "Complete Portal Pass";
+            const string passName = "CompletePortalPass";
 
             // This adds a raster render pass to the graph, specifying the name and the data type that will be passed to the ExecutePass function.
             using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData))

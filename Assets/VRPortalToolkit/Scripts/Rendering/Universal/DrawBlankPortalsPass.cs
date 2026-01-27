@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -32,20 +33,19 @@ namespace VRPortalToolkit.Rendering.Universal
         private class PassData
         {
             public Material material;
-            public UniversalCameraData cameraData;
+            public RTHandle lastFrame;
         }
 
         static void ExecutePass(PassData data, RasterGraphContext context)
         {
             PortalRenderNode parentNode = PortalRenderStack.Current;
 
-            RawColorHistory history = data.cameraData.historyManager.GetHistoryForRead<RawColorHistory>();
-            RTHandle historyTexture = history?.GetPreviousTexture(0); // 0 gets the immediately previous frame
-
-            bool hasFrameBuffer = FrameBuffer.current != null && historyTexture != null;
-
             //context.cmd.SetGlobalInt(PropertyID.PortalStencilRef, PortalPassStack.Current.stateBlock.stencilReference);
-            if (hasFrameBuffer) propertyBlock.SetTexture(PropertyID.MainTex, historyTexture);
+
+            //Debug.Log($"FB: {FrameBuffer.current}, {FrameBuffer.current.eye}, {FrameBuffer.current?.handle}");
+
+            bool hasFrameBuffer = FrameBuffer.current != null && data.lastFrame != null && data.lastFrame.rt;
+            if (hasFrameBuffer) propertyBlock.SetTexture(PropertyID.MainTex, data.lastFrame);
 
             foreach (PortalRenderNode renderNode in parentNode.children)
             {
@@ -66,6 +66,8 @@ namespace VRPortalToolkit.Rendering.Universal
                             UpdateScaleAndTranslation(GetWindow(parentNode.worldToCameraMatrix, parentNode.projectionMatrix, renderNode),
                                 originalNode.window, PropertyID.MainTex_ST);
 
+                        //Debug.Log($"{(int)FrameBuffer.current.eye}: {GetWindow(parentNode.worldToCameraMatrix, parentNode.projectionMatrix, renderNode).GetRect()}, {originalNode.window.GetRect()}");
+
                         foreach (IPortalRenderer renderer in renderNode.renderers)
                             renderer.Render(renderNode, context.cmd, material, propertyBlock);
                     }
@@ -80,16 +82,18 @@ namespace VRPortalToolkit.Rendering.Universal
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
-            const string passName = "Draw Blank Portals Pass";
+            const string passName = "DrawBlankPortalsPass";
 
             // This adds a raster render pass to the graph, specifying the name and the data type that will be passed to the ExecutePass function.
             using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData))
             {
-                passData.material = material;
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
-                passData.cameraData = frameData.Get<UniversalCameraData>();
+                passData.lastFrame = FrameBuffer.current?.handle;
+                passData.material = material;
+
                 builder.AllowGlobalStateModification(true);
                 builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture);
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
             }
         }

@@ -51,7 +51,6 @@ namespace VRPortalToolkit.Rendering.Universal
 
         static void ExecutePass(PassData data, RasterGraphContext context)
         {
-            return;
             foreach (var renderNode in data.nodesToDecrease)
             {
                 Material decreaseMaterial = renderNode.overrides.portalDecrease ? renderNode.overrides.portalDecrease : data.decreaseMaterial,
@@ -92,7 +91,7 @@ namespace VRPortalToolkit.Rendering.Universal
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
-            const string passName = "Decrease Stencil Portals Pass";
+            const string passName = "DecreaseStencilPortalsPass";
 
             // This adds a raster render pass to the graph, specifying the name and the data type that will be passed to the ExecutePass function.
             using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData))
@@ -104,6 +103,7 @@ namespace VRPortalToolkit.Rendering.Universal
 
                 builder.AllowGlobalStateModification(true);
                 builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture);
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
             }
         }

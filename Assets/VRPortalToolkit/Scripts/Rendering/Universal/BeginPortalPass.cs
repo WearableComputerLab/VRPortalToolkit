@@ -24,6 +24,13 @@ namespace VRPortalToolkit
             this.renderPassEvent = renderPassEvent;
         }
 
+        private class PassData { }
+
+        static void ExecutePass(PassData data, RasterGraphContext context)
+        {
+            //PortalRenderStack.Current.SetViewAndProjectionMatrices(context.cmd);
+        }
+
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
             var cameraData = frameData.Get<UniversalCameraData>();
@@ -34,6 +41,13 @@ namespace VRPortalToolkit
 
             foreach (var renderer in PortalRenderStack.Current.renderers)
                 renderer?.PreCull(PortalRenderStack.Current);
+
+            // This adds a raster render pass to the graph, specifying the name and the data type that will be passed to the ExecutePass function.
+            using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData))
+            {
+                UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
+                builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
+            }
         }
     }
 }

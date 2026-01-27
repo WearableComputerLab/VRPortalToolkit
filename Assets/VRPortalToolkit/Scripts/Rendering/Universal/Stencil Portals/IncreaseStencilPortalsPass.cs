@@ -96,7 +96,7 @@ namespace VRPortalToolkit.Rendering.Universal
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
-            const string passName = "Increase Stencil Portals Pass";
+            const string passName = "IncreaseStencilPortalsPass";
 
             // This adds a raster render pass to the graph, specifying the name and the data type that will be passed to the ExecutePass function.
             using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData))
@@ -108,8 +108,8 @@ namespace VRPortalToolkit.Rendering.Universal
                 var cameraData = frameData.Get<UniversalCameraData>();
 
                 builder.AllowGlobalStateModification(true);
-                builder.SetRenderAttachment(resourceData.backBufferColor, 0);
-                builder.SetRenderAttachmentDepth(resourceData.backBufferDepth, 0);
+                builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture);
                 //builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
             }

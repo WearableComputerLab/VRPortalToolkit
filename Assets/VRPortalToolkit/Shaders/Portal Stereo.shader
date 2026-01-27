@@ -23,6 +23,7 @@ Shader "VRPortalToolkit/Portal Stereo"
          Pass
          {
               ZWrite On
+              ZTest Always
               ZTest[_ZTest]
               Cull[_PortalCullMode]
 

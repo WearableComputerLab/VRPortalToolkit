@@ -2,15 +2,18 @@ using Misc.EditorHelpers;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Unity.Android.Gradle.Manifest;
 using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.Universal.Internal;
 using UnityEngine.UIElements;
 using UnityEngine.XR;
+using UnityEngine.XR.Management;
 
 
 namespace VRPortalToolkit.Rendering.Universal
@@ -70,27 +73,27 @@ namespace VRPortalToolkit.Rendering.Universal
             set => _algorithm = value;
         }
 
-        [Tooltip("The layer mask for opaque objects.")]
-        [Header("Filtering"), SerializeField] private LayerMask _opaqueLayerMask = -1;
-        /// <summary>
-        /// The layer mask for opaque objects.
-        /// </summary>
-        public LayerMask opaqueLayerMask
-        {
-            get => _opaqueLayerMask;
-            set => _opaqueLayerMask = value;
-        }
+        //[Tooltip("The layer mask for opaque objects.")]
+        //[Header("Filtering"), SerializeField] private LayerMask _opaqueLayerMask = -1;
+        ///// <summary>
+        ///// The layer mask for opaque objects.
+        ///// </summary>
+        //public LayerMask opaqueLayerMask
+        //{
+        //    get => _opaqueLayerMask;
+        //    set => _opaqueLayerMask = value;
+        //}
 
-        [Tooltip("The layer mask for transparent objects.")]
-        [SerializeField] private LayerMask _transparentLayerMask = -1;
-        /// <summary>
-        /// The layer mask for transparent objects.
-        /// </summary>
-        public LayerMask transparentLayerMask
-        {
-            get => _transparentLayerMask;
-            set => _transparentLayerMask = value;
-        }
+        //[Tooltip("The layer mask for transparent objects.")]
+        //[SerializeField] private LayerMask _transparentLayerMask = -1;
+        ///// <summary>
+        ///// The layer mask for transparent objects.
+        ///// </summary>
+        //public LayerMask transparentLayerMask
+        //{
+        //    get => _transparentLayerMask;
+        //    set => _transparentLayerMask = value;
+        //}
 
         [Tooltip("The minimum portal recursion depth.")]
         [Header("Scene Settings"), SerializeField] private int _minDepth = 1;
@@ -152,16 +155,16 @@ namespace VRPortalToolkit.Rendering.Universal
             set => _portalResolution = Mathf.Clamp(value, 0f, 1f);
         }
 
-        //[Tooltip("The resolution scale for the buffer effect.")]
-        //[SerializeField, Range(0f, 1f)] private float _bufferResolution = 1f;
-        ///// <summary>
-        ///// The resolution scale for the buffer effect.
-        ///// </summary>
-        //public float bufferResolution
-        //{
-        //    get => _bufferResolution;
-        //    set => _bufferResolution = Mathf.Clamp(value, 0f, 1f);
-        //}
+        [Tooltip("The resolution scale for the buffer effect.")]
+        [SerializeField, Range(0f, 1f)] private float _bufferResolution = 1f;
+        /// <summary>
+        /// The resolution scale for the buffer effect.
+        /// </summary>
+        public float bufferResolution
+        {
+            get => _bufferResolution;
+            set => _bufferResolution = Mathf.Clamp(value, 0f, 1f);
+        }
 
         [Tooltip("The minimum portal recursion depth in the editor.")]
         [Header("Editor Settings"), SerializeField] private int _editorMinDepth = 0;
@@ -221,16 +224,16 @@ namespace VRPortalToolkit.Rendering.Universal
             set => _editorPortalResolution = Mathf.Clamp(value, 0f, 1f);
         }
 
-        //[Tooltip("")]
-        //[SerializeField, Range(0f, 1f)] private float _editorBufferResolution = 1f;
-        ///// <summary>
-        ///// The resolution scale for the buffer effect in the editor.
-        ///// </summary>
-        //public float editorBufferResolution
-        //{
-        //    get => _editorBufferResolution;
-        //    set => _editorBufferResolution = Mathf.Clamp(value, 0f, 1f);
-        //}
+        [Tooltip("")]
+        [SerializeField, Range(0f, 1f)] private float _editorBufferResolution = 1f;
+        /// <summary>
+        /// The resolution scale for the buffer effect in the editor.
+        /// </summary>
+        public float editorBufferResolution
+        {
+            get => _editorBufferResolution;
+            set => _editorBufferResolution = Mathf.Clamp(value, 0f, 1f);
+        }
 
         [Tooltip("Required for both Render Texture Portals, aswell as the buffer effect for Stencil Portals.")]
         [Header("Shaders"), SerializeField] private Material _portalStereo;
@@ -295,9 +298,9 @@ namespace VRPortalToolkit.Rendering.Universal
         private static PropertyInfo _renderFeaturesProperty;
         private static FieldInfo _clearDepthsField;
 
-        private PortalRenderNode _rootNode;
-
+        private PortalRenderNode _root;
         private Queue<ScriptableRenderPass> _passesQueue = new Queue<ScriptableRenderPass>();
+        private Camera.StereoscopicEye _currentEye = Camera.StereoscopicEye.Right;
 
         private PortalCameraSetupPass setupPass;
         private BeginPortalPass beginPass;
@@ -307,10 +310,9 @@ namespace VRPortalToolkit.Rendering.Universal
         private DrawTexturePortalsPass renderTexturePortalsPass;
         private IncreaseStencilPortalsPass increaseStencilPortalsPass;
         private DecreaseStencilPortalsPass decreaseStencilPortalsPass;
+        private StoreFramePass storeFramePass;
         //private BeginUndoStencilPortalPass beginUndoStencilPass;
         //private CompleteUndoStencilPortalPass completeUndoStencilPass;
-
-        private bool? _restoreClearDepth;
 
         protected virtual void OnValidate()
         {
@@ -328,6 +330,7 @@ namespace VRPortalToolkit.Rendering.Universal
             depthOnlyPortalPass = new DrawDepthOnlyPortalsPass();
             increaseStencilPortalsPass = new IncreaseStencilPortalsPass();
             decreaseStencilPortalsPass = new DecreaseStencilPortalsPass();
+            storeFramePass = new StoreFramePass();
             //beginUndoStencilPass = new BeginUndoStencilPortalPass();
             //completeUndoStencilPass = new CompleteUndoStencilPortalPass();
 
@@ -372,7 +375,6 @@ namespace VRPortalToolkit.Rendering.Universal
         {
             // Decide if this is a camera that will be rendered by this feature
             if (!isActive || camera == renderCamera) return;
-            _restoreClearDepth = null;
 
             var cameraData = camera.GetUniversalAdditionalCameraData();
 
@@ -405,17 +407,6 @@ namespace VRPortalToolkit.Rendering.Universal
                 renderCamera.projectionMatrix = camera.projectionMatrix;
             }
 
-            // Set up frame buffer
-            if (camera.stereoEnabled && XRSettings.stereoRenderingMode == XRSettings.StereoRenderingMode.MultiPass)
-            {
-                if (camera.projectionMatrix.m02 <= 0f)
-                    FrameBuffer.SetCurrent(camera, Camera.MonoOrStereoscopicEye.Left);
-                else
-                    FrameBuffer.SetCurrent(camera, Camera.MonoOrStereoscopicEye.Right);
-            }
-            else
-                FrameBuffer.SetCurrent(camera);
-
             int minDepth, maxDepth, maxRenders, maxShadowDepth;
             
             //float bufferResolution;
@@ -426,7 +417,7 @@ namespace VRPortalToolkit.Rendering.Universal
                 maxDepth = _editorMaxDepth;
                 maxRenders = _editorMaxRenders;
                 maxShadowDepth = _editorMaxShadowDepth;
-                //bufferResolution = _editorBufferResolution;
+                bufferResolution = _editorBufferResolution;
             }
             else
             {
@@ -434,16 +425,27 @@ namespace VRPortalToolkit.Rendering.Universal
                 maxDepth = _maxDepth;
                 maxRenders = _maxRenders;
                 maxShadowDepth = _maxShadowDepth;
-                //bufferResolution = _bufferResolution;
+                bufferResolution = _bufferResolution;
             }
+
+            if (camera.stereoEnabled && XRSettings.stereoRenderingMode == XRSettings.StereoRenderingMode.MultiPass)
+            {
+                _currentEye = _currentEye == Camera.StereoscopicEye.Right ? Camera.StereoscopicEye.Left : Camera.StereoscopicEye.Right;
+
+                FrameBuffer.SetCurrent(camera, (Camera.MonoOrStereoscopicEye)_currentEye);
+            }
+            else
+                FrameBuffer.SetCurrent(camera);
 
             if (_algorithm == PortalAlgorithm.BreadthFirst)
             {
                 if (camera.stereoEnabled && XRSettings.stereoRenderingMode != XRSettings.StereoRenderingMode.MultiPass)
-                    _rootNode = PortalAlgorithms.GetStereoTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, renderCamera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
+                    _root = PortalAlgorithms.GetStereoTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, renderCamera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
                         camera.GetStereoViewMatrix(Camera.StereoscopicEye.Right), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right), minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers());
+                else if (camera.stereoEnabled)
+                    _root = PortalAlgorithms.GetTree(camera, camera.transform.localToWorldMatrix, camera.GetStereoViewMatrix(_currentEye), camera.GetStereoProjectionMatrix(_currentEye), camera.cullingMask, minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers());
                 else
-                    _rootNode = PortalAlgorithms.GetTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers());
+                    _root = PortalAlgorithms.GetTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers());
             }
             else
             {
@@ -452,24 +454,26 @@ namespace VRPortalToolkit.Rendering.Universal
                 Vector2? focus = null;//new Vector2(0.5f, 0.5f);
 
                 if (camera.stereoEnabled && XRSettings.stereoRenderingMode != XRSettings.StereoRenderingMode.MultiPass)
-                    _rootNode = PortalAlgorithms.GetPredictiveStereoTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, renderCamera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
+                    _root = PortalAlgorithms.GetPredictiveStereoTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, renderCamera.cullingMask, camera.GetStereoViewMatrix(Camera.StereoscopicEye.Left), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left),
                         camera.GetStereoViewMatrix(Camera.StereoscopicEye.Right), camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right), minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers(), focus);
+                else if (camera.stereoEnabled)
+                    _root = PortalAlgorithms.GetPredictiveTree(camera, camera.transform.localToWorldMatrix, camera.GetStereoViewMatrix(_currentEye), camera.GetStereoProjectionMatrix(_currentEye), camera.cullingMask, minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers(), focus);
                 else
-                    _rootNode = PortalAlgorithms.GetPredictiveTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers(), focus);
+                    _root = PortalAlgorithms.GetPredictiveTree(camera, camera.transform.localToWorldMatrix, camera.worldToCameraMatrix, camera.projectionMatrix, camera.cullingMask, minDepth, maxDepth, maxRenders, PortalRendering.GetAllPortalRenderers(), focus);
             }
 
-            //storePreviousFramePass.resolution = bufferResolution;
+            storeFramePass.resolution = bufferResolution;
 
             Shader.SetGlobalInt(PropertyID.PortalStencilRef, 0);
 
             blankPortalsRenderPass.material = portalStereo;
             renderTexturePortalsPass.material = portalStereo;
             depthOnlyPortalPass.depthOnlyMaterial = portalDepthOnly;
-            increaseStencilPortalsPass.increaseMaterial = testMaterial;//portalIncrease;
-            increaseStencilPortalsPass.clearDepthMaterial = testMaterial;//portalClearDepth;
-            decreaseStencilPortalsPass.depthMaterial = testMaterial;//portalDepthOnly;
-            decreaseStencilPortalsPass.clearDepthMaterial = testMaterial;//portalClearDepth;
-            decreaseStencilPortalsPass.decreaseMaterial = testMaterial;//portalDecrease;
+            //increaseStencilPortalsPass.increaseMaterial = testMaterial;//portalIncrease;
+            //increaseStencilPortalsPass.clearDepthMaterial = testMaterial;//portalClearDepth;
+            //decreaseStencilPortalsPass.depthMaterial = testMaterial;//portalDepthOnly;
+            //decreaseStencilPortalsPass.clearDepthMaterial = testMaterial;//portalClearDepth;
+            //decreaseStencilPortalsPass.decreaseMaterial = testMaterial;//portalDecrease;
             increaseStencilPortalsPass.increaseMaterial = portalIncrease;
             increaseStencilPortalsPass.clearDepthMaterial = portalClearDepth;
             decreaseStencilPortalsPass.depthMaterial = portalDepthOnly;
@@ -478,13 +482,14 @@ namespace VRPortalToolkit.Rendering.Universal
 
             _clearDepthsField ??= typeof(UniversalAdditionalCameraData).GetField("m_ClearDepth", BindingFlags.NonPublic | BindingFlags.Instance);
 
+            // Set up frame buffer
             if (renderMode == RenderMode.RenderTexture)
-                RenderTexturePortals(camera, cameraData, _rootNode, maxShadowDepth);
+                RenderTexturePortals(camera, cameraData, maxShadowDepth);
             else
-                RenderStencilPortals(camera, cameraData, cameraData.scriptableRenderer, _rootNode, maxShadowDepth);
+                RenderStencilPortals(camera, cameraData, cameraData.scriptableRenderer, maxShadowDepth);
         }
 
-        private void RenderTexturePortals(Camera camera, UniversalAdditionalCameraData cameraData, PortalRenderNode root, int maxShadowDepth)
+        private void RenderTexturePortals(Camera camera, UniversalAdditionalCameraData cameraData, int maxShadowDepth)
         {
             var isSceneCamera = camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.SceneView;
 
@@ -492,8 +497,9 @@ namespace VRPortalToolkit.Rendering.Universal
             
             RenderTextureDescriptor descriptor;
 
-            if (camera.stereoEnabled && XRSettings.stereoRenderingMode != XRSettings.StereoRenderingMode.MultiPass)
+            if (camera.stereoEnabled)// && XRSettings.stereoRenderingMode != XRSettings.StereoRenderingMode.MultiPass)
             {
+                //Debug.Log("Cam?");
                 descriptor = XRSettings.eyeTextureDesc;
             }
             else if (camera.targetTexture != null)
@@ -517,10 +523,10 @@ namespace VRPortalToolkit.Rendering.Universal
             descriptor.width = Mathf.Max(1, (int)(descriptor.width * resolution));
             descriptor.height = Mathf.Max(1, (int)(descriptor.height * resolution));
 
-            PortalRenderStack.Push(root);
-            foreach (PortalRenderNode child in root.GetPostorderDepthFirst())
+            PortalRenderStack.Push(_root);
+            foreach (PortalRenderNode child in _root.GetPostorderDepthFirst())
             {
-                if (child.isValid && child != root)
+                if (child.isValid && child != _root)
                 {
                     PortalRenderStack.Push(child);
 
@@ -547,20 +553,22 @@ namespace VRPortalToolkit.Rendering.Universal
                 }
             }
 
-            if (root.validChildCount > 0)
+            if (_root.validChildCount > 0)
                 _passesQueue.Enqueue(renderTexturePortalsPass);
 
-            if (root.invalidChildCount > 0)
+            if (_root.invalidChildCount > 0)
                 _passesQueue.Enqueue(blankPortalsRenderPass);
+
+            _passesQueue.Enqueue(storeFramePass);
         }
 
         private static void UpdateCamera(int maxShadowDepth, PortalRenderNode child)
         {
-            renderCamera.clearStencilAfterLightingPass = false;
+            //renderCamera.clearStencilAfterLightingPass = false;
             renderCamera.transform.SetPositionAndRotation(child.localToWorldMatrix.GetPosition(), child.localToWorldMatrix.rotation);
             renderCamera.worldToCameraMatrix = child.worldToCameraMatrix;
             renderCamera.projectionMatrix = child.projectionMatrix;
-
+            
             if (child.isStereo)
             {
                 renderCamera.SetStereoViewMatrix(Camera.StereoscopicEye.Left, child.GetStereoViewMatrix(0));
@@ -577,7 +585,7 @@ namespace VRPortalToolkit.Rendering.Universal
             renderCamera.rect = child.cullingWindow.GetRect();
         }
 
-        private void RenderStencilPortals(Camera camera, UniversalAdditionalCameraData cameraData, ScriptableRenderer renderer, PortalRenderNode root, int maxShadowDepth)
+        private void RenderStencilPortals(Camera camera, UniversalAdditionalCameraData cameraData, ScriptableRenderer renderer, int maxShadowDepth)
         {
             StencilManager.Begin(renderer);
 
@@ -586,7 +594,7 @@ namespace VRPortalToolkit.Rendering.Universal
             setupPass.clearDepth = true;
             increaseStencilPortalsPass.nodesToIncrease.Clear();
             decreaseStencilPortalsPass.nodesToDecrease.Clear();
-            RenderStencilPortalsRecursive(camera, root, maxShadowDepth);
+            RenderStencilPortalsRecursive(camera, _root, maxShadowDepth);
             PortalRenderStack.Pop();
 
             //if (root.validChildCount > 0)
@@ -599,6 +607,8 @@ namespace VRPortalToolkit.Rendering.Universal
             //}
 
             StencilManager.Complete();
+
+            _passesQueue.Enqueue(storeFramePass);
         }
 
         private void RenderStencilPortalsRecursive(Camera camera, PortalRenderNode parent, int maxShadowDepth)
@@ -654,18 +664,30 @@ namespace VRPortalToolkit.Rendering.Universal
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            while (_passesQueue.TryDequeue(out var pass))
+                renderer.EnqueuePass(pass);
+
             if (renderingData.cameraData.camera != renderCamera)
             {
-                // This is a real camera being rendered
+                // Set up frame buffer
+                //if (renderingData.cameraData.camera.stereoEnabled && XRSettings.stereoRenderingMode == XRSettings.StereoRenderingMode.MultiPass)
+                //    FrameBuffer.SetCurrent(renderingData.cameraData.camera, (Camera.MonoOrStereoscopicEye)renderingData.cameraData.xr.multipassId);
+                //else
+                //    FrameBuffer.SetCurrent(renderingData.cameraData.camera);
+
+                //Shader.SetGlobalInt(PropertyID.PortalStencilRef, 0);
+
+                //// This is a real camera being rendered
+                ////renderingData.cameraData.historyManager?.RequestAccess<RawColorHistory>();
+                ////RawColorHistory colorHistory = renderingData.cameraData.historyManager?.GetHistoryForRead<RawColorHistory>();
+                ////blankPortalsRenderPass.lastFrame = colorHistory?.GetPreviousTexture(renderingData.cameraData.xr.multipassId); // 0 gets the immediately previous frame
+
+                //PortalRenderStack.Clear();
+                //PortalRenderStack.Push(_roots[renderingData.cameraData.xr.multipassId]);
             }
             else
             {
                 // This is the portal render camera being rendered
-            }
-
-            while (_passesQueue.TryDequeue(out var pass))
-            {
-                renderer.EnqueuePass(pass);
             }
         }
 
@@ -733,7 +755,6 @@ namespace VRPortalToolkit.Rendering.Universal
 
             public static void SetStencil(int stencilReference)
             {
-                return;
                 StencilState stencilState = new StencilState(true, 255, 255, CompareFunction.Equal);
 
                 StencilState forwardOnlyStencilState = DeferredLights_OverwriteStencil(stencilState, 0b_0110_0000);

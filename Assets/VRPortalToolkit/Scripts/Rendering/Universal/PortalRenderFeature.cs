@@ -522,7 +522,7 @@ namespace VRPortalToolkit.Rendering.Universal
             if (bufferResolution > 0f)
             {
                 //storePreviousFramePass.rootRenderNode = rootPassNode.renderNode;
-                storePreviousFramePass.resolution = bufferResolution;
+                //storePreviousFramePass.resolution = bufferResolution;
                 renderer.EnqueuePass(storePreviousFramePass);
             }
 

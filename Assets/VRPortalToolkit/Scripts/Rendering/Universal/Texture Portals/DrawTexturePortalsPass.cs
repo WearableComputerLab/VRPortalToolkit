@@ -39,14 +39,17 @@ namespace VRPortalToolkit.Rendering.Universal
         static void ExecutePass(PassData data, RasterGraphContext context)
         {
             PortalRenderNode parentNode = PortalRenderStack.Current;
-            
-            Rect rect = parentNode.cullingWindow.GetRect();
 
+            //float width = data.cameraData.cameraTargetDescriptor.width;
+            //float height = data.cameraData.cameraTargetDescriptor.height;
+
+            Rect rect = parentNode.cullingWindow.GetRect();
             Vector4 st = new Vector4(rect.width, rect.height, rect.x, rect.y);
+            //Vector4 st = new Vector4(1f, 1f, 0f, 0f);
 
             propertyBlock.SetVector(PropertyID.MainTex_ST, st);
 
-            if (parentNode.isStereo)
+            if (parentNode.isStereo) 
                 propertyBlock.SetVector(PropertyID.MainTex_ST_2, st);
 
             foreach (PortalRenderNode renderNode in parentNode.children)
@@ -72,7 +75,7 @@ namespace VRPortalToolkit.Rendering.Universal
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
-            const string passName = "Draw Texture Portals Pass";
+            const string passName = "DrawTexturePortalsPass";
 
             // This adds a raster render pass to the graph, specifying the name and the data type that will be passed to the ExecutePass function.
             using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData))
@@ -83,6 +86,7 @@ namespace VRPortalToolkit.Rendering.Universal
 
                 builder.AllowGlobalStateModification(true);
                 builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture);
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
             }
         }

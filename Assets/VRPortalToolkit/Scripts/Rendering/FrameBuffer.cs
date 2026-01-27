@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace VRPortalToolkit.Rendering
 {
@@ -27,16 +28,22 @@ namespace VRPortalToolkit.Rendering
         public Camera camera => _camera;
 
         //private RenderTexture _texture;
-        ///// <summary>
-        ///// Gets the render texture used by this frame buffer.
-        ///// </summary>
+        /////// <summary>
+        /////// Gets the render texture used by this frame buffer.
+        /////// </summary>
         //public RenderTexture texture => _texture;
 
-        private RenderTargetIdentifier _identifier;
-        /// <summary>
-        /// Gets the render target identifier for this frame buffer.
-        /// </summary>
-        public RenderTargetIdentifier identifier => _identifier;
+        private RTHandle _handle;
+        ///// <summary>
+        ///// Gets the render texture handle used by this frame buffer.
+        ///// </summary>
+        public RTHandle handle => _handle;
+
+        //private RenderTargetIdentifier _identifier;
+        ///// <summary>
+        ///// Gets the render target identifier for this frame buffer.
+        ///// </summary>
+        //public RenderTargetIdentifier identifier => _identifier;
 
         private Camera.MonoOrStereoscopicEye _eye;
         /// <summary>
@@ -152,7 +159,7 @@ namespace VRPortalToolkit.Rendering
 
             if (_bufferByCamera.TryGetValue(key, out FrameBuffer buffer))
             {
-                //buffer.ClearTexture();
+                buffer.ClearTexture();
                 buffer.rootNode = null;
                 _bufferByCamera.Remove(key);
             }
@@ -165,7 +172,7 @@ namespace VRPortalToolkit.Rendering
         {
             foreach (var pair in _bufferByCamera)
             {
-                //pair.Value.ClearTexture();
+                pair.Value.ClearTexture();
                 pair.Value.rootNode = null;
             }
 
@@ -176,24 +183,31 @@ namespace VRPortalToolkit.Rendering
         ///// Updates the render texture for this frame buffer with the specified descriptor.
         ///// </summary>
         ///// <param name="descriptor">The descriptor for the new render texture.</param>
-        //public void UpdateTexture(RenderTextureDescriptor descriptor)
-        //{
-        //    ClearTexture();
-        //    _texture = RenderTexture.GetTemporary(descriptor);
-        //    _identifier = new RenderTargetIdentifier(_texture, 0, CubemapFace.Unknown, -1);
-        //}
+        public void UpdateTexture(RenderTextureDescriptor descriptor)
+        {
+            RenderingUtils.ReAllocateHandleIfNeeded(ref _handle, descriptor);
+
+            //ClearTexture();
+            //_texture = RenderTexture.GetTemporary(descriptor);
+            //_identifier = new RenderTargetIdentifier(_texture, 0, CubemapFace.Unknown, -1);
+        }
 
         ///// <summary>
         ///// Clears and releases the render texture used by this frame buffer.
         ///// </summary>
-        //public void ClearTexture()
-        //{
-        //    if (_texture != null)
-        //    {
-        //        RenderTexture.ReleaseTemporary(_texture);
-        //        _identifier = default(RenderTargetIdentifier);
-        //        _texture = null;
-        //    }
-        //}
+        public void ClearTexture()
+        {
+            if (_handle != null)
+            {
+                _handle.Release();
+                _handle = null;
+            }
+            //if (_texture != null)
+            //{
+            //    RenderTexture.ReleaseTemporary(_texture);
+            //    _identifier = default;
+            //    _texture = null;
+            //}
+        }
     }
 }
