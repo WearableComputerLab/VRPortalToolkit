@@ -6959,6 +6959,10 @@ PrefabInstance:
       propertyPath: m_RootOrder
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 957923808719078447, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
+      propertyPath: _rayInteractor
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 1955298787501045394, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
       propertyPath: m_RootOrder
       value: 0
@@ -7002,6 +7006,18 @@ PrefabInstance:
     - target: {fileID: 1955298787501045394, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2374669774467162269, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4011699474455216782, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4221857166795882132, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
+      propertyPath: _rayInteractor
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 5133393884107300620, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
       propertyPath: m_Name

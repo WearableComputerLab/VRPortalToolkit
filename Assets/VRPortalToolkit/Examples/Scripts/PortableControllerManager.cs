@@ -1,6 +1,4 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -29,6 +27,16 @@ namespace VRPortalToolkit.Examples
         {
             get => _directInteractor;
             set => _directInteractor = value;
+        }
+
+        [SerializeField] private XRPortableRayInteractor _rayInteractor;
+        /// <summary>
+        /// The ray interactor used for grabbing and manipulating objects.
+        /// </summary>
+        public XRPortableRayInteractor rayInteractor
+        {
+            get => _rayInteractor;
+            set => _rayInteractor = value;
         }
 
         [SerializeField] private XRPortableRayInteractor _teleportInteractor;
@@ -71,20 +79,10 @@ namespace VRPortalToolkit.Examples
             set => _teleportModeCancel = value;
         }
 
-        /// <summary>
-        /// Whether teleportation mode is currently active.
-        /// </summary>
         private bool _isTeleporting = false;
-        
-        /// <summary>
-        /// Whether teleportation is currently allowed.
-        /// </summary>
         private bool _canTeleport = true;
-        
-        /// <summary>
-        /// Coroutine reference for delayed teleportation cancellation.
-        /// </summary>
-        private IEnumerator _waitThenCancel;
+        private InteractorState _directState;
+        private InteractorState _rayState;
 
         /// <summary>
         /// Initializes the component and starts the update coroutine.
@@ -105,6 +103,12 @@ namespace VRPortalToolkit.Examples
                 _directInteractor.selectExited.AddListener(OnDirectInteractorSelectExited);
             }
 
+            if (_rayInteractor)
+            {
+                _rayInteractor.selectEntered.AddListener(OnRayInteractorSelectEntered);
+                _rayInteractor.selectExited.AddListener(OnRayInteractorSelectExited);
+            }
+
             if (_teleportModeActivate.action != null)
             {
                 _teleportModeActivate.EnableDirectAction();
@@ -112,15 +116,21 @@ namespace VRPortalToolkit.Examples
                 _teleportModeActivate.action.canceled += CancelTeleport;
             }
 
-            UpdateCanTeleport();
+            UpdateState();
         }
 
         protected virtual void OnDisable()
         {
             if (_directInteractor)
             {
-                _directInteractor.selectEntered.AddListener(OnDirectInteractorSelectEntered);
-                _directInteractor.selectExited.AddListener(OnDirectInteractorSelectExited);
+                _directInteractor.selectEntered.RemoveListener(OnDirectInteractorSelectEntered);
+                _directInteractor.selectExited.RemoveListener(OnDirectInteractorSelectExited);
+            }
+
+            if (_rayInteractor)
+            {
+                _rayInteractor.selectEntered.RemoveListener(OnRayInteractorSelectEntered);
+                _rayInteractor.selectExited.RemoveListener(OnRayInteractorSelectExited);
             }
         }
 
@@ -140,42 +150,84 @@ namespace VRPortalToolkit.Examples
         private IEnumerator WaitForEndOfFrame()
         {
             while (true)
-        {
+            {
                 yield return null;
 
                 if (_isTeleporting && !_canTeleport) _isTeleporting = false;
+
+                if (_rayInteractor)
+                {
+                    if ((_isTeleporting && _rayState == InteractorState.Empty)
+                        || _directState != InteractorState.Empty)
+                        _rayInteractor.gameObject.SetActive(false);
+                    else
+                        _rayInteractor.gameObject.SetActive(true);
+                }
+
+                if (_directInteractor)
+                {
+                    if (_rayState != InteractorState.Empty)
+                        _directInteractor.gameObject.SetActive(false);
+                    else
+                        _directInteractor.gameObject.SetActive(true);
+                }
 
                 if (_teleportInteractor && !_isTeleporting && _teleportInteractor.gameObject.activeSelf)
                     _teleportInteractor.gameObject.SetActive(false);
             }
         }
 
-        private void OnDirectInteractorSelectEntered(SelectEnterEventArgs _) => UpdateCanTeleport();
+        private void OnRayInteractorSelectEntered(SelectEnterEventArgs _) => UpdateState();
 
-        private void OnDirectInteractorSelectExited(SelectExitEventArgs _) => UpdateCanTeleport();
+        private void OnRayInteractorSelectExited(SelectExitEventArgs _) => UpdateState();
 
-        private void UpdateCanTeleport()
+        private void OnDirectInteractorSelectEntered(SelectEnterEventArgs _) => UpdateState();
+
+        private void OnDirectInteractorSelectExited(SelectExitEventArgs _) => UpdateState();
+
+        private void UpdateState()
         {
-            if (_directInteractor)
+            _directState = GetInteractorState(_directInteractor);
+            _rayState = GetInteractorState(_rayInteractor);
+
+            if (_directState == InteractorState.SelectingPortal || _rayState == InteractorState.SelectingPortal)
             {
-                foreach (var interactable in _directInteractor.interactablesSelected)
+                _canTeleport = false;
+
+                if (_snapTurnAction && _snapTurnAction.action != null && _snapTurnAction.action.enabled)
+                    _snapTurnAction.action.Disable();
+            }
+            else
+            {
+                _canTeleport = true;
+
+                if (_snapTurnAction && _snapTurnAction.action != null && !_snapTurnAction.action.enabled)
+                    _snapTurnAction.action.Enable();
+            }
+        }
+
+        private InteractorState GetInteractorState(XRBaseInteractor interactor)
+        {
+            if (interactor && interactor.isActiveAndEnabled)
+            {
+                foreach (var interactable in interactor.interactablesSelected)
                 {
                     if (interactable.transform.GetComponent<XRPointAndPortal>())
-                    {
-                        _canTeleport = false;
-
-                        if (_snapTurnAction && _snapTurnAction.action != null && _snapTurnAction.action.enabled)
-                            _snapTurnAction.action.Disable();
-
-                        return;
-                    }
+                        return InteractorState.SelectingPortal;
                 }
+
+                if (interactor.interactablesSelected.Count > 0)
+                    return InteractorState.SelectingInteractable;
             }
 
-            _canTeleport = true;
+            return InteractorState.Empty;
+        }
 
-            if (_snapTurnAction && _snapTurnAction.action != null && !_snapTurnAction.action.enabled)
-                _snapTurnAction.action.Enable();
+        private enum InteractorState : byte
+        {
+            Empty = 0,
+            SelectingInteractable = 1,
+            SelectingPortal = 2,
         }
     }
 }

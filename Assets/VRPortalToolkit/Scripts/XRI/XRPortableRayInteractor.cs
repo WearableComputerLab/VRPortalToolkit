@@ -1,6 +1,9 @@
 using System.Collections.Generic;
+using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.UI;
 using VRPortalToolkit.Cloning;
 using VRPortalToolkit.Physics;
 
@@ -46,8 +49,13 @@ namespace VRPortalToolkit.XRI
         private Vector3[] linePoints;
         private PortalRay[] _portalRays;
         private int _portalRaysCount;
-        private int _portalIndex;
+        private int _portalHitIndex = -1;
         private RaycastHit _hitInfo;
+        private int _portalUIHitIndex = -1;
+        private RaycastResult _uiRaycastResult;
+
+        private static TrackedDeviceEventData _trackedDeviceEvent;
+        private static List<RaycastResult> _raycastResults;
 
         /// <summary>
         /// Gets the portals needed to travel to the specified interactable.
@@ -69,7 +77,7 @@ namespace VRPortalToolkit.XRI
 
         private IEnumerable<Portal> GetPortalsToRaycastHit()
         {
-            for (int i = 1; i <= _portalIndex; i++)
+            for (int i = 1; i <= _portalHitIndex; i++)
                 yield return _portalRays[i].fromPortal;
 
         }
@@ -79,11 +87,11 @@ namespace VRPortalToolkit.XRI
         {
             base.OnSelectEntering(args);
 
-            if (!useForceGrab && interactablesSelected.Count == 1 && _portalIndex != -1)
+            if (!useForceGrab && interactablesSelected.Count == 1 && _portalHitIndex != -1)
             {
                 Vector3 point = _hitInfo.point;
 
-                for (int i = _portalIndex; i > 0; i--)
+                for (int i = _portalHitIndex; i > 0; i--)
                     _portalRays[i].fromPortal?.connected.ModifyPoint(ref point);
 
                 attachTransform.position = point;
@@ -150,7 +158,7 @@ namespace VRPortalToolkit.XRI
                 else
                     caster = new Raycaster();
 
-                if (PortalPhysics.Cast(caster, _portalRays, _portalRaysCount, out _hitInfo, out _portalIndex, raycastMask, raycastTriggerInteraction))
+                if (PortalPhysics.Cast(caster, _portalRays, _portalRaysCount, out _hitInfo, out _portalHitIndex, raycastMask, raycastTriggerInteraction))
                 {
                     Collider collider = PortalCloning.GetOriginal(_hitInfo.collider);
 
@@ -171,9 +179,9 @@ namespace VRPortalToolkit.XRI
                 }
             }
             else
-                _portalIndex = -1;
+                _portalHitIndex = -1;
 
-            if (_portalIndex == -1)
+            if (_portalHitIndex == -1)
             {
                 // Inform the interactor
                 XRUtils.SetRaycastHitsCount(this, -1);
@@ -213,12 +221,21 @@ namespace VRPortalToolkit.XRI
         /// <returns>True if hit information is available.</returns>
         public new bool TryGetHitInfo(out Vector3 position, out Vector3 normal, out int portalRayIndex, out bool isValidTarget)
         {
+            if (_portalUIHitIndex >= 0)
+            {
+                position = _uiRaycastResult.worldPosition;
+                normal = _uiRaycastResult.worldNormal;
+                portalRayIndex = _portalUIHitIndex;
+                isValidTarget = _uiRaycastResult.isValid; // TODO: Check that
+                return true;
+            }
+
             position = _hitInfo.point;
             normal = _hitInfo.normal;
-            portalRayIndex = _portalIndex;
+            portalRayIndex = _portalHitIndex;
             isValidTarget = hasSelection && _actualValidTarget != null;
 
-            return _portalIndex >= 0;
+            return _portalHitIndex >= 0;
         }
 
         /// <summary>
@@ -240,7 +257,7 @@ namespace VRPortalToolkit.XRI
             {
                 cursorPose.position = position;
                 Vector3 up = transform.up;
-                for (int i = 1; i < _portalIndex; i++)
+                for (int i = 1; i < _portalHitIndex; i++)
                     _portalRays[i].fromPortal?.ModifyDirection(up);
 
                 cursorPose.rotation = attachTransform.rotation;
@@ -263,6 +280,57 @@ namespace VRPortalToolkit.XRI
 
             cursorPose = default;
             return false;
+        }
+
+        public override void UpdateUIModel(ref TrackedDeviceModel model)
+        {
+            _portalUIHitIndex = -1;
+
+            if (!isActiveAndEnabled || portalRayCount == 0 || this.IsBlockedByInteractionWithinGroup() || !EventSystem.current)
+            {
+                model.Reset(false);
+                return;
+            }
+
+            base.UpdateUIModel(ref model);
+
+            var raycastPoints = model.raycastPoints;
+            raycastPoints.Clear();
+
+            _raycastResults ??= new List<RaycastResult>();
+            _trackedDeviceEvent ??= new TrackedDeviceEventData(EventSystem.current);
+            model.CopyTo(_trackedDeviceEvent);
+
+            int maxRayCount = _portalHitIndex == -1 ? portalRayCount : _portalHitIndex + 1;
+            for (int i = 0; i < maxRayCount; i++)
+            {
+                PortalRay portalRay = _portalRays[i];
+
+                Vector3 origin = portalRay.origin, dirVec = portalRay.direction;
+
+                raycastPoints.Clear();
+                raycastPoints.Add(origin);
+
+                if (i == _portalHitIndex)
+                    raycastPoints.Add(origin + dirVec.normalized * _hitInfo.distance);
+                else
+                    raycastPoints.Add(origin + dirVec);
+
+                _trackedDeviceEvent.rayHitIndex = 0;
+                EventSystem.current.RaycastAll(_trackedDeviceEvent, _raycastResults);
+
+                // This will be the ui that hits something
+                if (_raycastResults.Count > 0)
+                {
+                    _portalUIHitIndex = i;
+                    _uiRaycastResult = _raycastResults[0];
+                    break;
+                }
+
+                // Something else blocked the UI
+                //if (_trackedDeviceEvent.rayHitIndex != 0)
+                //    break;
+            }
         }
     }
 }
