@@ -989,7 +989,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1995798847}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &591452153
 PrefabInstance:
@@ -2240,6 +2240,14 @@ PrefabInstance:
       propertyPath: _selectedColor.b
       value: 0.29411766
       objectReference: {fileID: 0}
+    - target: {fileID: 3290913004355741486, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3290913005003956852, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5959625589689371681, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
       propertyPath: m_Name
       value: PortalPair_2
@@ -2385,6 +2393,14 @@ PrefabInstance:
     - target: {fileID: 1455416165163364013, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
       propertyPath: _selectedColor.g
       value: 0.8627451
+      objectReference: {fileID: 0}
+    - target: {fileID: 3290913004355741486, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3290913005003956852, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5959625589689371681, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
       propertyPath: m_Name
@@ -2588,6 +2604,14 @@ PrefabInstance:
       propertyPath: _selectedColor.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3290913004355741486, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3290913005003956852, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5959625589689371681, guid: 7408510d67847dd42a455df5f3d619ee, type: 3}
       propertyPath: m_Name
       value: PortalPair_1
@@ -2747,7 +2771,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 890366227}
-  m_RootOrder: 4
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1206239762
 PrefabInstance:
@@ -2818,15 +2842,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5606572167047035596, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
       propertyPath: m_RootOrder
-      value: 5
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6619370472619880971, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
       propertyPath: m_RootOrder
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 8621906634061859684, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
       propertyPath: m_RootOrder
-      value: 5
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1756455550866717912, guid: c288f1f45066de34980ab80d3ef22fac, type: 3}
